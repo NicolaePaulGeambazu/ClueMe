@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }: any) {
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
   const { reminders, isLoading, loadReminders, useFirebase } = useReminders();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(true);
   
   const styles = createStyles(colors);
 
@@ -36,19 +37,19 @@ export default function HomeScreen({ navigation }: any) {
           navigation.navigate('Add');
           break;
         case 'view_calendar':
-          console.log('Calendar view');
+          navigation.navigate('Calendar');
           break;
         case 'search':
-          console.log('Search functionality');
+          navigation.navigate('Search');
           break;
         case 'filter':
-          console.log('Filter functionality');
+          navigation.navigate('Categories');
           break;
         case 'family':
-          console.log('Family functionality');
+          navigation.navigate('Family');
           break;
         case 'categories':
-          console.log('Categories functionality');
+          navigation.navigate('Categories');
           break;
         default:
           console.log('Quick action:', action);
@@ -72,21 +73,6 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.title}>
             {isAnonymous ? 'Welcome to ClearCue' : `Welcome back${user?.displayName ? `, ${user.displayName}` : ''}`}
           </Text>
-        </View>
-        
-        <View style={styles.headerActions}>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => handleQuickAction('search')}
-          >
-            <Search size={24} color={colors.textSecondary} strokeWidth={2} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Settings size={24} color={colors.textSecondary} strokeWidth={2} />
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -148,57 +134,75 @@ export default function HomeScreen({ navigation }: any) {
         }
       >
         <View style={styles.quickActions}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <TouchableOpacity 
+            style={styles.quickActionsHeader}
+            onPress={() => setShowQuickActions(!showQuickActions)}
+          >
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <ChevronRight 
+              size={20} 
+              color={colors.textSecondary} 
+              strokeWidth={2}
+              style={[
+                styles.chevron,
+                { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
+              ]}
+            />
+          </TouchableOpacity>
           
-          <View style={styles.actionsGrid}>
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('add_reminder')}
-            >
-              <Plus size={24} color={colors.primary} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Add Reminder</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('view_calendar')}
-            >
-              <Calendar size={24} color={colors.secondary} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Calendar</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('search')}
-            >
-              <Search size={24} color={colors.success} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Search</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('filter')}
-            >
-              <Filter size={24} color={colors.warning} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Filter</Text>
-            </TouchableOpacity>
+          {showQuickActions && (
+            <View style={styles.actionsGrid}>
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('view_calendar')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.secondary + '15' }]}>
+                  <Calendar size={24} color={colors.secondary} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>Calendar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('search')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.success + '15' }]}>
+                  <Search size={24} color={colors.success} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>Search</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('filter')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.warning + '15' }]}>
+                  <Filter size={24} color={colors.warning} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>Filter</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('family')}
-            >
-              <Users size={24} color={colors.tertiary} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Family</Text>
-            </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('family')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.tertiary + '15' }]}>
+                  <Users size={24} color={colors.tertiary} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>Family</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => handleQuickAction('categories')}
-            >
-              <Star size={24} color={colors.error} strokeWidth={2} />
-              <Text style={styles.actionLabel}>Categories</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('categories')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.error + '15' }]}>
+                  <Star size={24} color={colors.error} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>Categories</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <View style={styles.recentSection}>
@@ -310,15 +314,6 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: 24,
     color: colors.text,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  headerButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: colors.border,
-  },
   welcomeBanner: {
     backgroundColor: colors.primary + '15',
     borderRadius: 12,
@@ -404,6 +399,14 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   quickActions: {
     marginBottom: 32,
+    backgroundColor: colors.background,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   sectionTitle: {
     fontFamily: 'Inter-SemiBold',
@@ -414,25 +417,39 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 16,
   },
   actionCard: {
-    width: '30%',
+    width: '47%',
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 120,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: colors.border + '20',
   },
   actionLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
     color: colors.text,
-    marginTop: 8,
+    marginTop: 12,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  actionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
   recentSection: {
     marginBottom: 32,
@@ -541,5 +558,15 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  quickActionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  chevron: {
+    width: 20,
+    height: 20,
   },
 });

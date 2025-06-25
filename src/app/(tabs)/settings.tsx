@@ -11,15 +11,13 @@ import {
   User, 
   LogOut,
   Calendar,
-  Search,
-  Filter,
-  Star,
   Mail
 } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { userService, UserProfile } from '../../services/firebaseService';
+import InfoModal from '../../components/InfoModal';
 
 export default function SettingsScreen() {
   const { theme, toggleTheme, isDark } = useTheme();
@@ -28,6 +26,12 @@ export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    content: '',
+    type: 'info' as 'info' | 'help' | 'privacy' | 'warning'
+  });
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -68,8 +72,31 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleQuickAction = (action: string) => {
-    console.log('Quick action:', action);
+  const handleHelpSupport = () => {
+    setModalConfig({
+      title: 'Help & Support',
+      content: 'Need help with ClearCue?\n\n📧 Email: support@clearcue.app\n🌐 Website: clearcue.app\n📱 In-app feedback available\n\nWe\'re here to help you get the most out of your reminders!',
+      type: 'help'
+    });
+    setModalVisible(true);
+  };
+
+  const handleAboutClearCue = () => {
+    setModalConfig({
+      title: 'About ClearCue',
+      content: 'ClearCue v1.0.0\n\nA simple, private, and effective reminder app designed to help you stay organized without the clutter.\n\n✨ Features:\n• Smart notifications\n• Calendar integration\n• Priority management\n• Family sharing\n• No ads or tracking\n\nMade with ❤️ for productivity',
+      type: 'info'
+    });
+    setModalVisible(true);
+  };
+
+  const handleDataPrivacy = () => {
+    setModalConfig({
+      title: 'Data & Privacy',
+      content: '🔒 Your Privacy Matters\n\nClearCue is built with privacy-first principles:\n\n📱 Local Storage:\n• Reminders stored locally on your device\n• No cloud sync unless you choose Firebase\n• Your data stays private\n\n☁️ Firebase Sync (Optional):\n• End-to-end encrypted when enabled\n• Only you can access your data\n• No data mining or tracking\n\n🚫 No Tracking:\n• No analytics or user profiling\n• No third-party data sharing\n• No targeted advertising\n\n📋 Data Control:\n• Export your data anytime\n• Delete all data permanently\n• Complete control over your information\n\nYour reminders, your privacy, your control.',
+      type: 'privacy'
+    });
+    setModalVisible(true);
   };
 
   const formatDate = (date: Date) => {
@@ -142,45 +169,6 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity 
-              style={styles.quickActionCard}
-              onPress={() => handleQuickAction('calendar')}
-            >
-              <Calendar size={24} color={colors.primary} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Calendar</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickActionCard}
-              onPress={() => handleQuickAction('search')}
-            >
-              <Search size={24} color={colors.success} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Search</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickActionCard}
-              onPress={() => handleQuickAction('filter')}
-            >
-              <Filter size={24} color={colors.warning} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Filter</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.quickActionCard}
-              onPress={() => handleQuickAction('favorites')}
-            >
-              <Star size={24} color={colors.error} strokeWidth={2} />
-              <Text style={styles.quickActionLabel}>Favorites</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Appearance */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
@@ -231,7 +219,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Privacy & Security</Text>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleDataPrivacy}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.success + '15' }]}>
                 <Shield size={20} color={colors.success} strokeWidth={2} />
@@ -249,27 +237,27 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleHelpSupport}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
                 <HelpCircle size={20} color={colors.warning} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingLabel}>Help & Support</Text>
-                <Text style={styles.settingDescription}>Get help and support</Text>
+                <Text style={styles.settingDescription}>Get help, contact support, and learn tips</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.settingItem}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleAboutClearCue}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.textSecondary + '15' }]}>
                 <Info size={20} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingLabel}>About ClearCue</Text>
-                <Text style={styles.settingDescription}>Version 1.0.0</Text>
+                <Text style={styles.settingDescription}>Version 1.0.0 • Learn more about the app</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
@@ -304,6 +292,13 @@ export default function SettingsScreen() {
           </Text>
         </View>
       </ScrollView>
+      <InfoModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        title={modalConfig.title}
+        content={modalConfig.content}
+        type={modalConfig.type}
+      />
     </SafeAreaView>
   );
 }
@@ -424,30 +419,6 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: colors.text,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  quickActionCard: {
-    width: '48%',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  quickActionLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: colors.text,
-    marginTop: 8,
-    textAlign: 'center',
   },
   settingItem: {
     flexDirection: 'row',
