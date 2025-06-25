@@ -1,15 +1,8 @@
 import { useEffect } from 'react';
 
-declare global {
-  interface Window {
-    frameworkReady?: () => void;
-  }
-}
-
 export function useFrameworkReady() {
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.frameworkReady) {
-      window.frameworkReady();
-    }
+    // Framework ready logic for React Native
+    // This can be used for any initialization needed when the app is ready
   }, []);
 }
