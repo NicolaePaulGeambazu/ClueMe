@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import '@react-native-firebase/app';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firebase from '@react-native-firebase/app';
+import { Platform } from 'react-native';
 import { userService, initializeFirebase } from '../services/firebaseService';
 
 interface User {
@@ -35,6 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const initializeAuth = async () => {
     try {
+      console.log('🔍 Starting Firebase auth initialization...');
+      console.log('📱 Platform:', Platform.OS);
+      console.log('🔥 Firebase apps count:', firebase.apps.length);
+      
       // Wait for Firebase to be ready
       let attempts = 0;
       const maxAttempts = 15; // Increased attempts

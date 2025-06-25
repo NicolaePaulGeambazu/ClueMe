@@ -1,14 +1,19 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
-import { Chrome as Home, Plus, Settings } from 'lucide-react-native';
+import { Chrome as Home, Plus, Settings, Search, Calendar, Users, User } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Colors } from '../../constants/Colors';
 
-// Import tab screens
+// Import screen components
 import HomeScreen from './index';
 import AddScreen from './add';
 import SettingsScreen from './settings';
+import SearchScreen from './search';
+import CalendarScreen from './calendar';
+import CategoriesScreen from './categories';
+import FamilyScreen from './family';
+import ProfileScreen from './profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -18,21 +23,8 @@ export default function TabLayout() {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }: { route: any }) => ({
+      screenOptions={{
         headerShown: false,
-        tabBarIcon: ({ focused, color, size }: { focused: boolean; color: string; size: number }) => {
-          let iconName;
-
-          if (route.name === 'Home') {
-            iconName = <Home size={size} color={color} strokeWidth={2} />;
-          } else if (route.name === 'Add') {
-            iconName = <Plus size={size} color={color} strokeWidth={2} />;
-          } else if (route.name === 'Settings') {
-            iconName = <Settings size={size} color={color} strokeWidth={2} />;
-          }
-
-          return iconName;
-        },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: [styles.tabBar, { 
@@ -41,11 +33,71 @@ export default function TabLayout() {
         }],
         tabBarItemStyle: styles.tabBarItem,
         tabBarLabelStyle: styles.tabBarLabel,
-      })}
+      }}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Add" component={AddScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Home size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Search size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Calendar size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Add"
+        component={AddScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Plus size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Family"
+        component={FamilyScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Users size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <User size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Settings size={size} color={color} strokeWidth={2} />
+          ),
+        }}
+      />
     </Tab.Navigator>
   );
 }

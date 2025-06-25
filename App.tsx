@@ -15,9 +15,9 @@ import { FamilyProvider } from './src/contexts/FamilyContext';
 import { StatusBar } from 'react-native';
 
 // Import layout components
-import RootLayout from './src/app/_layout';
 import AuthLayout from './src/app/(auth)/_layout';
 import TabLayout from './src/app/(tabs)/_layout';
+import IndexScreen from './src/app/index';
 
 // Import individual screens for direct navigation
 import SearchScreen from './src/app/(tabs)/search';
@@ -35,10 +35,10 @@ export default function App() {
         <FamilyProvider>
           <NavigationContainer>
             <StatusBar barStyle="dark-content" />
-            <Stack.Navigator>
+            <Stack.Navigator initialRouteName="Index">
               <Stack.Screen 
-                name="Root" 
-                component={RootLayout} 
+                name="Index" 
+                component={IndexScreen} 
                 options={{ headerShown: false }}
               />
               <Stack.Screen 

@@ -1,5 +1,6 @@
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { Platform } from 'react-native';
 
 // Types
 export interface UserProfile {
@@ -37,6 +38,12 @@ let firebaseInitPromise: Promise<boolean> | null = null;
 // Helper function to check if Firestore is available
 const checkFirestoreAvailability = (): boolean => {
   try {
+    // Only allow Firebase on iOS for now since Android config is missing
+    if (Platform.OS === 'android') {
+      console.warn('❌ Firebase not configured for Android (missing google-services.json)');
+      return false;
+    }
+    
     const firestoreInstance = firestore();
     if (!firestoreInstance) {
       console.warn('❌ Firestore instance not available');

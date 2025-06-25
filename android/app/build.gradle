@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.clearcue2"
+    namespace "org.reactjs.native.example.clueme2"
     defaultConfig {
-        applicationId "com.clearcue2"
+        applicationId "org.reactjs.native.example.clueme2"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

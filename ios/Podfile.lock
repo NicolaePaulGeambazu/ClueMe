@@ -2714,6 +2714,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNSVG (15.12.0):
+    - React-Core
   - SocketRocket (0.7.0)
   - Yoga (0.0.0)
 
@@ -2797,6 +2799,7 @@ DEPENDENCIES:
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - RNScreens (from `../node_modules/react-native-screens`)
+  - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -2962,6 +2965,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/firestore"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNSVG:
+    :path: "../node_modules/react-native-svg"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -3056,6 +3061,7 @@ SPEC CHECKSUMS:
   RNFBAuth: ecbb030e0fd3551b8bc36cc85e0ebb1bcfb7685e
   RNFBFirestore: b12e7d4e6a94e08565638442def454984a06c065
   RNScreens: a77d531f86f2f76dc8a02f7a938d560f2a94540f
+  RNSVG: 28b61fc4856abe8eaea46794419f848986ee7e80
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 929fa3162dc47b68bdbd4b7b794b6353ef9b53c5
 
