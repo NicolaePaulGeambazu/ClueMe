@@ -36,13 +36,19 @@ export default function HomeScreen({ navigation }: any) {
           navigation.navigate('Add');
           break;
         case 'view_calendar':
-          navigation.navigate('Calendar');
+          console.log('Calendar view');
           break;
         case 'search':
-          navigation.navigate('Search');
+          console.log('Search functionality');
           break;
         case 'filter':
-          navigation.navigate('Categories');
+          console.log('Filter functionality');
+          break;
+        case 'family':
+          console.log('Family functionality');
+          break;
+        case 'categories':
+          console.log('Categories functionality');
           break;
         default:
           console.log('Quick action:', action);
@@ -71,19 +77,15 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.headerActions}>
           <TouchableOpacity 
             style={styles.headerButton}
-            onPress={() => navigation.navigate('Search')}
+            onPress={() => handleQuickAction('search')}
           >
             <Search size={24} color={colors.textSecondary} strokeWidth={2} />
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.headerButton}
-            onPress={() => isAnonymous ? setShowLoginPrompt(true) : navigation.navigate('Profile')}
+            onPress={() => navigation.navigate('Settings')}
           >
-            {isAnonymous ? (
-              <User size={24} color={colors.primary} strokeWidth={2} />
-            ) : (
-              <Bell size={24} color={colors.textSecondary} strokeWidth={2} />
-            )}
+            <Settings size={24} color={colors.textSecondary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -179,6 +181,22 @@ export default function HomeScreen({ navigation }: any) {
             >
               <Filter size={24} color={colors.warning} strokeWidth={2} />
               <Text style={styles.actionLabel}>Filter</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => handleQuickAction('family')}
+            >
+              <Users size={24} color={colors.tertiary} strokeWidth={2} />
+              <Text style={styles.actionLabel}>Family</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => handleQuickAction('categories')}
+            >
+              <Star size={24} color={colors.error} strokeWidth={2} />
+              <Text style={styles.actionLabel}>Categories</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -299,7 +317,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   headerButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.border,
   },
   welcomeBanner: {
     backgroundColor: colors.primary + '15',
@@ -362,7 +380,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -399,13 +417,12 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     gap: 12,
   },
   actionCard: {
-    flex: 1,
-    minWidth: '45%',
+    width: '30%',
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -429,7 +446,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -496,7 +513,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -506,7 +523,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.borderLight,
+    backgroundColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,

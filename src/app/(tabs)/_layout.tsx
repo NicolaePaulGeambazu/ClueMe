@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StyleSheet } from 'react-native';
-import { Chrome as Home, Plus, Settings, Search, Calendar, Users, User } from 'lucide-react-native';
+import { Chrome as Home, Plus, Settings } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Colors } from '../../constants/Colors';
 
@@ -9,11 +9,6 @@ import { Colors } from '../../constants/Colors';
 import HomeScreen from './index';
 import AddScreen from './add';
 import SettingsScreen from './settings';
-import SearchScreen from './search';
-import CalendarScreen from './calendar';
-import CategoriesScreen from './categories';
-import FamilyScreen from './family';
-import ProfileScreen from './profile';
 
 const Tab = createBottomTabNavigator();
 
@@ -42,24 +37,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} strokeWidth={2} />
           ),
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Search size={size} color={color} strokeWidth={2} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Calendar"
-        component={CalendarScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Calendar size={size} color={color} strokeWidth={2} />
-          ),
+          tabBarLabel: 'Home',
         }}
       />
       <Tab.Screen
@@ -69,24 +47,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Plus size={size} color={color} strokeWidth={2} />
           ),
-        }}
-      />
-      <Tab.Screen
-        name="Family"
-        component={FamilyScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Users size={size} color={color} strokeWidth={2} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <User size={size} color={color} strokeWidth={2} />
-          ),
+          tabBarLabel: 'Add',
         }}
       />
       <Tab.Screen
@@ -96,6 +57,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} strokeWidth={2} />
           ),
+          tabBarLabel: 'Settings',
         }}
       />
     </Tab.Navigator>
@@ -104,17 +66,20 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    borderTopWidth: 1,
+    height: 60,
     paddingBottom: 8,
     paddingTop: 8,
-    height: 88,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
   },
   tabBarItem: {
-    paddingTop: 8,
+    paddingVertical: 4,
   },
   tabBarLabel: {
-    fontFamily: 'Inter-Medium',
     fontSize: 12,
-    marginTop: 4,
+    fontWeight: '600',
   },
 }); 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -13,18 +13,43 @@ import {
   Calendar,
   Search,
   Filter,
-  Star
+  Star,
+  Mail
 } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/Colors';
+import { userService, UserProfile } from '../../services/firebaseService';
 
 export default function SettingsScreen() {
   const { theme, toggleTheme, isDark } = useTheme();
   const colors = Colors[theme];
   const { user, isAnonymous, signOut } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const styles = createStyles(colors);
+
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      loadUserProfile();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user]);
+
+  const loadUserProfile = async () => {
+    try {
+      if (user?.uid) {
+        const profile = await userService.getUserProfile(user.uid);
+        setUserProfile(profile);
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignOut = () => {
     Alert.alert(
@@ -47,31 +72,73 @@ export default function SettingsScreen() {
     console.log('Quick action:', action);
   };
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Customize your ClearCue experience</Text>
-      </View>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Profile Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Profile</Text>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarPlaceholder}>
+            <User size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
           
-          <View style={styles.profileCard}>
-            <View style={styles.avatar}>
-              <User size={32} color="#FFFFFF" strokeWidth={2} />
+          <Text style={styles.displayName}>
+            {user?.displayName || userProfile?.displayName || 'Welcome User'}
+          </Text>
+          <Text style={styles.email}>
+            {user?.email || userProfile?.email || 'user@example.com'}
+          </Text>
+          
+          {isAnonymous && (
+            <View style={styles.anonymousBadge}>
+              <Text style={styles.anonymousText}>Anonymous User</Text>
             </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {isAnonymous ? 'Anonymous User' : (user?.displayName || 'User')}
-              </Text>
-              <Text style={styles.profileEmail}>
-                {isAnonymous ? 'Sign in to sync your data' : (user?.email || 'No email')}
+          )}
+        </View>
+
+        {/* Account Information */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Account Information</Text>
+          
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <Mail size={20} color={colors.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>
+                {user?.email || userProfile?.email || 'Not available'}
               </Text>
             </View>
-            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+          </View>
+
+          <View style={styles.infoItem}>
+            <View style={styles.infoIcon}>
+              <Calendar size={20} color={colors.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Member Since</Text>
+              <Text style={styles.infoValue}>
+                {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Today'}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -277,39 +344,86 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 4,
   },
   profileCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarPlaceholder: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  displayName: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  email: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  anonymousBadge: {
+    backgroundColor: colors.warning + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.warning + '30',
+  },
+  anonymousText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+    color: colors.warning,
+  },
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
-    shadowColor: colors.shadow,
+    marginBottom: 8,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
   },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primary,
+  infoIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
-  profileInfo: {
+  infoContent: {
     flex: 1,
   },
-  profileName: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  profileEmail: {
-    fontFamily: 'Inter-Regular',
+  infoLabel: {
+    fontFamily: 'Inter-Medium',
     fontSize: 14,
     color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: colors.text,
   },
   quickActionsGrid: {
     flexDirection: 'row',
@@ -322,7 +436,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -343,7 +457,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 8,
-    shadowColor: colors.shadow,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -395,5 +509,15 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: colors.text,
   },
 });

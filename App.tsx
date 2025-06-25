@@ -19,13 +19,6 @@ import AuthLayout from './src/app/(auth)/_layout';
 import TabLayout from './src/app/(tabs)/_layout';
 import IndexScreen from './src/app/index';
 
-// Import individual screens for direct navigation
-import SearchScreen from './src/app/(tabs)/search';
-import CalendarScreen from './src/app/(tabs)/calendar';
-import CategoriesScreen from './src/app/(tabs)/categories';
-import FamilyScreen from './src/app/(tabs)/family';
-import ProfileScreen from './src/app/(tabs)/profile';
-
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -38,58 +31,18 @@ export default function App() {
             <Stack.Navigator initialRouteName="Index">
               <Stack.Screen 
                 name="Index" 
-                component={IndexScreen} 
+                component={IndexScreen}
                 options={{ headerShown: false }}
               />
               <Stack.Screen 
                 name="Auth" 
-                component={AuthLayout} 
+                component={AuthLayout}
                 options={{ headerShown: false }}
               />
               <Stack.Screen 
                 name="MainTabs" 
-                component={TabLayout} 
+                component={TabLayout}
                 options={{ headerShown: false }}
-              />
-              <Stack.Screen 
-                name="Search" 
-                component={SearchScreen} 
-                options={{ 
-                  title: 'Search',
-                  headerBackTitle: 'Back'
-                }}
-              />
-              <Stack.Screen 
-                name="Calendar" 
-                component={CalendarScreen} 
-                options={{ 
-                  title: 'Calendar',
-                  headerBackTitle: 'Back'
-                }}
-              />
-              <Stack.Screen 
-                name="Categories" 
-                component={CategoriesScreen} 
-                options={{ 
-                  title: 'Categories',
-                  headerBackTitle: 'Back'
-                }}
-              />
-              <Stack.Screen 
-                name="Family" 
-                component={FamilyScreen} 
-                options={{ 
-                  title: 'Family',
-                  headerBackTitle: 'Back'
-                }}
-              />
-              <Stack.Screen 
-                name="Profile" 
-                component={ProfileScreen} 
-                options={{ 
-                  title: 'Profile',
-                  headerBackTitle: 'Back'
-                }}
               />
             </Stack.Navigator>
           </NavigationContainer>
