@@ -1,40 +1,132 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
+# Podfile for ClearCue2
+# This Podfile is configured to work with React Native and addresses common issues
+# related to Swift pods and static library linking, especially with Firebase.
+
+# Section 1: React Native Core Configuration
+# This line resolves the `react_native_pods.rb` script using Node's module resolution.
+# This ensures that the correct script, potentially from a hoisted `react-native`
+# package in a monorepo or complex setup, is used.
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, min_ios_version_supported
-prepare_react_native_project!
+# Define the minimum iOS deployment target for your project.
+# Based on your React Native version (0.75.5), iOS 15.0 is a reasonable minimum.
+# Ensure this matches your Xcode project settings.
+platform :ios, '15.0'
 
+# Crucial for Swift pods when using static libraries.
+# This tells CocoaPods to generate module maps for all pods that don't already have them.
+# This is a common solution for "Swift pod ... depends upon ... which does not define modules" errors.
+use_modular_headers!
+
+# Section 2: Framework Linkage Configuration
+# This block determines whether your pods will be linked as static or dynamic frameworks.
+# It uses an environment variable `USE_FRAMEWORKS` for flexibility.
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  # Example: USE_FRAMEWORKS="static" will use static linking.
+  # If you always want static linking, you can hardcode: `use_frameworks! :linkage => :static`
   use_frameworks! :linkage => linkage.to_sym
+else
+  # Default to dynamic frameworks if USE_FRAMEWORKS is not explicitly set.
+  # If your project strictly requires static frameworks by default, change this to `:static`.
+  use_frameworks!
 end
 
+# Section 3: Main Application Target
+# This block defines dependencies and configurations for your main application target.
 target 'ClearCue2' do
+  # `use_native_modules!` is a React Native CLI function that auto-links most
+  # of your native dependencies based on your `package.json`.
+  # It also provides configuration details like the React Native path.
   config = use_native_modules!
 
+  # `use_react_native!` configures the core React Native libraries.
+  # `:path` should point to your `react-native` module.
+  # `:app_path` is the absolute path to your React Native project root (usually one level up from `ios/`).
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
+    # Uncomment and set these flags as needed for your project:
+    # :hermes_enabled => true,     # Hermes is often enabled by default in new RN projects
+    # :fabric_enabled => false,    # Set to true if you are using the New Architecture
+    # :flipper_configuration => FlipperConfiguration.enabled, # Enable Flipper for debugging
+    # :mac_catalyst_enabled => false, # Set to true if building for Mac Catalyst
   )
 
+  # Explicitly define Firebase pods and enforce modular headers for them.
+  # These are based on your `package.json` dependencies:
+  # @react-native-firebase/app, @react-native-firebase/auth, @react-native-firebase/firestore.
+  # Including common transitive dependencies that often cause modular header issues.
+  pod 'Firebase/Core', :modular_headers => true
+  pod 'Firebase/Auth', :modular_headers => true
+  pod 'Firebase/Firestore', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseFirestoreInternal', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true # Often a transitive dependency for Firebase
+  pod 'GoogleDataTransport', :modular_headers => true # Often a transitive dependency for Firebase
+  pod 'nanopb', :modular_headers => true # Often a transitive dependency for Firebase
+
+  # Other React Native community modules from your package.json:
+  # These are generally auto-linked by `use_native_modules!`, but listed here for clarity
+  # and if you ever needed to add specific options.
+  # pod 'RNCSafeAreaContext', :path => '../node_modules/react-native-safe-area-context' # Remove this line
+  # pod 'RNScreens', :path => '../node_modules/react-native-screens' # Remove this line
+
+  # Section 4: Test Target
+  # This block defines dependencies for your test target.
   target 'ClearCue2Tests' do
     inherit! :complete
-    # Pods for testing
+    # Pods specific for testing, if any.
+    # For instance, if you have a testing framework that uses CocoaPods.
   end
 
+  # Section 5: Post-Install Hook
+  # This block runs after all pods have been installed and allows for final adjustments.
   post_install do |installer|
-    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+    # This is a critical React Native post-installation step that applies necessary
+    # patches and configurations to the installed pods project.
+    # It addresses common issues like build settings, compiler flags, etc.
     react_native_post_install(
       installer,
       config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
+      :mac_catalyst_enabled => false, # Set to true if you are building for Mac Catalyst
+      # :ccache_enabled => true # Uncomment to enable ccache for faster incremental builds (requires ccache to be installed on your system)
+      # You can add other options here as provided by the `react_native_pods.rb` script.
     )
+
+    # BEGIN: Force iOS Deployment Target for all Pod targets
+    # This ensures all pods respect the platform :ios, '15.0' setting.
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      end
+    end
+    # END: Force iOS Deployment Target for all Pod targets
+
+    # BEGIN: Fix for BoringSSL-GRPC unsupported option '-G' (Xcode 16+ compatibility)
+    # This specifically removes the problematic compiler flag that causes build errors.
+    installer.pods_project.targets.each do |target|
+      if target.name == 'BoringSSL-GRPC'
+        target.source_build_phase.files.each do |file|
+          if file.settings && file.settings['COMPILER_FLAGS']
+            flags = file.settings['COMPILER_FLAGS'].split
+            # Remove the problematic flag that Clang misinterprets as '-G'
+            flags.reject! { |flag| flag == '-GCC_WARN_INHIBIT_ALL_WARNINGS' }
+            file.settings['COMPILER_FLAGS'] = flags.join(' ')
+          end
+        end
+      end
+    end
+    # END: Fix for BoringSSL-GRPC unsupported option '-G'
+
+    # Custom post-install hooks can be added here if needed for specific pods
+    # or project requirements, e.g., to fix specific build settings for a pod.
   end
 end
