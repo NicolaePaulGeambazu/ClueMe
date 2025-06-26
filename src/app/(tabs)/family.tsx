@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Users, Plus, Settings, Activity, Bell, TrendingUp } from 'lucide-react-native';
+import { Users, Settings, Activity, Bell, TrendingUp, Mail } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../contexts/AuthContext';
+import { useFamily } from '../../hooks/useFamily';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import FamilyInvitationModal from '../../components/FamilyInvitationModal';
 
 // Mock types
 interface FamilyMember {
@@ -27,114 +31,144 @@ interface FamilyActivity {
 }
 
 export default function FamilyScreen() {
+  const { t } = useTranslation();
   const { theme } = useTheme();
+  const { user, isAnonymous } = useAuth();
+  const { 
+    family, 
+    members, 
+    activities, 
+    pendingInvitations,
+    isLoading, 
+    error, 
+    loadFamily, 
+    removeMember,
+    sendInvitation,
+    acceptInvitation,
+    declineInvitation,
+    leaveFamily,
+    isOwner,
+    hasPendingInvitations
+  } = useFamily();
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
   // State management
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const [activities, setActivities] = useState<FamilyActivity[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'members' | 'activity' | 'notifications'>('members');
-
-  // Mock family ID - in real app, get from context
-  const familyId = 'mock-family-id';
-  const isOwner = true; // Mock owner status
-
-  // Load initial data
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Mock data
-      const mockMembers: FamilyMember[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john@example.com',
-          role: 'Owner',
-          isOnline: true,
-          lastActive: '2 minutes ago'
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane@example.com',
-          role: 'Member',
-          isOnline: false,
-          lastActive: '1 hour ago'
-        }
-      ];
-
-      const mockActivities: FamilyActivity[] = [
-        {
-          id: '1',
-          type: 'reminder_created',
-          title: 'New reminder created',
-          description: 'John created a new reminder for tomorrow',
-          timestamp: '2 hours ago',
-          memberId: '1',
-          memberName: 'John Doe'
-        }
-      ];
-
-      setMembers(mockMembers);
-      setActivities(mockActivities);
-    } catch (error) {
-      console.error('Error loading family data:', error);
-      Alert.alert('Error', 'Failed to load family data. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadInitialData();
+    await loadFamily();
     setIsRefreshing(false);
-  }, []);
+  }, [loadFamily]);
 
-  const handleMemberPress = (member: FamilyMember) => {
+  const handleMemberPress = (member: any) => {
     // Navigate to member details
     console.log('Member pressed:', member.name);
   };
 
-  const handleMemberMenu = (member: FamilyMember) => {
+  const handleMemberMenu = (member: any) => {
     Alert.alert(
       member.name,
-      'Choose an action',
+      t('family.memberActions'),
       [
-        { text: 'Edit', onPress: () => console.log('Edit member:', member.id) },
-        { text: 'Remove', style: 'destructive', onPress: () => handleRemoveMember(member) },
-        { text: 'Cancel', style: 'cancel' }
+        { text: t('family.edit'), onPress: () => console.log('Edit member:', member.id) },
+        { 
+          text: t('family.remove'), 
+          style: 'destructive', 
+          onPress: () => handleRemoveMember(member) 
+        },
+        { text: t('common.cancel'), style: 'cancel' }
       ]
     );
   };
 
-  const handleRemoveMember = async (member: FamilyMember) => {
+  const handleRemoveMember = async (member: any) => {
     try {
-      setMembers(prev => prev.filter(m => m.id !== member.id));
-      Alert.alert('Success', `${member.name} has been removed from the family.`);
+      await removeMember(member.id);
+      Alert.alert(t('common.success'), t('family.removeSuccess'));
     } catch (error) {
       console.error('Error removing member:', error);
-      Alert.alert('Error', 'Failed to remove member. Please try again.');
+      Alert.alert(t('common.error'), t('family.removeError'));
     }
   };
 
-  const handleActivityPress = (activity: FamilyActivity) => {
+  const handleActivityPress = (activity: any) => {
     // Navigate to activity details or related screen
     console.log('Activity pressed:', activity.type);
   };
 
-  const handleAddMember = () => {
-    // Navigate to add member screen
-    console.log('Add member pressed');
+  const handleInvitations = () => {
+    setShowInvitationModal(true);
   };
+
+  const handleLeaveFamily = () => {
+    Alert.alert(
+      t('family.leaveFamily'),
+      t('family.leaveFamilyConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { 
+          text: t('family.leaveFamily'), 
+          style: 'destructive', 
+          onPress: async () => {
+            try {
+              await leaveFamily();
+              Alert.alert(t('common.success'), t('family.leaveFamilySuccess'));
+            } catch (error) {
+              console.error('Error leaving family:', error);
+              Alert.alert(t('common.error'), t('family.leaveFamilyError'));
+            }
+          } 
+        }
+      ]
+    );
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{t('family.loading')}</Text>
+          {!family && (
+            <Text style={styles.loadingSubtext}>{t('family.creatingFamily')}</Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadFamily}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Show no family state (this should rarely happen now with auto-creation)
+  if (!family) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>No family found</Text>
+          <Text style={styles.loadingSubtext}>Create or join a family to get started</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadFamily}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -142,13 +176,23 @@ export default function FamilyScreen() {
         return (
           <View style={styles.tabContent}>
             <View style={styles.membersHeader}>
-              <Text style={styles.membersCount}>{members.length} Members</Text>
-              {isOwner && (
-                <TouchableOpacity style={styles.addButton} onPress={handleAddMember}>
-                  <Plus size={20} color={colors.primary} strokeWidth={2} />
-                  <Text style={styles.addButtonText}>Add Member</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={styles.membersCount}>{members.length} {t('family.membersCount')}</Text>
+              <View style={styles.membersActions}>
+                {isOwner && (
+                  <TouchableOpacity style={styles.actionButton} onPress={handleInvitations}>
+                    <Mail size={20} color={colors.primary} strokeWidth={2} />
+                    <Text style={styles.actionButtonText}>{t('family.invitations.sendInvitation')}</Text>
+                    {hasPendingInvitations && <View style={styles.notificationBadge} />}
+                  </TouchableOpacity>
+                )}
+                {!isOwner && (
+                  <TouchableOpacity style={styles.actionButton} onPress={handleInvitations}>
+                    <Mail size={20} color={colors.primary} strokeWidth={2} />
+                    <Text style={styles.actionButtonText}>{t('family.invitations.title')}</Text>
+                    {hasPendingInvitations && <View style={styles.notificationBadge} />}
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
             
             <ScrollView 
@@ -167,15 +211,23 @@ export default function FamilyScreen() {
                   key={member.id}
                   style={styles.memberCard}
                   onPress={() => handleMemberPress(member)}
+                  onLongPress={() => handleMemberMenu(member)}
                 >
                   <View style={styles.memberInfo}>
                     <Text style={styles.memberName}>{member.name}</Text>
                     <Text style={styles.memberEmail}>{member.email}</Text>
-                    <Text style={styles.memberRole}>{member.role}</Text>
+                    <Text style={styles.memberRole}>{t(`family.roles.${member.role}`)}</Text>
                   </View>
                   <View style={[styles.onlineIndicator, { backgroundColor: member.isOnline ? colors.success : colors.textTertiary }]} />
                 </TouchableOpacity>
               ))}
+              
+              {/* Leave Family Button for non-owners */}
+              {!isOwner && (
+                <TouchableOpacity style={styles.leaveFamilyButton} onPress={handleLeaveFamily}>
+                  <Text style={styles.leaveFamilyButtonText}>{t('family.leaveFamily')}</Text>
+                </TouchableOpacity>
+              )}
             </ScrollView>
           </View>
         );
@@ -202,7 +254,7 @@ export default function FamilyScreen() {
                 >
                   <View style={styles.activityHeader}>
                     <Text style={styles.activityTitle}>{activity.title}</Text>
-                    <Text style={styles.activityTimestamp}>{activity.timestamp}</Text>
+                    <Text style={styles.activityTimestamp}>{activity.createdAt.toLocaleDateString()}</Text>
                   </View>
                   <Text style={styles.activityDescription}>{activity.description}</Text>
                   <Text style={styles.activityMember}>by {activity.memberName}</Text>
@@ -215,7 +267,7 @@ export default function FamilyScreen() {
       case 'notifications':
         return (
           <View style={styles.tabContent}>
-            <Text style={styles.emptyText}>No notifications yet</Text>
+            <Text style={styles.emptyText}>{t('family.noNotifications')}</Text>
           </View>
         );
 
@@ -224,25 +276,15 @@ export default function FamilyScreen() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading family...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'members' && styles.activeTabButton]}
           onPress={() => setActiveTab('members')}
         >
           <Users size={20} color={activeTab === 'members' ? colors.primary : colors.textSecondary} strokeWidth={2} />
-          <Text style={[styles.tabLabel, activeTab === 'members' && styles.activeTabLabel]}>Members</Text>
+          <Text style={[styles.tabLabel, activeTab === 'members' && styles.activeTabLabel]}>{t('family.members')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -250,7 +292,7 @@ export default function FamilyScreen() {
           onPress={() => setActiveTab('activity')}
         >
           <Activity size={20} color={activeTab === 'activity' ? colors.primary : colors.textSecondary} strokeWidth={2} />
-          <Text style={[styles.tabLabel, activeTab === 'activity' && styles.activeTabLabel]}>Activity</Text>
+          <Text style={[styles.tabLabel, activeTab === 'activity' && styles.activeTabLabel]}>{t('family.activity')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
@@ -258,12 +300,23 @@ export default function FamilyScreen() {
           onPress={() => setActiveTab('notifications')}
         >
           <Bell size={20} color={activeTab === 'notifications' ? colors.primary : colors.textSecondary} strokeWidth={2} />
-          <Text style={[styles.tabLabel, activeTab === 'notifications' && styles.activeTabLabel]}>Notifications</Text>
+          <Text style={[styles.tabLabel, activeTab === 'notifications' && styles.activeTabLabel]}>{t('family.notifications')}</Text>
         </TouchableOpacity>
       </View>
 
       {renderTabContent()}
-    </SafeAreaView>
+
+      {/* Family Invitation Modal */}
+      <FamilyInvitationModal
+        visible={showInvitationModal}
+        onClose={() => setShowInvitationModal(false)}
+        pendingInvitations={pendingInvitations}
+        onSendInvitation={sendInvitation}
+        onAcceptInvitation={acceptInvitation}
+        onDeclineInvitation={declineInvitation}
+        isOwner={isOwner}
+      />
+    </View>
   );
 }
 
@@ -278,9 +331,15 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
+  },
+  loadingSubtext: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textTertiary,
+    marginTop: 8,
   },
   tabBar: {
     flexDirection: 'row',
@@ -300,7 +359,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.primary + '15',
   },
   tabLabel: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 4,
@@ -320,9 +379,31 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 16,
   },
   membersCount: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
+  },
+  membersActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  actionButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  notificationBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    marginLeft: 4,
   },
   addButton: {
     flexDirection: 'row',
@@ -333,7 +414,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 8,
   },
   addButtonText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 12,
     color: colors.primary,
     marginLeft: 4,
@@ -358,19 +439,19 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     flex: 1,
   },
   memberName: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
     marginBottom: 2,
   },
   memberEmail: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 2,
   },
   memberRole: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
   },
@@ -400,31 +481,53 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 8,
   },
   activityTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
   },
   activityTimestamp: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
   },
   activityDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
     marginBottom: 8,
   },
   activityMember: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
   },
   emptyText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 48,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.surface,
+  },
+  leaveFamilyButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  leaveFamilyButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.surface,
   },
 });

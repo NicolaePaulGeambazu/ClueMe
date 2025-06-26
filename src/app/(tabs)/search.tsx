@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
 import { Search, Filter, Star, Clock, CheckCircle, AlertCircle, X } from 'lucide-react-native';
 
 export default function SearchScreen() {
@@ -39,7 +39,7 @@ export default function SearchScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color={colors.textTertiary} strokeWidth={2} />
@@ -106,7 +106,7 @@ export default function SearchScreen() {
         title="Search Reminders"
         message="Sign in to search through all your saved reminders and access advanced search features."
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -134,7 +134,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
@@ -162,7 +162,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderColor: colors.primary + '30',
   },
   noticeText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.primary,
     lineHeight: 20,
@@ -171,7 +171,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginTop: 24,
   },
   resultsTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 18,
     color: colors.text,
     marginBottom: 16,
@@ -188,13 +188,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 3,
   },
   resultTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
     marginBottom: 4,
   },
   resultDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
   },
@@ -203,13 +203,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingVertical: 48,
   },
   emptyTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 18,
     color: colors.text,
     marginBottom: 8,
   },
   emptyDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',

@@ -12,11 +12,13 @@ export const Colors = {
     tabIconSelected: '#2f95dc',
     surface: '#ffffff',
     border: '#e1e1e1',
+    borderLight: '#f0f0f0',
     textSecondary: '#666666',
     textTertiary: '#999999',
     error: '#FF3B30',
     success: '#34C759',
     warning: '#FF9500',
+    shadow: '#000000',
   },
   dark: {
     text: '#ffffff',
@@ -29,11 +31,13 @@ export const Colors = {
     tabIconSelected: '#fff',
     surface: '#1c1c1e',
     border: '#38383a',
+    borderLight: '#2c2c2e',
     textSecondary: '#ebebf5',
     textTertiary: '#ebebf599',
     error: '#FF453A',
     success: '#30D158',
     warning: '#FF9F0A',
+    shadow: '#000000',
   },
 };
 

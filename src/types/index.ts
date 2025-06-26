@@ -7,8 +7,11 @@ export interface Item {
   category: string;
   priority: 'low' | 'medium' | 'high';
   dueDate?: string;
+  dueTime?: string;
+  location?: string;
   tags: string[];
   userId: string;
+  assignedTo?: string;
   createdAt: any;
   updatedAt: any;
 }
@@ -19,6 +22,7 @@ export interface User {
   displayName: string | null;
   photoURL: string | null;
   emailVerified: boolean;
+  isAnonymous: boolean;
 }
 
 export interface AppSettings {

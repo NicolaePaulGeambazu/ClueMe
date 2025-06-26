@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
 import { isValidEmail, isValidPassword } from '../../utils/authUtils';
 
 interface LoginPromptProps {
@@ -221,13 +222,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderBottomColor: colors.border,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 20,
     color: colors.text,
     marginBottom: 4,
   },
   message: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
   },
@@ -263,7 +264,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 2,
   },
   modeButtonText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.textSecondary,
   },
@@ -285,7 +286,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
@@ -311,7 +312,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 0,
   },
   submitButtonText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: '#FFFFFF',
   },
@@ -320,7 +321,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
     textAlign: 'center',

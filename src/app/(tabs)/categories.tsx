@@ -3,333 +3,341 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, A
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SquareCheck as CheckSquare, CreditCard, Pill, Calendar, FileText, ChevronRight, Plus, Edit, Trash2, Filter, Search, Star, Clock, CheckCircle, AlertCircle } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../contexts/AuthContext';
+import { useReminders } from '../../hooks/useReminders';
+import { useTaskTypes } from '../../hooks/useTaskTypes';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { FALLBACK_TASK_TYPES } from '../../constants/config';
 
-const categories = [
-  {
-    id: 'task',
-    label: 'Tasks',
-    color: '#3B82F6',
-    icon: CheckSquare,
-    description: 'General tasks and to-dos',
-  },
-  {
-    id: 'bill',
-    label: 'Bills',
-    color: '#EF4444',
-    icon: CreditCard,
-    description: 'Bills and payments due',
-  },
-  {
-    id: 'med',
-    label: 'Medicine',
-    color: '#10B981',
-    icon: Pill,
-    description: 'Medications and health reminders',
-  },
-  {
-    id: 'event',
-    label: 'Events',
-    color: '#8B5CF6',
-    icon: Calendar,
-    description: 'Meetings and appointments',
-  },
-  {
-    id: 'note',
-    label: 'Notes',
-    color: '#F59E0B',
-    icon: FileText,
-    description: 'Important notes and ideas',
-  },
-];
-
-export default function CategoriesScreen() {
+export default function CategoriesScreen({ navigation }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
-  const [totalReminders, setTotalReminders] = useState(0);
-  const [dueTodayCount, setDueTodayCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const { reminders, loadReminders } = useReminders();
+  const { taskTypes, isLoading: taskTypesLoading, seedDefaultTaskTypes } = useTaskTypes();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+  
+  const styles = createStyles(colors);
 
+  // Seed default task types if none exist
   useEffect(() => {
-    loadCategoryStats();
-  }, []);
+    if (taskTypes.length === 0 && !taskTypesLoading && user?.uid) {
+      console.log('🌱 No task types found, seeding defaults...');
+      seedDefaultTaskTypes().catch(console.error);
+    }
+  }, [taskTypes.length, taskTypesLoading, user?.uid, seedDefaultTaskTypes]);
 
-  const loadCategoryStats = async () => {
+  // Use Firebase task types if available, otherwise use fallback
+  const availableTaskTypes = taskTypes.length > 0 ? taskTypes : FALLBACK_TASK_TYPES;
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
     try {
-      // Mock data for now
-      const mockCounts = {
-        task: 5,
-        bill: 3,
-        med: 2,
-        event: 4,
-        note: 1
-      };
-      
-      setCategoryCounts(mockCounts);
-      setTotalReminders(15);
-      setDueTodayCount(3);
+      await Promise.all([
+        loadReminders(),
+        // Add any other refresh operations here
+      ]);
     } catch (error) {
-      console.error('Error loading category stats:', error);
+      console.error('Error refreshing:', error);
     } finally {
-      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [loadReminders]);
+
+  const getRemindersByType = (typeId: string) => {
+    return reminders.filter(reminder => reminder.type === typeId);
+  };
+
+  const getTypeStats = (typeId: string) => {
+    const typeReminders = getRemindersByType(typeId);
+    const total = typeReminders.length;
+    const completed = typeReminders.filter(r => r.completed).length;
+    const overdue = typeReminders.filter(r => {
+      if (!r.dueDate || r.completed) return false;
+      const dueDate = new Date(r.dueDate);
+      const today = new Date();
+      return dueDate < today;
+    }).length;
+    
+    return { total, completed, overdue };
+  };
+
+  const getTypeIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'CheckSquare': return CheckSquare;
+      case 'CreditCard': return CreditCard;
+      case 'Pill': return Pill;
+      case 'Calendar': return Calendar;
+      case 'FileText': return FileText;
+      default: return CheckSquare; // fallback
     }
   };
 
-  const handleCategoryPress = (categoryId: string) => {
-    // Navigate to category detail screen (could be implemented later)
-    console.log('Navigate to category:', categoryId);
+  const handleCategoryPress = (category: any) => {
+    const categoryId = 'name' in category ? category.name : category.id;
+    navigation.navigate('index', { 
+      filterType: categoryId,
+      filterLabel: category.label 
+    });
   };
 
-  const styles = createStyles(colors);
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading categories...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const filteredCategories = availableTaskTypes.filter(category => {
+    if (searchQuery) {
+      return category.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             category.description.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    return true;
+  });
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsSection}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <View style={styles.statsGrid}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{totalReminders}</Text>
-              <Text style={styles.statLabel}>Total Reminders</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{dueTodayCount}</Text>
-              <Text style={styles.statLabel}>Due Today</Text>
-            </View>
-          </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>Categories</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity style={styles.searchButton}>
+            <Search size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterButton}>
+            <Filter size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>All Categories</Text>
-          {categories.map((category) => {
-            const IconComponent = category.icon;
-            const count = categoryCounts[category.id] || 0;
-            const maxCount = Math.max(...Object.values(categoryCounts), 1);
-            const progressPercentage = (count / maxCount) * 100;
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {searchQuery && (
+          <View style={styles.searchContainer}>
+            <Text style={styles.searchResults}>
+              {filteredCategories.length} category{filteredCategories.length !== 1 ? 'ies' : 'y'} found
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.categoriesGrid}>
+          {filteredCategories.map((category) => {
+            const categoryId = 'name' in category ? category.name : category.id;
+            const stats = getTypeStats(categoryId);
+            const IconComponent = getTypeIcon('icon' in category ? category.icon : 'CheckSquare');
             
             return (
-              <TouchableOpacity 
-                key={category.id} 
+              <TouchableOpacity
+                key={categoryId}
                 style={styles.categoryCard}
-                onPress={() => handleCategoryPress(category.id)}
+                onPress={() => handleCategoryPress(category)}
               >
                 <View style={styles.categoryHeader}>
-                  <View style={[styles.iconContainer, { backgroundColor: `${category.color}15` }]}>
+                  <View style={[styles.categoryIcon, { backgroundColor: category.color + '15' }]}>
                     <IconComponent size={24} color={category.color} strokeWidth={2} />
                   </View>
-                  <View style={styles.categoryContent}>
-                    <View style={styles.categoryTitleRow}>
-                      <Text style={styles.categoryLabel}>{category.label}</Text>
-                      <View style={styles.countBadge}>
-                        <Text style={[styles.countText, { color: category.color }]}>
-                          {count}
-                        </Text>
-                      </View>
-                    </View>
-                    <Text style={styles.categoryDescription}>{category.description}</Text>
-                  </View>
-                  <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+                  <TouchableOpacity style={styles.categoryMenu}>
+                    <Text style={styles.menuDots}>•••</Text>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.progressBarContainer}>
-                  <View style={styles.progressBarBg}>
-                    <View 
-                      style={[
-                        styles.progressBar, 
-                        { 
-                          backgroundColor: category.color,
-                          width: `${Math.min(progressPercentage, 100)}%`
-                        }
-                      ]} 
-                    />
+                
+                <View style={styles.categoryContent}>
+                  <Text style={styles.categoryTitle}>{category.label}</Text>
+                  <Text style={styles.categoryDescription}>{category.description}</Text>
+                  
+                  <View style={styles.categoryStats}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statNumber}>{stats.total}</Text>
+                      <Text style={styles.statLabel}>Total</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                      <Text style={[styles.statNumber, { color: colors.success }]}>{stats.completed}</Text>
+                      <Text style={styles.statLabel}>Done</Text>
+                    </View>
+                    {stats.overdue > 0 && (
+                      <View style={styles.statItem}>
+                        <Text style={[styles.statNumber, { color: colors.error }]}>{stats.overdue}</Text>
+                        <Text style={styles.statLabel}>Overdue</Text>
+                      </View>
+                    )}
                   </View>
+                </View>
+                
+                <View style={styles.categoryFooter}>
+                  <ChevronRight size={16} color={colors.textSecondary} />
                 </View>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActionsGrid}>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Text style={styles.quickActionText}>View Overdue</Text>
-              <Text style={styles.quickActionCount}>0</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionCard}>
-              <Text style={styles.quickActionText}>This Week</Text>
-              <Text style={styles.quickActionCount}>{totalReminders}</Text>
-            </TouchableOpacity>
+        {filteredCategories.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No categories found</Text>
+            <Text style={styles.emptyDescription}>
+              {searchQuery 
+                ? `No categories match "${searchQuery}"`
+                : 'Categories will appear here once you create reminders'
+              }
+            </Text>
           </View>
-        </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  loadingText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  statsSection: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 20,
+  title: {
+    fontFamily: Fonts.display.bold,
+    fontSize: 28,
     color: colors.text,
-    marginBottom: 16,
   },
-  statsGrid: {
+  headerActions: {
     flexDirection: 'row',
     gap: 12,
   },
-  statCard: {
-    flex: 1,
+  searchButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  statNumber: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
-    color: colors.primary,
-    marginBottom: 4,
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  statLabel: {
-    fontFamily: 'Inter-Regular',
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+  searchContainer: {
+    paddingVertical: 16,
+  },
+  searchResults: {
+    fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.textSecondary,
   },
-  categoriesSection: {
-    marginBottom: 32,
+  categoriesGrid: {
+    gap: 16,
+    paddingBottom: 20,
   },
   categoryCard: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
     shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowRadius: 8,
     elevation: 3,
   },
   categoryHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  iconContainer: {
+  categoryIcon: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+  },
+  categoryMenu: {
+    padding: 8,
+  },
+  menuDots: {
+    fontSize: 16,
+    color: colors.textSecondary,
+    lineHeight: 16,
   },
   categoryContent: {
-    flex: 1,
+    marginBottom: 16,
   },
-  categoryTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  categoryLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: colors.text,
-  },
-  countBadge: {
-    backgroundColor: colors.borderLight,
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  countText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 12,
-  },
-  categoryDescription: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  progressBarContainer: {
-    marginTop: 8,
-  },
-  progressBarBg: {
-    height: 4,
-    backgroundColor: colors.borderLight,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 2,
-  },
-  quickActionsSection: {
-    marginBottom: 32,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  quickActionCard: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  quickActionText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  quickActionCount: {
-    fontFamily: 'Inter-Bold',
+  categoryTitle: {
+    fontFamily: Fonts.text.bold,
     fontSize: 18,
     color: colors.text,
+    marginBottom: 4,
+  },
+  categoryDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  categoryStats: {
+    flexDirection: 'row',
+    gap: 24,
+    marginTop: 12,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontFamily: Fonts.text.bold,
+    fontSize: 20,
+    color: colors.text,
+  },
+  statLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  categoryFooter: {
+    alignItems: 'flex-end',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyTitle: {
+    fontFamily: Fonts.text.bold,
+    fontSize: 18,
+    color: colors.text,
+    marginBottom: 8,
+  },
+  emptyDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });

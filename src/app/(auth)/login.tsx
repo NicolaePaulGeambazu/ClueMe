@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
 
 export default function LoginScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -157,13 +158,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 48,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 32,
     color: colors.text,
     marginBottom: 8,
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
@@ -184,7 +185,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
@@ -197,7 +198,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.primary,
   },
@@ -224,7 +225,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 0,
   },
   loginButtonText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: '#FFFFFF',
     marginRight: 8,
@@ -235,12 +236,12 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
   },
   signupLink: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 14,
     color: colors.primary,
   },

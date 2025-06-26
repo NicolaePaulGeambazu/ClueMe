@@ -15,6 +15,7 @@ export interface Reminder {
   hasNotification: boolean;
   tags: string[];
   userId: string;
+  assignedTo?: string;
   createdAt: string;
   updatedAt: string;
 }

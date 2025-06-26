@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, Clock, Star, Plus, Search, Bell, User, Calendar, Filter, Users, Settings, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
@@ -10,8 +11,10 @@ import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { Colors } from '../../constants/Colors';
 import { getReminderStats } from '../../utils/reminderUtils';
 import { getGreeting } from '../../utils/dateUtils';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 
 export default function HomeScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
@@ -23,6 +26,31 @@ export default function HomeScreen({ navigation }: any) {
   const styles = createStyles(colors);
 
   const stats = getReminderStats(reminders);
+
+  // Sort reminders by updatedAt descending
+  const recentReminders = [...reminders].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+  // Helper for type icon/emoji
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'task': return '✓';
+      case 'bill': return '💳';
+      case 'med': return '💊';
+      case 'event': return '📅';
+      case 'note': return '📝';
+      default: return '•';
+    }
+  };
+
+  // Helper for priority color
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return colors.error;
+      case 'medium': return colors.warning;
+      case 'low': return colors.success;
+      default: return colors.textSecondary;
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -70,23 +98,23 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>{getGreeting()}</Text>
-          <Text style={styles.title}>
-            {isAnonymous ? 'Welcome to ClearCue' : `Welcome back${user?.displayName ? `, ${user.displayName}` : ''}`}
+          <Text style={styles.userName}>
+            {isAnonymous ? t('home.welcomeAnonymous') : `${t('home.welcomeBack')}${user?.displayName ? `, ${user.displayName}` : ''}`}
           </Text>
         </View>
       </View>
 
       {isAnonymous && (
         <View style={styles.welcomeBanner}>
-          <Text style={styles.bannerTitle}>You're using ClearCue anonymously</Text>
+          <Text style={styles.bannerTitle}>{t('home.anonymousBannerTitle')}</Text>
           <Text style={styles.bannerDescription}>
-            Sign in to save your reminders permanently and sync across devices
+            {t('home.anonymousBannerDescription')}
           </Text>
           <TouchableOpacity 
             style={styles.signInButton}
             onPress={() => setShowLoginPrompt(true)}
           >
-            <Text style={styles.signInButtonText}>Sign In</Text>
+            <Text style={styles.signInButtonText}>{t('home.signIn')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -95,8 +123,8 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.storageBanner}>
           <Text style={styles.storageText}>
             {useFirebase 
-              ? '📱 Connected to Firebase (cloud sync enabled)'
-              : '💾 Using local storage (Firebase unavailable)'
+              ? t('home.firebaseConnected')
+              : t('home.localStorage')
             }
           </Text>
         </View>
@@ -105,20 +133,20 @@ export default function HomeScreen({ navigation }: any) {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <TrendingUp size={24} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.statNumber}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
+          <Text style={styles.statsValue}>{stats.total}</Text>
+          <Text style={styles.statsLabel}>{t('home.stats.total')}</Text>
         </View>
         
         <View style={styles.statCard}>
           <Clock size={24} color={colors.warning} strokeWidth={2} />
-          <Text style={styles.statNumber}>{stats.pending}</Text>
-          <Text style={styles.statLabel}>Pending</Text>
+          <Text style={styles.statsValue}>{stats.pending}</Text>
+          <Text style={styles.statsLabel}>{t('home.stats.pending')}</Text>
         </View>
         
         <View style={styles.statCard}>
           <Star size={24} color={colors.success} strokeWidth={2} />
-          <Text style={styles.statNumber}>{stats.favorites}</Text>
-          <Text style={styles.statLabel}>Favorites</Text>
+          <Text style={styles.statsValue}>{stats.favorites}</Text>
+          <Text style={styles.statsLabel}>{t('home.stats.favorites')}</Text>
         </View>
       </View>
 
@@ -138,7 +166,7 @@ export default function HomeScreen({ navigation }: any) {
             style={styles.quickActionsHeader}
             onPress={() => setShowQuickActions(!showQuickActions)}
           >
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
             <ChevronRight 
               size={20} 
               color={colors.textSecondary} 
@@ -159,7 +187,7 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.secondary + '15' }]}>
                   <Calendar size={24} color={colors.secondary} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>Calendar</Text>
+                <Text style={styles.actionLabel}>{t('home.calendar')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -169,7 +197,7 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.success + '15' }]}>
                   <Search size={24} color={colors.success} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>Search</Text>
+                <Text style={styles.actionLabel}>{t('home.search')}</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -179,7 +207,7 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.warning + '15' }]}>
                   <Filter size={24} color={colors.warning} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>Filter</Text>
+                <Text style={styles.actionLabel}>{t('home.filter')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -189,7 +217,7 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.tertiary + '15' }]}>
                   <Users size={24} color={colors.tertiary} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>Family</Text>
+                <Text style={styles.actionLabel}>{t('home.family')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -199,83 +227,58 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.error + '15' }]}>
                   <Star size={24} color={colors.error} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>Categories</Text>
+                <Text style={styles.actionLabel}>{t('home.categories')}</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
 
-        <View style={styles.recentSection}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          {reminders.length > 0 ? (
-            <View style={styles.recentList}>
-              {reminders.slice(0, 3).map((reminder) => (
-                <View key={reminder.id} style={styles.recentItem}>
-                  <View style={styles.recentItemContent}>
-                    <Text style={styles.recentItemTitle}>{reminder.title}</Text>
-                    <Text style={styles.recentItemType}>{reminder.type.toUpperCase()}</Text>
-                  </View>
-                  <View style={[styles.priorityDot, { backgroundColor: 
-                    reminder.priority === 'high' ? colors.error : 
-                    reminder.priority === 'medium' ? colors.warning : colors.success 
-                  }]} />
-                </View>
-              ))}
-            </View>
+        <View style={styles.recentActivitySection}>
+          <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
+          {recentReminders.length === 0 ? (
+            <Text style={styles.emptyActivity}>{t('home.noRecentActivity')}</Text>
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No recent activity</Text>
-              <Text style={styles.emptyDescription}>
-                {isAnonymous 
-                  ? 'Start by creating your first reminder or sign in to see your saved reminders'
-                  : 'Your recent reminders and activities will appear here'
-                }
-              </Text>
-              {!isAnonymous && (
-                <TouchableOpacity 
-                  style={styles.addFirstButton}
-                  onPress={() => navigation.navigate('Add')}
-                >
-                  <Text style={styles.addFirstButtonText}>Create Your First Reminder</Text>
-                </TouchableOpacity>
-              )}
-            </View>
+            recentReminders.slice(0, 10).map((reminder) => (
+              <View key={reminder.id} style={styles.activityCard}>
+                <View style={styles.activityHeader}>
+                  <Text style={styles.activityTypeIcon}>{getTypeIcon(reminder.type)}</Text>
+                  <Text style={styles.activityTitle}>{reminder.title}</Text>
+                  {reminder.isFavorite && <Star size={16} color={colors.warning} fill={colors.warning} style={{ marginLeft: 4 }} />}
+                  {reminder.completed && <CheckCircle size={16} color={colors.success} style={{ marginLeft: 4 }} />}
+                </View>
+                {reminder.description ? (
+                  <Text style={styles.activityDescription}>{reminder.description}</Text>
+                ) : null}
+                <View style={styles.activityMetaRow}>
+                  {reminder.dueDate && (
+                    <View style={styles.activityMetaItem}>
+                      <Clock size={14} color={colors.textSecondary} />
+                      <Text style={styles.activityMetaText}>{reminder.dueDate}{reminder.dueTime ? ` ${reminder.dueTime}` : ''}</Text>
+                    </View>
+                  )}
+                  {reminder.priority && (
+                    <View style={[styles.activityMetaItem, { backgroundColor: getPriorityColor(reminder.priority) + '15', borderRadius: 6, paddingHorizontal: 6 }] }>
+                      <Text style={[styles.activityMetaText, { color: getPriorityColor(reminder.priority) }]}>{reminder.priority}</Text>
+                    </View>
+                  )}
+                  {reminder.assignedTo && (
+                    <View style={styles.activityMetaItem}>
+                      <User size={14} color={colors.textSecondary} />
+                      <Text style={styles.activityMetaText}>{reminder.assignedTo}</Text>
+                    </View>
+                  )}
+                  {reminder.tags && reminder.tags.length > 0 && (
+                    <View style={styles.activityMetaItem}>
+                      <Text style={styles.activityMetaText}>{reminder.tags.map((t: string) => `#${t}`).join(' ')}</Text>
+                    </View>
+                  )}
+                  <View style={styles.activityMetaItem}>
+                    <Text style={styles.activityMetaText}>{reminder.updatedAt}</Text>
+                  </View>
+                </View>
+              </View>
+            ))
           )}
-        </View>
-
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionTitle}>Features</Text>
-          <View style={styles.featuresList}>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Bell size={20} color={colors.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Smart Notifications</Text>
-                <Text style={styles.featureDescription}>Never miss important reminders</Text>
-              </View>
-            </View>
-            
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Calendar size={20} color={colors.success} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Calendar Integration</Text>
-                <Text style={styles.featureDescription}>View all your reminders in one place</Text>
-              </View>
-            </View>
-            
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Star size={20} color={colors.warning} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>Priority Management</Text>
-                <Text style={styles.featureDescription}>Focus on what matters most</Text>
-              </View>
-            </View>
-          </View>
         </View>
       </ScrollView>
 
@@ -283,8 +286,8 @@ export default function HomeScreen({ navigation }: any) {
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
         onSuccess={handleLoginSuccess}
-        title="Welcome to ClearCue"
-        message="Sign in to save your reminders permanently and sync across devices."
+        title={t('home.welcomeAnonymous')}
+        message={t('home.anonymousBannerDescription')}
       />
     </SafeAreaView>
   );
@@ -304,13 +307,19 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   greeting: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.body,
     color: colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: 4,
+  },
+  userName: {
+    fontFamily: Fonts.display.bold,
+    fontSize: FontSizes.title2,
+    color: colors.text,
+    marginBottom: 16,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 24,
     color: colors.text,
   },
@@ -324,13 +333,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderColor: colors.primary + '30',
   },
   bannerTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.primary,
     marginBottom: 4,
   },
   bannerDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.primary,
     lineHeight: 20,
@@ -344,7 +353,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignSelf: 'flex-start',
   },
   signInButtonText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 14,
     color: '#FFFFFF',
   },
@@ -358,7 +367,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderColor: colors.secondary + '30',
   },
   storageText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 12,
     color: colors.secondary,
     textAlign: 'center',
@@ -381,17 +390,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  statNumber: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
+  statsValue: {
+    fontFamily: Fonts.display.bold,
+    fontSize: FontSizes.title1,
     color: colors.text,
-    marginTop: 8,
-    marginBottom: 4,
   },
-  statLabel: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
+  statsLabel: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
     color: colors.textSecondary,
+    marginTop: 4,
   },
   content: {
     flex: 1,
@@ -409,10 +417,10 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 2,
   },
   sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
+    fontFamily: Fonts.display.semibold,
+    fontSize: FontSizes.title3,
     color: colors.text,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -436,7 +444,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderColor: colors.border + '20',
   },
   actionLabel: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 13,
     color: colors.text,
     marginTop: 12,
@@ -451,71 +459,67 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 8,
   },
-  recentSection: {
-    marginBottom: 32,
-  },
-  recentList: {
-    gap: 12,
-  },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  recentItemContent: {
-    flex: 1,
-  },
-  recentItemTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  recentItemType: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  priorityDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 32,
-  },
-  emptyTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 18,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  emptyDescription: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
+  recentActivitySection: {
+    marginTop: 32,
     marginBottom: 16,
   },
-  addFirstButton: {
-    backgroundColor: colors.primary,
+  activityCard: {
+    backgroundColor: colors.surface,
     borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  addFirstButtonText: {
-    fontFamily: 'Inter-SemiBold',
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  activityTypeIcon: {
+    fontSize: 18,
+    marginRight: 8,
+  },
+  activityTitle: {
+    flex: 1,
+    fontFamily: Fonts.text.semibold,
+    fontSize: 15,
+    color: colors.text,
+  },
+  activityDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  activityMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 2,
+  },
+  activityMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+    marginBottom: 2,
+  },
+  activityMetaText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
+  emptyActivity: {
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
-    color: '#FFFFFF',
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: 12,
   },
   featuresSection: {
     marginTop: 32,
@@ -549,13 +553,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
     marginBottom: 4,
   },
   featureDescription: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
   },
@@ -568,5 +572,39 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   chevron: {
     width: 20,
     height: 20,
+  },
+  quickActionText: {
+    fontFamily: Fonts.button,
+    fontSize: FontSizes.footnote,
+    color: colors.primary,
+    marginTop: 8,
+  },
+  reminderTitle: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  reminderTime: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.subheadline,
+    color: colors.textSecondary,
+  },
+  reminderDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.subheadline,
+    color: colors.textSecondary,
+    marginTop: 4,
+    lineHeight: LineHeights.subheadline,
+  },
+  categoryName: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
+    color: colors.text,
+  },
+  categoryCount: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
+    color: colors.textSecondary,
   },
 });

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { Mail, ArrowLeft, Send } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors';
+import { Colors } from '../../constants/Colors'
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const { theme } = useTheme();
@@ -170,21 +171,21 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 24,
   },
   successTitle: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 28,
     color: colors.text,
     marginBottom: 16,
     textAlign: 'center',
   },
   successMessage: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 12,
   },
   successSubtext: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textTertiary,
     textAlign: 'center',
@@ -197,7 +198,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 32,
   },
   backButtonText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 16,
     color: colors.primary,
     marginLeft: 8,
@@ -207,13 +208,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 48,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 32,
     color: colors.text,
     marginBottom: 8,
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
     textAlign: 'center',
@@ -235,7 +236,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     marginLeft: 12,
@@ -263,7 +264,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     elevation: 0,
   },
   resetButtonText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: '#FFFFFF',
     marginRight: 8,
@@ -274,12 +275,12 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.textSecondary,
   },
   loginLink: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 14,
     color: colors.primary,
   },

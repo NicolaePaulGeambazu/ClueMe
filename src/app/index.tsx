@@ -3,9 +3,10 @@ import { View, StyleSheet, Text } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Fonts';
 
 export default function IndexScreen({ navigation }: any) {
-  const { user, isLoading, isAnonymous } = useAuth();
+  const { isLoading } = useAuth();
   const { theme } = useTheme();
   const colors = Colors[theme];
 
@@ -14,7 +15,7 @@ export default function IndexScreen({ navigation }: any) {
     if (!isLoading) {
       // Use a timeout to ensure the layout is fully mounted
       const timer = setTimeout(() => {
-        // Always go to tabs for now (anonymous users can use the app)
+        // Always go to tabs (anonymous users can use the app)
         navigation.replace('MainTabs');
       }, 500);
       
@@ -44,7 +45,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
   },

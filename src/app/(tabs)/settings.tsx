@@ -11,21 +11,24 @@ import {
   User, 
   LogOut,
   Calendar,
-  Mail
+  Mail,
+  Sun,
+  Settings as SettingsIcon
 } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/Colors';
-import { userService, UserProfile } from '../../services/firebaseService';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import InfoModal from '../../components/InfoModal';
 
 export default function SettingsScreen() {
-  const { theme, toggleTheme, isDark } = useTheme();
+  const { t } = useTranslation();
+  const { theme, toggleTheme } = useTheme();
+  const { signOut, user, isAnonymous } = useAuth();
   const colors = Colors[theme];
-  const { user, isAnonymous, signOut } = useAuth();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalConfig, setModalConfig] = useState({
     title: '',
@@ -34,38 +37,22 @@ export default function SettingsScreen() {
   });
   const styles = createStyles(colors);
 
-  useEffect(() => {
-    if (user && !user.isAnonymous) {
-      loadUserProfile();
-    } else {
-      setIsLoading(false);
-    }
-  }, [user]);
-
-  const loadUserProfile = async () => {
-    try {
-      if (user?.uid) {
-        const profile = await userService.getUserProfile(user.uid);
-        setUserProfile(profile);
-      }
-    } catch (error) {
-      console.error('Error loading user profile:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('settings.signOut'),
+      t('settings.signOutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('settings.signOut'),
           style: 'destructive',
           onPress: async () => {
-            await signOut();
+            try {
+              await signOut();
+            } catch (error) {
+              console.error('Error signing out:', error);
+              Alert.alert(t('common.error'), t('settings.signOutError'));
+            }
           },
         },
       ]
@@ -74,8 +61,8 @@ export default function SettingsScreen() {
 
   const handleHelpSupport = () => {
     setModalConfig({
-      title: 'Help & Support',
-      content: 'Need help with ClearCue?\n\n📧 Email: support@clearcue.app\n🌐 Website: clearcue.app\n📱 In-app feedback available\n\nWe\'re here to help you get the most out of your reminders!',
+      title: t('settings.helpSupport'),
+      content: t('settings.helpContent'),
       type: 'help'
     });
     setModalVisible(true);
@@ -83,8 +70,8 @@ export default function SettingsScreen() {
 
   const handleAboutClearCue = () => {
     setModalConfig({
-      title: 'About ClearCue',
-      content: 'ClearCue v1.0.0\n\nA simple, private, and effective reminder app designed to help you stay organized without the clutter.\n\n✨ Features:\n• Smart notifications\n• Calendar integration\n• Priority management\n• Family sharing\n• No ads or tracking\n\nMade with ❤️ for productivity',
+      title: t('settings.aboutClearCue'),
+      content: t('settings.aboutContent'),
       type: 'info'
     });
     setModalVisible(true);
@@ -92,30 +79,12 @@ export default function SettingsScreen() {
 
   const handleDataPrivacy = () => {
     setModalConfig({
-      title: 'Data & Privacy',
-      content: '🔒 Your Privacy Matters\n\nClearCue is built with privacy-first principles:\n\n📱 Local Storage:\n• Reminders stored locally on your device\n• No cloud sync unless you choose Firebase\n• Your data stays private\n\n☁️ Firebase Sync (Optional):\n• End-to-end encrypted when enabled\n• Only you can access your data\n• No data mining or tracking\n\n🚫 No Tracking:\n• No analytics or user profiling\n• No third-party data sharing\n• No targeted advertising\n\n📋 Data Control:\n• Export your data anytime\n• Delete all data permanently\n• Complete control over your information\n\nYour reminders, your privacy, your control.',
+      title: t('settings.dataPrivacy'),
+      content: t('settings.privacyContent'),
       type: 'privacy'
     });
     setModalVisible(true);
   };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading profile...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -127,31 +96,31 @@ export default function SettingsScreen() {
           </View>
           
           <Text style={styles.displayName}>
-            {user?.displayName || userProfile?.displayName || 'Welcome User'}
+            {user?.displayName || t('settings.welcomeUser')}
           </Text>
           <Text style={styles.email}>
-            {user?.email || userProfile?.email || 'user@example.com'}
+            {user?.email || t('settings.userEmail')}
           </Text>
           
           {isAnonymous && (
             <View style={styles.anonymousBadge}>
-              <Text style={styles.anonymousText}>Anonymous User</Text>
+              <Text style={styles.anonymousText}>{t('settings.anonymousUser')}</Text>
             </View>
           )}
         </View>
 
         {/* Account Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+          <Text style={styles.sectionTitle}>{t('settings.accountInfo')}</Text>
           
           <View style={styles.infoItem}>
             <View style={styles.infoIcon}>
               <Mail size={20} color={colors.primary} strokeWidth={2} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoLabel}>{t('settings.email')}</Text>
               <Text style={styles.infoValue}>
-                {user?.email || userProfile?.email || 'Not available'}
+                {user?.email || t('settings.notAvailable')}
               </Text>
             </View>
           </View>
@@ -161,9 +130,9 @@ export default function SettingsScreen() {
               <Calendar size={20} color={colors.primary} strokeWidth={2} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Member Since</Text>
+              <Text style={styles.infoLabel}>{t('settings.memberSince')}</Text>
               <Text style={styles.infoValue}>
-                {userProfile?.createdAt ? formatDate(userProfile.createdAt) : 'Today'}
+                {t('settings.today')}
               </Text>
             </View>
           </View>
@@ -171,7 +140,7 @@ export default function SettingsScreen() {
 
         {/* Appearance */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Appearance</Text>
+          <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
@@ -179,12 +148,12 @@ export default function SettingsScreen() {
                 <Moon size={20} color={colors.secondary} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Dark Mode</Text>
-                <Text style={styles.settingDescription}>Use dark theme</Text>
+                <Text style={styles.settingLabel}>{t('settings.darkMode')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.darkModeDescription')}</Text>
               </View>
             </View>
             <Switch
-              value={isDark}
+              value={theme === 'dark'}
               onValueChange={toggleTheme}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
@@ -194,7 +163,7 @@ export default function SettingsScreen() {
 
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+          <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
@@ -202,8 +171,8 @@ export default function SettingsScreen() {
                 <Bell size={20} color={colors.primary} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Push Notifications</Text>
-                <Text style={styles.settingDescription}>Receive reminder notifications</Text>
+                <Text style={styles.settingLabel}>{t('settings.pushNotifications')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.pushNotificationsDescription')}</Text>
               </View>
             </View>
             <Switch
@@ -217,7 +186,7 @@ export default function SettingsScreen() {
 
         {/* Privacy & Security */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Privacy & Security</Text>
+          <Text style={styles.sectionTitle}>{t('settings.privacySecurity')}</Text>
           
           <TouchableOpacity style={styles.settingItem} onPress={handleDataPrivacy}>
             <View style={styles.settingLeft}>
@@ -225,8 +194,8 @@ export default function SettingsScreen() {
                 <Shield size={20} color={colors.success} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Data & Privacy</Text>
-                <Text style={styles.settingDescription}>Manage your data and privacy settings</Text>
+                <Text style={styles.settingLabel}>{t('settings.dataPrivacy')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.dataPrivacyDescription')}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
@@ -235,7 +204,7 @@ export default function SettingsScreen() {
 
         {/* Support */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
+          <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
           
           <TouchableOpacity style={styles.settingItem} onPress={handleHelpSupport}>
             <View style={styles.settingLeft}>
@@ -243,8 +212,8 @@ export default function SettingsScreen() {
                 <HelpCircle size={20} color={colors.warning} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Help & Support</Text>
-                <Text style={styles.settingDescription}>Get help, contact support, and learn tips</Text>
+                <Text style={styles.settingLabel}>{t('settings.helpSupport')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.helpSupportDescription')}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
@@ -256,8 +225,8 @@ export default function SettingsScreen() {
                 <Info size={20} color={colors.textSecondary} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>About ClearCue</Text>
-                <Text style={styles.settingDescription}>Version 1.0.0 • Learn more about the app</Text>
+                <Text style={styles.settingLabel}>{t('settings.aboutClearCue')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.aboutClearCueDescription')}</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
@@ -267,7 +236,7 @@ export default function SettingsScreen() {
         {/* Account Actions */}
         {!isAnonymous && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Account</Text>
+            <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
             
             <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
               <View style={styles.settingLeft}>
@@ -275,8 +244,8 @@ export default function SettingsScreen() {
                   <LogOut size={20} color={colors.error} strokeWidth={2} />
                 </View>
                 <View style={styles.settingContent}>
-                  <Text style={[styles.settingLabel, { color: colors.error }]}>Sign Out</Text>
-                  <Text style={styles.settingDescription}>Sign out of your account</Text>
+                  <Text style={[styles.settingLabel, { color: colors.error }]}>{t('settings.signOut')}</Text>
+                  <Text style={styles.settingDescription}>{t('settings.signOutDescription')}</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -285,10 +254,10 @@ export default function SettingsScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            ClearCue is designed to be simple, private, and effective.
+            {t('settings.footerText')}
           </Text>
           <Text style={styles.footerSubtext}>
-            No ads, no tracking, just clear reminders when you need them.
+            {t('settings.footerSubtext')}
           </Text>
         </View>
       </ScrollView>
@@ -314,13 +283,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.surface,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 28,
     color: colors.text,
     marginBottom: 4,
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.textSecondary,
   },
@@ -332,8 +301,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginTop: 32,
   },
   sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontFamily: Fonts.display.semibold,
+    fontSize: FontSizes.title3,
     color: colors.text,
     marginBottom: 16,
     paddingHorizontal: 4,
@@ -360,16 +329,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 16,
   },
   displayName: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 24,
+    fontFamily: Fonts.display.semibold,
+    fontSize: FontSizes.title3,
     color: colors.text,
     marginBottom: 4,
   },
   email: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.subheadline,
     color: colors.textSecondary,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   anonymousBadge: {
     backgroundColor: colors.warning + '15',
@@ -380,9 +349,9 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderColor: colors.warning + '30',
   },
   anonymousText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: colors.warning,
+    fontFamily: Fonts.text.medium,
+    fontSize: FontSizes.caption1,
+    color: colors.background,
   },
   infoItem: {
     flexDirection: 'row',
@@ -410,14 +379,14 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     flex: 1,
   },
   infoLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+    fontFamily: Fonts.text.medium,
+    fontSize: FontSizes.footnote,
     color: colors.textSecondary,
     marginBottom: 2,
   },
   infoValue: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.body,
     color: colors.text,
   },
   settingItem: {
@@ -451,14 +420,14 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     flex: 1,
   },
   settingLabel: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
     color: colors.text,
     marginBottom: 2,
   },
   settingDescription: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 12,
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.subheadline,
     color: colors.textSecondary,
   },
   footer: {
@@ -468,14 +437,14 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   footerText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: 8,
   },
   footerSubtext: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
     textAlign: 'center',
@@ -487,7 +456,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontFamily: 'Inter-Medium',
+    fontFamily: Fonts.text.medium,
     fontSize: 16,
     color: colors.text,
   },

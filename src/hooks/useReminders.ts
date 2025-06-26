@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { mockDataService, Reminder as MockReminder } from '../services/mockData';
 import { reminderService, Reminder as FirebaseReminder } from '../services/firebaseService';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,14 +8,20 @@ const convertToFirebaseReminder = (mockReminder: MockReminder): Omit<FirebaseRem
   userId: mockReminder.userId,
   title: mockReminder.title,
   description: mockReminder.description,
-  type: mockReminder.type === 'bill' ? 'reminder' : mockReminder.type === 'med' ? 'reminder' : mockReminder.type,
+  type: mockReminder.type === 'bill' ? 'bill' : mockReminder.type === 'med' ? 'med' : mockReminder.type,
   priority: mockReminder.priority,
   status: mockReminder.completed ? 'completed' : 'pending',
   dueDate: mockReminder.dueDate ? new Date(mockReminder.dueDate) : undefined,
+  dueTime: mockReminder.dueTime,
+  location: mockReminder.location,
+  isFavorite: mockReminder.isFavorite,
+  isRecurring: mockReminder.isRecurring,
+  hasNotification: mockReminder.hasNotification,
+  assignedTo: mockReminder.assignedTo,
+  tags: mockReminder.tags,
+  completed: mockReminder.completed,
   createdAt: new Date(mockReminder.createdAt),
   updatedAt: new Date(mockReminder.updatedAt),
-  isFavorite: mockReminder.isFavorite,
-  tags: mockReminder.tags,
 });
 
 const convertToMockReminder = (firebaseReminder: FirebaseReminder): MockReminder => ({
@@ -26,12 +32,13 @@ const convertToMockReminder = (firebaseReminder: FirebaseReminder): MockReminder
   type: firebaseReminder.type === 'reminder' ? 'task' : firebaseReminder.type,
   priority: firebaseReminder.priority,
   dueDate: firebaseReminder.dueDate ? firebaseReminder.dueDate.toISOString().split('T')[0] : undefined,
-  dueTime: '', // Firebase doesn't store time separately
-  location: '', // Firebase doesn't store location
-  completed: firebaseReminder.status === 'completed',
+  dueTime: firebaseReminder.dueTime || '',
+  location: firebaseReminder.location || '',
+  completed: firebaseReminder.status === 'completed' || firebaseReminder.completed || false,
   isFavorite: firebaseReminder.isFavorite || false,
-  isRecurring: false, // Firebase doesn't store this
-  hasNotification: true, // Firebase doesn't store this
+  isRecurring: firebaseReminder.isRecurring || false,
+  hasNotification: firebaseReminder.hasNotification || false,
+  assignedTo: firebaseReminder.assignedTo || '',
   tags: firebaseReminder.tags || [],
   createdAt: firebaseReminder.createdAt.toISOString(),
   updatedAt: firebaseReminder.updatedAt.toISOString(),
@@ -43,6 +50,7 @@ export const useReminders = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useFirebase, setUseFirebase] = useState(true);
+  const unsubscribeRef = useRef<null | (() => void)>(null);
 
   const loadReminders = useCallback(async () => {
     if (!user || authLoading) return;
@@ -116,7 +124,7 @@ export const useReminders = () => {
           const firebaseUpdates: Partial<FirebaseReminder> = {};
           if (updates.title) firebaseUpdates.title = updates.title;
           if (updates.description !== undefined) firebaseUpdates.description = updates.description;
-          if (updates.type) firebaseUpdates.type = updates.type === 'bill' ? 'reminder' : updates.type === 'med' ? 'reminder' : updates.type;
+          if (updates.type) firebaseUpdates.type = updates.type === 'bill' ? 'bill' : updates.type === 'med' ? 'med' : updates.type;
           if (updates.priority) firebaseUpdates.priority = updates.priority;
           if (updates.completed !== undefined) firebaseUpdates.status = updates.completed ? 'completed' : 'pending';
           if (updates.dueDate) firebaseUpdates.dueDate = new Date(updates.dueDate);
@@ -301,6 +309,22 @@ export const useReminders = () => {
       return [];
     }
   }, [user, useFirebase]);
+
+  // Real-time Firestore listener
+  useEffect(() => {
+    if (!user || authLoading || !useFirebase) return;
+    setIsLoading(true);
+    setError(null);
+    // Subscribe to Firestore changes
+    unsubscribeRef.current = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
+      const mockReminders = firebaseReminders.map(convertToMockReminder);
+      setReminders(mockReminders);
+      setIsLoading(false);
+    });
+    return () => {
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, [user, authLoading, useFirebase]);
 
   useEffect(() => {
     if (!authLoading) {

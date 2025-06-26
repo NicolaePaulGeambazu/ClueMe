@@ -11,6 +11,7 @@ import {
 import { X, AlertCircle, Info, Shield, HelpCircle } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { Colors } from '../constants/Colors';
+import { Fonts } from '../constants/Fonts';
 
 interface InfoModalProps {
   visible: boolean;
@@ -165,7 +166,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   title: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: Fonts.display.bold,
     fontSize: 24,
     color: colors.text,
     marginBottom: 16,
@@ -175,14 +176,14 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingBottom: 8,
   },
   contentText: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     lineHeight: 24,
     marginBottom: 8,
   },
   bulletPoint: {
-    fontFamily: 'Inter-Regular',
+    fontFamily: Fonts.text.regular,
     fontSize: 16,
     color: colors.text,
     lineHeight: 24,
@@ -206,7 +207,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     justifyContent: 'center',
   },
   closeButtonText: {
-    fontFamily: 'Inter-SemiBold',
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: '#FFFFFF',
   },

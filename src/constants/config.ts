@@ -1,14 +1,11 @@
-export const APP_CONFIG = {
-  name: 'ClearCue',
-  version: '1.0.0',
-  description: 'Beautiful, intuitive reminder app',
-  support: {
-    email: 'support@clearcue.app',
-    website: 'https://clearcue.app'
-  }
-};
+import { Colors } from './Colors';
 
-export const REMINDER_TYPES = [
+export const APP_NAME = 'ClearCue';
+export const APP_VERSION = '1.0.0';
+
+// Default task types will now be loaded from Firebase
+// These are fallback values in case Firebase is not available
+export const FALLBACK_TASK_TYPES = [
   { id: 'task', label: 'Task', color: '#3B82F6', icon: '✓', description: 'General tasks' },
   { id: 'bill', label: 'Bill', color: '#EF4444', icon: '💳', description: 'Bills & payments' },
   { id: 'med', label: 'Medicine', color: '#10B981', icon: '💊', description: 'Health & meds' },
@@ -29,11 +26,10 @@ export const RECURRENCE_TYPES = [
   { id: 'yearly', label: 'Yearly' },
 ] as const;
 
-export const QUICK_TIMES = [
-  { label: 'Morning', value: '09:00' },
-  { label: 'Afternoon', value: '14:00' },
-  { label: 'Evening', value: '18:00' },
-  { label: 'Night', value: '21:00' },
+export const NOTIFICATION_TYPES = [
+  { id: 'push', label: 'Push Notification' },
+  { id: 'email', label: 'Email' },
+  { id: 'sms', label: 'SMS' },
 ] as const;
 
 export const QUICK_DATES = [
@@ -43,11 +39,34 @@ export const QUICK_DATES = [
   { label: 'Next Week', value: 7 },
 ] as const;
 
-export const NOTIFICATION_TIMES = [
-  { label: 'At time of event', value: 0 },
-  { label: '5 minutes before', value: 5 },
-  { label: '15 minutes before', value: 15 },
-  { label: '30 minutes before', value: 30 },
-  { label: '1 hour before', value: 60 },
-  { label: '1 day before', value: 1440 },
-] as const;
+export const STORAGE_KEYS = {
+  USER_PREFERENCES: 'user_preferences',
+  THEME: 'theme',
+  NOTIFICATIONS: 'notifications',
+  FIRST_LAUNCH: 'first_launch',
+  ANONYMOUS_ID: 'anonymous_id',
+} as const;
+
+export const API_ENDPOINTS = {
+  BASE_URL: 'https://api.clearcue.com',
+  AUTH: '/auth',
+  REMINDERS: '/reminders',
+  USERS: '/users',
+  FAMILIES: '/families',
+} as const;
+
+export const ERROR_MESSAGES = {
+  NETWORK_ERROR: 'Network error. Please check your connection.',
+  AUTH_ERROR: 'Authentication failed. Please try again.',
+  PERMISSION_ERROR: 'You don\'t have permission to perform this action.',
+  VALIDATION_ERROR: 'Please check your input and try again.',
+  UNKNOWN_ERROR: 'An unexpected error occurred. Please try again.',
+} as const;
+
+export const SUCCESS_MESSAGES = {
+  REMINDER_CREATED: 'Reminder created successfully!',
+  REMINDER_UPDATED: 'Reminder updated successfully!',
+  REMINDER_DELETED: 'Reminder deleted successfully!',
+  PROFILE_UPDATED: 'Profile updated successfully!',
+  SETTINGS_SAVED: 'Settings saved successfully!',
+} as const;
