@@ -22,7 +22,7 @@ import { useNotifications } from '../../hooks/useNotifications';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import InfoModal from '../../components/InfoModal';
-import NotificationTest from '../../components/NotificationTest';
+import { NotificationTest } from '../../components/NotificationTest';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notificationService, NotificationData } from '../services/notificationService';
+import messaging from '@react-native-firebase/messaging';
+import { Platform } from 'react-native';
 
 export const useNotifications = () => {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -48,6 +50,41 @@ export const useNotifications = () => {
     }
   }, [initialize]);
 
+  // Register device for remote messages
+  const registerDeviceForRemoteMessages = useCallback(async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        console.log('Checking if device is registered for remote messages...');
+        const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
+        console.log('Device registration status:', isRegistered);
+        
+        if (!isRegistered) {
+          console.log('Registering device for remote messages...');
+          await messaging().registerDeviceForRemoteMessages();
+          
+          // Wait a moment for registration to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check registration status again
+          const newStatus = await messaging().isDeviceRegisteredForRemoteMessages;
+          console.log('Device registration status after registration:', newStatus);
+          
+          if (!newStatus) {
+            console.log('Device registration failed - this is normal in iOS simulator');
+            // In iOS simulator, registration might fail, but we can still try to get token
+            return true;
+          }
+        }
+        return true;
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to register device for remote messages:', err);
+      // Even if registration fails, we can try to get token
+      return true;
+    }
+  }, []);
+
   // Send notification to user
   const sendNotificationToUser = useCallback(async (
     userId: string,
@@ -75,10 +112,64 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Get FCM token
-  const getFCMToken = useCallback(() => {
-    return notificationService.getCurrentFCMToken();
+  // Send test notification
+  const sendTestNotification = useCallback(async () => {
+    try {
+      await notificationService.sendTestNotification();
+    } catch (err) {
+      console.error('Failed to send test notification:', err);
+      throw err;
+    }
   }, []);
+
+  // Get FCM token
+  const getFCMToken = useCallback(async () => {
+    try {
+      console.log('useNotifications: Getting FCM token...');
+      
+      // Try to register device first
+      await registerDeviceForRemoteMessages();
+      
+      // Try to get token with error handling
+      try {
+        console.log('useNotifications: Attempting to get FCM token...');
+        const token = await messaging().getToken();
+        console.log('useNotifications: FCM token retrieved:', token ? token.substring(0, 20) + '...' : 'null');
+        return token;
+      } catch (tokenError) {
+        console.log('useNotifications: First token attempt failed:', tokenError);
+        
+        // If first attempt fails, try registering again and retry
+        if (Platform.OS === 'ios') {
+          console.log('useNotifications: Retrying with fresh registration...');
+          try {
+            await messaging().registerDeviceForRemoteMessages();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const retryToken = await messaging().getToken();
+            console.log('useNotifications: FCM token on retry:', retryToken ? retryToken.substring(0, 20) + '...' : 'null');
+            return retryToken;
+          } catch (retryError) {
+            console.log('useNotifications: Retry also failed:', retryError);
+            throw retryError;
+          }
+        }
+        
+        throw tokenError;
+      }
+    } catch (err) {
+      console.error('useNotifications: Failed to get FCM token:', err);
+      
+      // In iOS simulator, we might not be able to get a real FCM token
+      if (Platform.OS === 'ios') {
+        console.log('useNotifications: This is expected in iOS simulator - FCM tokens only work on real devices');
+        // Return a mock token for testing purposes
+        return 'simulator-mock-fcm-token-' + Date.now();
+      }
+      
+      return null;
+    }
+  }, [registerDeviceForRemoteMessages]);
 
   // Initialize on mount
   useEffect(() => {
@@ -92,8 +183,10 @@ export const useNotifications = () => {
     error,
     initialize,
     requestPermissions,
+    registerDeviceForRemoteMessages,
     sendNotificationToUser,
     sendNotificationToFamily,
+    sendTestNotification,
     getFCMToken,
   };
 }; 

@@ -65,6 +65,7 @@ target 'ClearCue2' do
   pod 'Firebase/Core', :modular_headers => true
   pod 'Firebase/Auth', :modular_headers => true
   pod 'Firebase/Firestore', :modular_headers => true
+  pod 'Firebase/Messaging', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'FirebaseCoreExtension', :modular_headers => true
