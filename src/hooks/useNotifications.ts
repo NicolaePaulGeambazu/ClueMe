@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
-import { notificationService, NotificationData } from '../services/notificationService';
+import { notificationService, NotificationData, TaskNotificationData } from '../services/notificationService';
 import messaging from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { useFamily } from './useFamily';
 
 export const useNotifications = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { family } = useFamily();
 
   // Initialize notifications
   const initialize = useCallback(async () => {
@@ -116,8 +120,9 @@ export const useNotifications = () => {
   const sendTestNotification = useCallback(async () => {
     try {
       await notificationService.sendTestNotification();
+      console.log('Test notification sent successfully');
     } catch (err) {
-      console.error('Failed to send test notification:', err);
+      console.error('Error sending test notification:', err);
       throw err;
     }
   }, []);
@@ -176,6 +181,86 @@ export const useNotifications = () => {
     initialize();
   }, [initialize]);
 
+  // Enhanced notification methods for tasks
+  const notifyTaskCreated = async (
+    taskData: TaskNotificationData,
+    excludeCurrentUser: boolean = true
+  ) => {
+    try {
+      if (!family) {
+        console.log('No family found, skipping task creation notification');
+        return;
+      }
+
+      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
+      await notificationService.notifyTaskCreated(
+        family.id,
+        taskData,
+        excludeUserId
+      );
+    } catch (error) {
+      console.error('Error sending task creation notification:', error);
+    }
+  };
+
+  const notifyTaskAssigned = async (
+    taskData: TaskNotificationData,
+    excludeCurrentUser: boolean = true
+  ) => {
+    try {
+      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
+      await notificationService.notifyTaskAssigned(taskData, excludeUserId);
+    } catch (error) {
+      console.error('Error sending task assignment notification:', error);
+    }
+  };
+
+  const notifyTaskUpdated = async (
+    taskData: TaskNotificationData,
+    updateType: 'due_date' | 'priority' | 'description' | 'general',
+    excludeCurrentUser: boolean = true
+  ) => {
+    try {
+      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
+      await notificationService.notifyTaskUpdated(
+        taskData,
+        updateType,
+        excludeUserId
+      );
+    } catch (error) {
+      console.error('Error sending task update notification:', error);
+    }
+  };
+
+  const notifyTaskCompleted = async (
+    taskData: TaskNotificationData,
+    completedByDisplayName: string,
+    excludeCurrentUser: boolean = true
+  ) => {
+    try {
+      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
+      await notificationService.notifyTaskCompleted(
+        taskData,
+        user?.uid || '',
+        completedByDisplayName,
+        excludeUserId
+      );
+    } catch (error) {
+      console.error('Error sending task completion notification:', error);
+    }
+  };
+
+  const sendTaskReminder = async (
+    taskData: TaskNotificationData,
+    reminderType: 'due_soon' | 'overdue' | 'daily_digest'
+  ) => {
+    try {
+      await notificationService.sendTaskReminder(taskData, reminderType);
+    } catch (error) {
+      console.error('Error sending task reminder:', error);
+    }
+  };
+
   return {
     isInitialized,
     isEnabled,
@@ -188,5 +273,10 @@ export const useNotifications = () => {
     sendNotificationToFamily,
     sendTestNotification,
     getFCMToken,
+    notifyTaskCreated,
+    notifyTaskAssigned,
+    notifyTaskUpdated,
+    notifyTaskCompleted,
+    sendTaskReminder,
   };
 }; 

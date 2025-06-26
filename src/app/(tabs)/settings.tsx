@@ -13,7 +13,8 @@ import {
   Calendar,
   Mail,
   Sun,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Globe
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -23,9 +24,10 @@ import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import InfoModal from '../../components/InfoModal';
 import { NotificationTest } from '../../components/NotificationTest';
+import { LanguageSelector } from '../../components/LanguageSelector';
 
 export default function SettingsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { signOut, user, isAnonymous } = useAuth();
   const { 
@@ -106,6 +108,10 @@ export default function SettingsScreen() {
     setModalVisible(true);
   };
 
+  const handleLanguageChange = (languageCode: string) => {
+    i18n.changeLanguage(languageCode);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -182,6 +188,28 @@ export default function SettingsScreen() {
               thumbColor="#FFFFFF"
             />
           </View>
+        </View>
+
+        {/* Language */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('language.title')}</Text>
+          
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.tertiary + '15' }]}>
+                <Globe size={20} color={colors.tertiary} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>{t('language.title')}</Text>
+                <Text style={styles.settingDescription}>{t('language.description')}</Text>
+              </View>
+            </View>
+          </View>
+          
+          <LanguageSelector
+            currentLanguage={i18n.language}
+            onLanguageChange={handleLanguageChange}
+          />
         </View>
 
         {/* Notifications */}

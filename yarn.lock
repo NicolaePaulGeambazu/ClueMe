@@ -2165,7 +2165,7 @@
 
 "@react-native-community/cli@^18.0.0":
   version "18.0.0"
-  resolved "https://registry.npmjs.org/@react-native-community/cli/-/cli-18.0.0.tgz"
+  resolved "https://registry.yarnpkg.com/@react-native-community/cli/-/cli-18.0.0.tgz#27d0160b7c0a44b1bcc0f45d736bbc6b7d2d5ca6"
   integrity sha512-DyKptlG78XPFo7tDod+we5a3R+U9qjyhaVFbOPvH4pFNu5Dehewtol/srl44K6Cszq0aEMlAJZ3juk0W4WnOJA==
   dependencies:
     "@react-native-community/cli-clean" "18.0.0"

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { mockDataService, Reminder as MockReminder } from '../services/mockData';
 import { reminderService, Reminder as FirebaseReminder } from '../services/firebaseService';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from './useNotifications';
+import { useFamily } from './useFamily';
 
 // Convert between Firebase and Mock reminder types
 const convertToFirebaseReminder = (mockReminder: MockReminder): Omit<FirebaseReminder, 'id'> => ({
@@ -46,6 +48,8 @@ const convertToMockReminder = (firebaseReminder: FirebaseReminder): MockReminder
 
 export const useReminders = () => {
   const { user, isLoading: authLoading } = useAuth();
+  const { family } = useFamily();
+  const { notifyTaskCreated, notifyTaskAssigned } = useNotifications();
   const [reminders, setReminders] = useState<MockReminder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +101,27 @@ export const useReminders = () => {
           
           const id = await reminderService.createReminder(firebaseReminderData);
           await loadReminders();
+          
+          // Send notifications if this is a family task with assigned members
+          if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
+            const taskNotificationData = {
+              taskId: id,
+              taskTitle: reminderData.title,
+              taskDescription: reminderData.description,
+              assignedBy: user.uid,
+              assignedByDisplayName: user.displayName || user.email || 'Family Member',
+              assignedTo: [reminderData.assignedTo], // Convert to array
+              dueDate: reminderData.dueDate,
+              priority: reminderData.priority,
+            };
+            
+            // Notify family about new task
+            await notifyTaskCreated(taskNotificationData);
+            
+            // Notify assigned member specifically
+            await notifyTaskAssigned(taskNotificationData);
+          }
+          
           return id;
         } catch (firebaseError) {
           console.warn('Firebase failed, falling back to local storage:', firebaseError);
@@ -110,12 +135,33 @@ export const useReminders = () => {
         userId: user.uid,
       });
       await loadReminders();
+      
+      // Send notifications for mock data as well
+      if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
+        const taskNotificationData = {
+          taskId: id,
+          taskTitle: reminderData.title,
+          taskDescription: reminderData.description,
+          assignedBy: user.uid,
+          assignedByDisplayName: user.displayName || user.email || 'Family Member',
+          assignedTo: [reminderData.assignedTo], // Convert to array
+          dueDate: reminderData.dueDate,
+          priority: reminderData.priority,
+        };
+        
+        // Notify family about new task
+        await notifyTaskCreated(taskNotificationData);
+        
+        // Notify assigned member specifically
+        await notifyTaskAssigned(taskNotificationData);
+      }
+      
       return id;
     } catch (err) {
       setError('Failed to create reminder');
       throw err;
     }
-  }, [user, loadReminders, useFirebase]);
+  }, [user, loadReminders, useFirebase, notifyTaskCreated, notifyTaskAssigned, family]);
 
   const updateReminder = useCallback(async (id: string, updates: Partial<MockReminder>) => {
     try {

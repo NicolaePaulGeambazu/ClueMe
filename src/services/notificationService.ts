@@ -1,13 +1,24 @@
 import messaging from '@react-native-firebase/messaging';
 import { Platform, Alert } from 'react-native';
 import auth from '@react-native-firebase/auth';
-import { userService, familyService } from './firebaseService';
+import { userService, familyService, FamilyMember } from './firebaseService';
 
 export interface NotificationData {
   title: string;
   body: string;
   data?: Record<string, string>;
-  type?: 'reminder' | 'family_invitation' | 'general';
+  type?: 'reminder' | 'family_invitation' | 'task_assigned' | 'task_created' | 'general';
+}
+
+export interface TaskNotificationData {
+  taskId: string;
+  taskTitle: string;
+  taskDescription?: string;
+  assignedBy: string;
+  assignedByDisplayName: string;
+  assignedTo: string[];
+  dueDate?: string;
+  priority?: 'low' | 'medium' | 'high';
 }
 
 class NotificationService {
@@ -406,6 +417,236 @@ class NotificationService {
    */
   cleanup(): void {
     // Cleanup any listeners if needed
+  }
+
+  /**
+   * Send notification to family members when a task is created
+   */
+  async notifyTaskCreated(
+    familyId: string,
+    taskData: TaskNotificationData,
+    excludeUserId?: string
+  ): Promise<void> {
+    try {
+      console.log('🔔 Sending task creation notification to family:', familyId);
+      
+      // Get family members
+      const familyMembers = await familyService.getFamilyMembers(familyId);
+      if (!familyMembers || familyMembers.length === 0) {
+        console.log('No family members found for family:', familyId);
+        return;
+      }
+
+      // Get all family members except the creator
+      const membersToNotify = familyMembers.filter(
+        (member: FamilyMember) => member.userId !== excludeUserId
+      );
+
+      // Create notification data
+      const notification: NotificationData = {
+        title: 'New Family Task',
+        body: `${taskData.assignedByDisplayName} added a new task: "${taskData.taskTitle}"`,
+        type: 'task_created',
+        data: {
+          taskId: taskData.taskId,
+          familyId: familyId,
+          action: 'task_created',
+          assignedBy: taskData.assignedBy,
+        },
+      };
+
+      // Send notification to each family member
+      for (const member of membersToNotify) {
+        if (member.userId !== excludeUserId) {
+          await this.sendNotificationToUser(member.userId, notification);
+        }
+      }
+
+      console.log(`✅ Task creation notification sent to ${membersToNotify.length} family members`);
+    } catch (error) {
+      console.error('Failed to send task creation notification:', error);
+    }
+  }
+
+  /**
+   * Send notification to specific users when they are assigned to a task
+   */
+  async notifyTaskAssigned(
+    taskData: TaskNotificationData,
+    excludeUserId?: string
+  ): Promise<void> {
+    try {
+      console.log('🔔 Sending task assignment notifications');
+      
+      // Create notification data
+      const notification: NotificationData = {
+        title: 'Task Assigned to You',
+        body: `${taskData.assignedByDisplayName} assigned you to: "${taskData.taskTitle}"`,
+        type: 'task_assigned',
+        data: {
+          taskId: taskData.taskId,
+          action: 'task_assigned',
+          assignedBy: taskData.assignedBy,
+          dueDate: taskData.dueDate || '',
+          priority: taskData.priority || 'medium',
+        },
+      };
+
+      // Send notification to each assigned user
+      for (const userId of taskData.assignedTo) {
+        if (userId !== excludeUserId) {
+          await this.sendNotificationToUser(userId, notification);
+        }
+      }
+
+      console.log(`✅ Task assignment notifications sent to ${taskData.assignedTo.length} users`);
+    } catch (error) {
+      console.error('Failed to send task assignment notifications:', error);
+    }
+  }
+
+  /**
+   * Send notification when a task is updated (due date, priority, etc.)
+   */
+  async notifyTaskUpdated(
+    taskData: TaskNotificationData,
+    updateType: 'due_date' | 'priority' | 'description' | 'general',
+    excludeUserId?: string
+  ): Promise<void> {
+    try {
+      console.log('🔔 Sending task update notification');
+      
+      let title = 'Task Updated';
+      let body = `${taskData.assignedByDisplayName} updated: "${taskData.taskTitle}"`;
+      
+      // Customize message based on update type
+      switch (updateType) {
+        case 'due_date':
+          title = 'Task Due Date Changed';
+          body = `${taskData.assignedByDisplayName} changed the due date for: "${taskData.taskTitle}"`;
+          break;
+        case 'priority':
+          title = 'Task Priority Changed';
+          body = `${taskData.assignedByDisplayName} changed the priority for: "${taskData.taskTitle}"`;
+          break;
+        case 'description':
+          title = 'Task Description Updated';
+          body = `${taskData.assignedByDisplayName} updated the description for: "${taskData.taskTitle}"`;
+          break;
+      }
+
+      const notification: NotificationData = {
+        title,
+        body,
+        type: 'task_assigned',
+        data: {
+          taskId: taskData.taskId,
+          action: 'task_updated',
+          updateType,
+          assignedBy: taskData.assignedBy,
+        },
+      };
+
+      // Send notification to assigned users
+      for (const userId of taskData.assignedTo) {
+        if (userId !== excludeUserId) {
+          await this.sendNotificationToUser(userId, notification);
+        }
+      }
+
+      console.log(`✅ Task update notification sent to ${taskData.assignedTo.length} users`);
+    } catch (error) {
+      console.error('Failed to send task update notification:', error);
+    }
+  }
+
+  /**
+   * Send notification when a task is completed
+   */
+  async notifyTaskCompleted(
+    taskData: TaskNotificationData,
+    completedBy: string,
+    completedByDisplayName: string,
+    excludeUserId?: string
+  ): Promise<void> {
+    try {
+      console.log('🔔 Sending task completion notification');
+      
+      const notification: NotificationData = {
+        title: 'Task Completed',
+        body: `${completedByDisplayName} completed: "${taskData.taskTitle}"`,
+        type: 'task_assigned',
+        data: {
+          taskId: taskData.taskId,
+          action: 'task_completed',
+          completedBy,
+        },
+      };
+
+      // Send notification to all assigned users and the creator
+      const allUsers = [...taskData.assignedTo, taskData.assignedBy];
+      const uniqueUsers = [...new Set(allUsers)];
+
+      for (const userId of uniqueUsers) {
+        if (userId !== excludeUserId) {
+          await this.sendNotificationToUser(userId, notification);
+        }
+      }
+
+      console.log(`✅ Task completion notification sent to ${uniqueUsers.length} users`);
+    } catch (error) {
+      console.error('Failed to send task completion notification:', error);
+    }
+  }
+
+  /**
+   * Send reminder notification for upcoming tasks
+   */
+  async sendTaskReminder(
+    taskData: TaskNotificationData,
+    reminderType: 'due_soon' | 'overdue' | 'daily_digest'
+  ): Promise<void> {
+    try {
+      console.log('🔔 Sending task reminder notification');
+      
+      let title = 'Task Reminder';
+      let body = `Reminder: "${taskData.taskTitle}"`;
+      
+      switch (reminderType) {
+        case 'due_soon':
+          title = 'Task Due Soon';
+          body = `"${taskData.taskTitle}" is due soon!`;
+          break;
+        case 'overdue':
+          title = 'Task Overdue';
+          body = `"${taskData.taskTitle}" is overdue!`;
+          break;
+        case 'daily_digest':
+          title = 'Daily Task Summary';
+          body = `You have tasks to complete today!`;
+          break;
+      }
+
+      const notification: NotificationData = {
+        title,
+        body,
+        type: 'reminder',
+        data: {
+          taskId: taskData.taskId,
+          action: 'task_reminder',
+          reminderType,
+        },
+      };
+
+      // Send reminder to assigned users
+      for (const userId of taskData.assignedTo) {
+        await this.sendNotificationToUser(userId, notification);
+      }
+
+      console.log(`✅ Task reminder sent to ${taskData.assignedTo.length} users`);
+    } catch (error) {
+      console.error('Failed to send task reminder:', error);
+    }
   }
 }
 
