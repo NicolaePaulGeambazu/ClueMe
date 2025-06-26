@@ -7,7 +7,7 @@
 
 import '@react-native-firebase/app';
 import './src/i18n'; // Initialize i18n
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AuthProvider } from './src/contexts/AuthContext';
@@ -15,6 +15,7 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { FamilyProvider } from './src/contexts/FamilyContext';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
+import { notificationService } from './src/services/notificationService';
 
 // Import layout components
 import AuthLayout from './src/app/(auth)/_layout';
@@ -32,6 +33,26 @@ const Stack = createNativeStackNavigator();
 function AppContent() {
   const { theme } = useTheme();
   const colors = Colors[theme];
+
+  // Initialize notifications when app starts
+  useEffect(() => {
+    const initNotifications = async () => {
+      try {
+        console.log('🔔 Initializing push notifications...');
+        await notificationService.initialize();
+        console.log('✅ Push notifications initialized successfully');
+      } catch (error) {
+        console.error('❌ Failed to initialize push notifications:', error);
+      }
+    };
+
+    initNotifications();
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.cleanup();
+    };
+  }, []);
 
   return (
     <NavigationContainer>

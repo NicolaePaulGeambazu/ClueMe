@@ -18,16 +18,23 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import InfoModal from '../../components/InfoModal';
+import NotificationTest from '../../components/NotificationTest';
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { signOut, user, isAnonymous } = useAuth();
+  const { 
+    isEnabled: notificationsEnabled, 
+    isLoading: notificationsLoading,
+    requestPermissions,
+    error: notificationError 
+  } = useNotifications();
   const colors = Colors[theme];
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalConfig, setModalConfig] = useState({
@@ -36,6 +43,19 @@ export default function SettingsScreen() {
     type: 'info' as 'info' | 'help' | 'privacy' | 'warning'
   });
   const styles = createStyles(colors);
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await requestPermissions();
+      if (!granted) {
+        Alert.alert(
+          t('settings.notificationPermissionDenied'),
+          t('settings.notificationPermissionDeniedMessage'),
+          [{ text: t('common.ok') }]
+        );
+      }
+    }
+  };
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -89,6 +109,9 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Notification Test Component - Temporary for testing */}
+        <NotificationTest />
+
         {/* Profile Section */}
         <View style={styles.profileCard}>
           <View style={styles.avatarPlaceholder}>
@@ -172,14 +195,22 @@ export default function SettingsScreen() {
               </View>
               <View style={styles.settingContent}>
                 <Text style={styles.settingLabel}>{t('settings.pushNotifications')}</Text>
-                <Text style={styles.settingDescription}>{t('settings.pushNotificationsDescription')}</Text>
+                <Text style={styles.settingDescription}>
+                  {notificationsLoading 
+                    ? t('settings.loadingNotifications')
+                    : notificationError 
+                    ? t('settings.notificationError')
+                    : t('settings.pushNotificationsDescription')
+                  }
+                </Text>
               </View>
             </View>
             <Switch
               value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
+              onValueChange={handleNotificationToggle}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#FFFFFF"
+              disabled={notificationsLoading}
             />
           </View>
         </View>

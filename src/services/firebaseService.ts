@@ -10,6 +10,8 @@ export interface UserProfile {
   createdAt: Date;
   updatedAt: Date;
   isAnonymous: boolean;
+  fcmToken?: string;
+  lastTokenUpdate?: string;
   preferences?: {
     theme?: 'light' | 'dark' | 'system';
     notifications?: boolean;
