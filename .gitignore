@@ -22,6 +22,12 @@ DerivedData
 *.xcuserstate
 **/.xcode.env.local
 
+# iOS Build Artifacts
+*.xcarchive/
+ios/ClearCue2.xcarchive/
+ios/build/
+ios/DerivedData/
+
 # Android/IntelliJ
 #
 build/
