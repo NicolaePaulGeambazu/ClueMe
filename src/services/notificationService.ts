@@ -1,7 +1,9 @@
 import messaging from '@react-native-firebase/messaging';
 import { Platform, Alert } from 'react-native';
 import auth from '@react-native-firebase/auth';
-import { userService, familyService, FamilyMember } from './firebaseService';
+import { userService, familyService, FamilyMember, reminderService } from './firebaseService';
+import BackgroundJob from 'react-native-background-job';
+import PushNotification from 'react-native-push-notification';
 
 export interface NotificationData {
   title: string;
@@ -21,9 +23,27 @@ export interface TaskNotificationData {
   priority?: 'low' | 'medium' | 'high';
 }
 
+export interface NotificationTiming {
+  type: 'exact' | 'before' | 'after';
+  value: number; // minutes before/after due time, or 0 for exact
+  label: string;
+}
+
+export const DEFAULT_NOTIFICATION_TIMINGS: NotificationTiming[] = [
+  { type: 'before', value: 15, label: '15 minutes before' },
+  { type: 'before', value: 30, label: '30 minutes before' },
+  { type: 'before', value: 60, label: '1 hour before' },
+  { type: 'before', value: 1440, label: '1 day before' },
+  { type: 'exact', value: 0, label: 'At due time' },
+  { type: 'after', value: 15, label: '15 minutes after' },
+  { type: 'after', value: 30, label: '30 minutes after' },
+  { type: 'after', value: 60, label: '1 hour after' },
+];
+
 class NotificationService {
   private fcmToken: string | null = null;
   private isInitialized = false;
+  private backgroundJobId = 'reminder-check-job';
 
   /**
    * Initialize the notification service
@@ -51,11 +71,356 @@ class NotificationService {
       // Set up message handlers for different app states
       this.setupMessageHandlers();
 
+      // Initialize local notifications
+      this.initializeLocalNotifications();
+
+      // Set up background job for reminder checking
+      await this.setupBackgroundJob();
+
       this.isInitialized = true;
       console.log('✅ Push notifications initialized successfully');
     } catch (error) {
       console.error('Failed to initialize notification service:', error);
     }
+  }
+
+  /**
+   * Initialize local notifications
+   */
+  private initializeLocalNotifications(): void {
+    PushNotification.configure({
+      onRegister: function (token: { os: string; token: string }) {
+        console.log('TOKEN:', token);
+      },
+      onNotification: function (notification: any) {
+        console.log('NOTIFICATION:', notification);
+      },
+      permissions: {
+        alert: true,
+        badge: true,
+        sound: true,
+      },
+      popInitialNotification: true,
+      requestPermissions: Platform.OS === 'ios',
+    });
+
+    // Create notification channel for Android
+    if (Platform.OS === 'android') {
+      PushNotification.createChannel(
+        {
+          channelId: 'reminders',
+          channelName: 'Reminders',
+          channelDescription: 'Reminder notifications',
+          playSound: true,
+          soundName: 'default',
+          importance: 4,
+          vibrate: true,
+        },
+        (created: boolean) => console.log(`Channel created: ${created}`)
+      );
+    }
+  }
+
+  /**
+   * Set up background job for checking reminders
+   */
+  private async setupBackgroundJob(): Promise<void> {
+    try {
+      // Register background job
+      BackgroundJob.register({
+        jobKey: this.backgroundJobId,
+        job: async () => {
+          console.log('🔄 Background job running: checking reminders...');
+          await this.checkAndNotifyOverdueReminders();
+          await this.checkAndNotifyUpcomingReminders();
+        },
+      });
+
+      // Schedule the job to run every 15 minutes
+      await BackgroundJob.schedule({
+        jobKey: this.backgroundJobId,
+        period: 15 * 60 * 1000, // 15 minutes
+        networkType: BackgroundJob.NETWORK_TYPE_ANY,
+        requiresCharging: false,
+        requiresDeviceIdle: false,
+        persist: true,
+      });
+
+      console.log('✅ Background job scheduled successfully');
+    } catch (error) {
+      console.error('Failed to setup background job:', error);
+    }
+  }
+
+  /**
+   * Schedule local notification for a specific reminder
+   */
+  private scheduleLocalNotification(reminder: any, timing: NotificationTiming): void {
+    try {
+      const dueDate = new Date(reminder.dueDate);
+      
+      // If there's a due time, combine it with the due date
+      if (reminder.dueTime) {
+        const [hours, minutes] = reminder.dueTime.split(':');
+        dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      }
+
+      // Calculate notification time based on timing
+      let notificationTime = new Date(dueDate);
+      switch (timing.type) {
+        case 'before':
+          notificationTime.setMinutes(notificationTime.getMinutes() - timing.value);
+          break;
+        case 'after':
+          notificationTime.setMinutes(notificationTime.getMinutes() + timing.value);
+          break;
+        case 'exact':
+        default:
+          // Use exact time
+          break;
+      }
+
+      // Don't schedule if the time has already passed
+      if (notificationTime <= new Date()) {
+        return;
+      }
+
+      const notificationId = `${reminder.id}-${timing.type}-${timing.value}`;
+      
+      PushNotification.localNotificationSchedule({
+        id: notificationId,
+        channelId: 'reminders',
+        title: this.getNotificationTitle(reminder, timing),
+        message: this.getNotificationMessage(reminder, timing),
+        date: notificationTime,
+        allowWhileIdle: true,
+        repeatType: 'day',
+        playSound: true,
+        soundName: 'default',
+        importance: 'high',
+        priority: 'high',
+      });
+
+      console.log(`✅ Scheduled local notification for reminder: ${reminder.title} at ${notificationTime.toISOString()}`);
+    } catch (error) {
+      console.error('Failed to schedule local notification:', error);
+    }
+  }
+
+  /**
+   * Get notification title based on timing
+   */
+  private getNotificationTitle(reminder: any, timing: NotificationTiming): string {
+    switch (timing.type) {
+      case 'before':
+        return 'Reminder Coming Up';
+      case 'exact':
+        return 'Reminder Due Now';
+      case 'after':
+        return 'Reminder Overdue';
+      default:
+        return 'Reminder';
+    }
+  }
+
+  /**
+   * Get notification message based on timing
+   */
+  private getNotificationMessage(reminder: any, timing: NotificationTiming): string {
+    switch (timing.type) {
+      case 'before':
+        return `"${reminder.title}" is due in ${this.formatTimeValue(timing.value)}`;
+      case 'exact':
+        return `"${reminder.title}" is due now!`;
+      case 'after':
+        return `"${reminder.title}" was due ${this.formatTimeValue(timing.value)} ago`;
+      default:
+        return `"${reminder.title}"`;
+    }
+  }
+
+  /**
+   * Check for overdue reminders and send notifications
+   */
+  async checkAndNotifyOverdueReminders(): Promise<void> {
+    try {
+      console.log('🔍 Checking for overdue reminders...');
+      
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.log('No authenticated user, skipping overdue check');
+        return;
+      }
+
+      // Get all user reminders from Firebase
+      const userReminders = await reminderService.getUserReminders(currentUser.uid);
+      
+      // Filter for overdue reminders that have notifications enabled
+      const overdueReminders = userReminders.filter(reminder => {
+        if (!reminder.hasNotification || reminder.status === 'completed') {
+          return false;
+        }
+        
+        if (!reminder.dueDate) {
+          return false;
+        }
+        
+        const now = new Date();
+        const dueDate = new Date(reminder.dueDate);
+        
+        // If there's a due time, combine it with the due date
+        if (reminder.dueTime) {
+          const [hours, minutes] = reminder.dueTime.split(':');
+          dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        return dueDate < now;
+      });
+
+      console.log(`Found ${overdueReminders.length} overdue reminders with notifications enabled`);
+
+      // Send local notifications for each overdue reminder
+      for (const reminder of overdueReminders) {
+        this.sendOverdueLocalNotification(reminder);
+      }
+
+      console.log(`✅ Sent ${overdueReminders.length} overdue reminder notifications`);
+    } catch (error) {
+      console.error('Failed to check overdue reminders:', error);
+    }
+  }
+
+  /**
+   * Send local notification for overdue reminder
+   */
+  private sendOverdueLocalNotification(reminder: any): void {
+    try {
+      PushNotification.localNotification({
+        channelId: 'reminders',
+        title: 'Reminder Overdue',
+        message: `"${reminder.title}" is overdue!`,
+        playSound: true,
+        soundName: 'default',
+        importance: 'high',
+        priority: 'high',
+      });
+
+      console.log(`✅ Sent overdue notification for reminder: ${reminder.title}`);
+    } catch (error) {
+      console.error('Failed to send overdue local notification:', error);
+    }
+  }
+
+  /**
+   * Check for upcoming reminders and schedule notifications
+   */
+  async checkAndNotifyUpcomingReminders(): Promise<void> {
+    try {
+      console.log('🔍 Checking for upcoming reminders...');
+      
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.log('No authenticated user, skipping upcoming check');
+        return;
+      }
+
+      // Get all user reminders from Firebase
+      const userReminders = await reminderService.getUserReminders(currentUser.uid);
+      const now = new Date();
+      
+      // Filter for upcoming reminders that have notifications enabled
+      const upcomingReminders = userReminders.filter(reminder => {
+        if (!reminder.hasNotification || reminder.status === 'completed') {
+          return false;
+        }
+        
+        if (!reminder.dueDate) {
+          return false;
+        }
+        
+        const dueDate = new Date(reminder.dueDate);
+        
+        // If there's a due time, combine it with the due date
+        if (reminder.dueTime) {
+          const [hours, minutes] = reminder.dueTime.split(':');
+          dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+        
+        // Only include reminders that are in the future
+        return dueDate > now;
+      });
+
+      console.log(`Found ${upcomingReminders.length} upcoming reminders with notifications enabled`);
+
+      // Schedule local notifications for each upcoming reminder
+      for (const reminder of upcomingReminders) {
+        await this.scheduleReminderNotifications(reminder);
+      }
+    } catch (error) {
+      console.error('Failed to check upcoming reminders:', error);
+    }
+  }
+
+  /**
+   * Schedule notifications for a reminder based on its timing preferences
+   */
+  private async scheduleReminderNotifications(reminder: any): Promise<void> {
+    try {
+      // Get notification timing preferences (default to 15 minutes before)
+      const notificationTimings = reminder.notificationTimings || [
+        { type: 'before', value: 15, label: '15 minutes before' }
+      ];
+
+      // Schedule a notification for each timing
+      for (const timing of notificationTimings) {
+        this.scheduleLocalNotification(reminder, timing);
+      }
+    } catch (error) {
+      console.error('Failed to schedule reminder notifications:', error);
+    }
+  }
+
+  /**
+   * Format time value for display
+   */
+  private formatTimeValue(minutes: number): string {
+    if (minutes < 60) {
+      return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else if (minutes < 1440) {
+      const hours = Math.floor(minutes / 60);
+      return `${hours} hour${hours !== 1 ? 's' : ''}`;
+    } else {
+      const days = Math.floor(minutes / 1440);
+      return `${days} day${days !== 1 ? 's' : ''}`;
+    }
+  }
+
+  /**
+   * Start background reminder checking (call this when app starts)
+   */
+  startBackgroundReminderChecking(): void {
+    console.log('🔄 Starting background reminder checking...');
+    
+    // Check immediately
+    this.checkAndNotifyOverdueReminders();
+    this.checkAndNotifyUpcomingReminders();
+    
+    console.log('✅ Background reminder checking started');
+  }
+
+  /**
+   * Cleanup method for when app is unmounted
+   */
+  cleanup(): void {
+    console.log('🧹 Cleaning up notification service...');
+    
+    // Cancel all scheduled notifications
+    PushNotification.cancelAllLocalNotifications();
+    
+    // Cancel background job
+    BackgroundJob.cancel({ jobKey: this.backgroundJobId });
+    
+    this.isInitialized = false;
   }
 
   /**
@@ -410,13 +775,6 @@ class NotificationService {
       console.error('Failed to request notification permissions:', error);
       return false;
     }
-  }
-
-  /**
-   * Cleanup resources
-   */
-  cleanup(): void {
-    // Cleanup any listeners if needed
   }
 
   /**

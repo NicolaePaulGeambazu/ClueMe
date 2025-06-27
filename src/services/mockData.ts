@@ -13,6 +13,11 @@ export interface Reminder {
   isFavorite: boolean;
   isRecurring: boolean;
   hasNotification: boolean;
+  notificationTimings?: Array<{
+    type: 'exact' | 'before' | 'after';
+    value: number;
+    label: string;
+  }>;
   tags: string[];
   userId: string;
   assignedTo?: string;
@@ -300,6 +305,13 @@ class MockDataService {
           isFavorite: true,
           isRecurring: true,
           hasNotification: true,
+          notificationTimings: [
+            {
+              type: 'exact',
+              value: 0,
+              label: 'Morning',
+            },
+          ],
           tags: ['health', 'daily'],
           userId,
           createdAt: new Date().toISOString(),
@@ -316,6 +328,13 @@ class MockDataService {
           isFavorite: false,
           isRecurring: true,
           hasNotification: true,
+          notificationTimings: [
+            {
+              type: 'exact',
+              value: 0,
+              label: 'Monthly',
+            },
+          ],
           tags: ['bills', 'monthly'],
           userId,
           createdAt: new Date().toISOString(),
@@ -334,6 +353,13 @@ class MockDataService {
           isFavorite: false,
           isRecurring: true,
           hasNotification: true,
+          notificationTimings: [
+            {
+              type: 'exact',
+              value: 0,
+              label: 'Weekly',
+            },
+          ],
           tags: ['work', 'meeting'],
           userId,
           createdAt: new Date().toISOString(),

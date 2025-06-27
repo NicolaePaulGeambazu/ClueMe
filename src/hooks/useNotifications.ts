@@ -261,6 +261,15 @@ export const useNotifications = () => {
     }
   };
 
+  // Start background reminder checking
+  const startBackgroundReminderChecking = useCallback(() => {
+    try {
+      notificationService.startBackgroundReminderChecking();
+    } catch (error) {
+      console.error('Error starting background reminder checking:', error);
+    }
+  }, []);
+
   return {
     isInitialized,
     isEnabled,
@@ -278,5 +287,6 @@ export const useNotifications = () => {
     notifyTaskUpdated,
     notifyTaskCompleted,
     sendTaskReminder,
+    startBackgroundReminderChecking,
   };
 }; 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TrendingUp, Clock, Star, Plus, Search, Bell, User, Calendar, Filter, Users, Settings, ChevronRight, CheckCircle, AlertCircle, Timer, List } from 'lucide-react-native';
@@ -10,8 +10,10 @@ import { useReminders } from '../../hooks/useReminders';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { Colors } from '../../constants/Colors';
 import { getReminderStats } from '../../utils/reminderUtils';
-import { getGreeting } from '../../utils/dateUtils';
+import { getGreeting, formatForActivity, formatDate, formatTime, formatTimeOnly } from '../../utils/dateUtils';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { useFamily } from '../../contexts/FamilyContext';
+import { format, isToday, isYesterday } from 'date-fns';
 
 export default function HomeScreen({ navigation }: any) {
   const { t } = useTranslation();
@@ -20,8 +22,10 @@ export default function HomeScreen({ navigation }: any) {
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
   const { reminders, isLoading, loadReminders, useFirebase } = useReminders();
+  const { familyMembers } = useFamily();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
+  const loggedMissingUsers = useRef(new Set<string>());
   
   const styles = createStyles(colors);
 
@@ -50,6 +54,21 @@ export default function HomeScreen({ navigation }: any) {
       case 'low': return colors.success;
       default: return colors.textSecondary;
     }
+  };
+
+  // Helper to get assigned user's name
+  const getAssignedUserName = (userId: string) => {
+    if (!familyMembers || familyMembers.length === 0) return t('common.unknown');
+    const member = familyMembers.find(m => m.userId === userId);
+    if (!member) {
+      // Only log this once per user ID to avoid spam
+      if (!loggedMissingUsers.current.has(userId)) {
+        console.log('Assigned user not found in familyMembers:', userId, familyMembers.map(m => m.userId));
+        loggedMissingUsers.current.add(userId);
+      }
+      return t('common.unknown');
+    }
+    return member.name;
   };
 
   const handleRefresh = async () => {
@@ -97,6 +116,11 @@ export default function HomeScreen({ navigation }: any) {
     executeAfterAuth(() => {
       console.log('Action completed after login');
     });
+  };
+
+  // Format activity date
+  const formatActivityDate = (dateString: string) => {
+    return formatForActivity(dateString);
   };
 
   return (
@@ -291,7 +315,10 @@ export default function HomeScreen({ navigation }: any) {
                   {reminder.dueDate && (
                     <View style={styles.activityMetaItem}>
                       <Clock size={14} color={colors.textSecondary} />
-                      <Text style={styles.activityMetaText}>{reminder.dueDate}{reminder.dueTime ? ` ${reminder.dueTime}` : ''}</Text>
+                      <Text style={styles.activityMetaText}>
+                        {formatDate(reminder.dueDate)}
+                        {reminder.dueTime ? ` ${formatTimeOnly(reminder.dueTime)}` : ''}
+                      </Text>
                     </View>
                   )}
                   {reminder.priority && (
@@ -302,7 +329,7 @@ export default function HomeScreen({ navigation }: any) {
                   {reminder.assignedTo && (
                     <View style={styles.activityMetaItem}>
                       <User size={14} color={colors.textSecondary} />
-                      <Text style={styles.activityMetaText}>{reminder.assignedTo}</Text>
+                      <Text style={styles.activityMetaText}>{getAssignedUserName(reminder.assignedTo)}</Text>
                     </View>
                   )}
                   {reminder.tags && reminder.tags.length > 0 && (
@@ -311,7 +338,7 @@ export default function HomeScreen({ navigation }: any) {
                     </View>
                   )}
                   <View style={styles.activityMetaItem}>
-                    <Text style={styles.activityMetaText}>{reminder.updatedAt}</Text>
+                    <Text style={styles.activityMetaText}>{formatActivityDate(reminder.updatedAt)}</Text>
                   </View>
                 </View>
               </View>

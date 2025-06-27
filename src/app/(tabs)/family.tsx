@@ -8,6 +8,7 @@ import { useFamily } from '../../hooks/useFamily';
 import { Colors } from '../../constants/Colors'
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import FamilyInvitationModal from '../../components/FamilyInvitationModal';
+import { formatForActivity } from '../../utils/dateUtils';
 
 // Mock types
 interface FamilyMember {
@@ -254,7 +255,7 @@ export default function FamilyScreen() {
                 >
                   <View style={styles.activityHeader}>
                     <Text style={styles.activityTitle}>{activity.title}</Text>
-                    <Text style={styles.activityTimestamp}>{activity.createdAt.toLocaleDateString()}</Text>
+                    <Text style={styles.activityTimestamp}>{formatForActivity(activity.createdAt)}</Text>
                   </View>
                   <Text style={styles.activityDescription}>{activity.description}</Text>
                   <Text style={styles.activityMember}>by {activity.memberName}</Text>

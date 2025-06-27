@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Clock, Star, CheckCircle, AlertCircle, User } from 'lucide-react-native';
 import { Fonts } from '../../constants/Fonts';
+import { formatTimeOnly } from '../../utils/dateUtils';
 
 interface TimeBlockProps {
   reminder: any;
@@ -47,15 +48,6 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       case 'low': return colors.success;
       default: return colors.textSecondary;
     }
-  };
-
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes} ${ampm}`;
   };
 
   const isOverdue = () => {
@@ -113,7 +105,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
           {reminder.dueTime && (
             <View style={styles.timeMeta}>
               <Clock size={12} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={styles.timeText}>{formatTime(reminder.dueTime)}</Text>
+              <Text style={styles.timeText}>{formatTimeOnly(reminder.dueTime)}</Text>
             </View>
           )}
           

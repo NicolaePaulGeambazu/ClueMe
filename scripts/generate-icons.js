@@ -15,7 +15,7 @@ const iconSizes = [
 ];
 
 const inputIcon = path.join(__dirname, '../src/assets/images/icon.png');
-const outputDir = path.join(__dirname, '../ios/ClearCue/Images.xcassets/AppIcon.appiconset');
+const outputDir = path.join(__dirname, '../ios/ClearCue2/Images.xcassets/AppIcon.appiconset');
 
 // Ensure output directory exists
 if (!fs.existsSync(outputDir)) {

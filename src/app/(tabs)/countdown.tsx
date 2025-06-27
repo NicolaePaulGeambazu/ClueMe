@@ -10,6 +10,7 @@ import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import firebaseService from '../../services/firebaseService';
+import { formatDate, formatTime } from '../../utils/dateUtils';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -60,23 +61,89 @@ export default function CountdownScreen({ navigation, route }: any) {
     try {
       setIsLoading(true);
       if (isAnonymous) {
+        console.log('⏰ User is anonymous, skipping countdown load');
         setCountdowns([]);
         return;
       }
 
-      const userCountdowns = await firebaseService.getCountdowns(user?.uid || '');
+      if (!user?.uid) {
+        console.log('⏰ No user UID available, skipping countdown load');
+        setCountdowns([]);
+        return;
+      }
+
+      console.log('⏰ Loading countdowns for user:', user.uid);
+      const userCountdowns = await firebaseService.getCountdowns(user.uid);
+      console.log('⏰ Successfully loaded countdowns:', userCountdowns.length);
       setCountdowns(userCountdowns);
-    } catch (error) {
-      console.error('Error loading countdowns:', error);
-      Alert.alert(t('common.error'), 'Failed to load countdowns');
+    } catch (error: any) {
+      console.error('❌ Error loading countdowns:', error);
+      
+      // Provide more specific error messages based on the error type
+      let errorMessage = 'Failed to load countdowns';
+      let errorTitle = 'Countdown Loading Error';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'You don\'t have permission to access countdowns. Please try signing out and back in.';
+        errorTitle = 'Permission Denied';
+      } else if (error.code === 'unauthenticated') {
+        errorMessage = 'You need to be signed in to access countdowns. Please sign in again.';
+        errorTitle = 'Authentication Required';
+      } else if (error.message && error.message.includes('Firebase permission denied')) {
+        errorMessage = 'Unable to access countdowns due to permission issues. Please try refreshing or signing out and back in.';
+        errorTitle = 'Access Denied';
+      } else if (error.message && error.message.includes('network')) {
+        errorMessage = 'Network error while loading countdowns. Please check your connection and try again.';
+        errorTitle = 'Network Error';
+      } else {
+        errorMessage = `Failed to load countdowns: ${error.message || 'Unknown error'}. Please try refreshing.`;
+      }
+      
+      Alert.alert(errorTitle, errorMessage, [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Retry', 
+          onPress: () => {
+            console.log('⏰ Retrying countdown load...');
+            setTimeout(() => loadCountdowns(), 1000); // Retry after 1 second
+          }
+        }
+      ]);
+      
+      // Set empty array to show empty state
+      setCountdowns([]);
     } finally {
       setIsLoading(false);
     }
   }, [user?.uid, isAnonymous, t]);
 
+  // Set up real-time listener for countdowns
   useEffect(() => {
-    loadCountdowns();
-  }, [loadCountdowns]);
+    if (isAnonymous || !user?.uid) {
+      setCountdowns([]);
+      return;
+    }
+
+    console.log('⏰ Setting up countdowns listener for user:', user.uid);
+    const unsubscribe = firebaseService.onUserCountdownsChange(user.uid, (updatedCountdowns) => {
+      console.log('⏰ Countdowns updated via real-time listener:', updatedCountdowns.length);
+      setCountdowns(updatedCountdowns);
+      setIsLoading(false);
+    });
+
+    // Cleanup listener on unmount or user change
+    return () => {
+      console.log('⏰ Cleaning up countdowns listener');
+      unsubscribe();
+    };
+  }, [user?.uid, isAnonymous]);
+
+  // Initial load for non-anonymous users
+  useEffect(() => {
+    if (!isAnonymous && user?.uid) {
+      loadCountdowns();
+    }
+  }, [loadCountdowns, user?.uid, isAnonymous]);
 
   // Timer effect for active countdowns
   useEffect(() => {
@@ -191,9 +258,7 @@ export default function CountdownScreen({ navigation, route }: any) {
           updatedAt: new Date(),
         };
         await firebaseService.updateCountdown(updatedCountdown);
-        setCountdowns(prev => prev.map(c => 
-          c.id === editingCountdown.id ? updatedCountdown : c
-        ));
+        console.log('✅ Countdown updated successfully:', updatedCountdown.id);
         setEditingCountdown(null);
       } else {
         // Add new countdown
@@ -206,7 +271,7 @@ export default function CountdownScreen({ navigation, route }: any) {
           color: colors.primary,
         };
         await firebaseService.createCountdown(newCountdown);
-        setCountdowns(prev => [...prev, newCountdown]);
+        console.log('✅ Countdown created successfully:', newCountdown.id);
       }
 
       setShowAddModal(false);
@@ -216,9 +281,38 @@ export default function CountdownScreen({ navigation, route }: any) {
         targetDate: '',
         targetTime: '',
       });
-    } catch (error) {
-      console.error('Error saving countdown:', error);
-      Alert.alert(t('common.error'), 'Failed to save countdown');
+    } catch (error: any) {
+      console.error('❌ Error saving countdown:', error);
+      
+      let errorMessage = 'Failed to save countdown';
+      let errorTitle = 'Save Error';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'You don\'t have permission to save countdowns. Please try signing out and back in.';
+        errorTitle = 'Permission Denied';
+      } else if (error.code === 'unauthenticated') {
+        errorMessage = 'You need to be signed in to save countdowns. Please sign in again.';
+        errorTitle = 'Authentication Required';
+      } else if (error.message && error.message.includes('Firebase permission denied')) {
+        errorMessage = 'Unable to save countdown due to permission issues. Please try refreshing or signing out and back in.';
+        errorTitle = 'Access Denied';
+      } else if (error.message && error.message.includes('network')) {
+        errorMessage = 'Network error while saving countdown. Please check your connection and try again.';
+        errorTitle = 'Network Error';
+      } else {
+        errorMessage = `Failed to save countdown: ${error.message || 'Unknown error'}. Please try again.`;
+      }
+      
+      Alert.alert(errorTitle, errorMessage, [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Retry', 
+          onPress: () => {
+            console.log('⏰ Retrying countdown save...');
+            setTimeout(() => handleSaveCountdown(), 1000); // Retry after 1 second
+          }
+        }
+      ]);
     }
   };
 
@@ -229,25 +323,16 @@ export default function CountdownScreen({ navigation, route }: any) {
     return 'Good Evening';
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDateLocal = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return formatDate(date);
   };
 
-  const formatTime = (timeString: string) => {
+  const formatTimeLocal = (timeString: string) => {
     const [hours, minutes] = timeString.split(':');
     const date = new Date();
     date.setHours(parseInt(hours), parseInt(minutes));
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
-    });
+    return formatTime(date);
   };
 
   const handleLoginSuccess = () => {
@@ -357,8 +442,8 @@ export default function CountdownScreen({ navigation, route }: any) {
                       <View style={styles.countdownMeta}>
                         <Calendar size={14} color={colors.textSecondary} />
                         <Text style={styles.countdownMetaText}>
-                          {formatDate(countdown.targetDate)}
-                          {countdown.targetTime && ` at ${formatTime(countdown.targetTime)}`}
+                          {formatDateLocal(countdown.targetDate)}
+                          {countdown.targetTime && ` at ${formatTimeLocal(countdown.targetTime)}`}
                         </Text>
                       </View>
                     </View>

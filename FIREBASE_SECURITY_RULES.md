@@ -36,10 +36,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
+    // Family members - allow authenticated users to read/write (simplified for development)
     match /familyMembers/{memberId} {
       allow read, write: if request.auth != null;
     }
     
+    // Family activities - allow authenticated users to read/write (simplified for development)
     match /familyActivities/{activityId} {
       allow read, write: if request.auth != null;
     }
@@ -61,23 +63,6 @@ service cloud.firestore {
   }
 }
 ```
-
-## How to Apply These Rules
-
-1. **Go to Firebase Console**: https://console.firebase.google.com
-2. **Select your project**
-3. **Go to Firestore Database** → **Rules** tab
-4. **Replace the existing rules** with the enhanced development rules above
-5. **Click "Publish"**
-
-## Why These Rules Work
-
-- ✅ **Proper Security**: Each collection has specific rules
-- ✅ **Development Friendly**: Allows all authenticated users to access family and list features
-- ✅ **User Isolation**: Users can only access their own reminders and countdowns
-- ✅ **Family Sharing**: Allows family creation and management
-- ✅ **List Management**: Allows list creation and sharing within families
-- ✅ **Task Type Sharing**: Users can read all task types but only modify their own
 
 ## Simple Development Rules (Fallback - Allows All Authenticated Access)
 
@@ -140,6 +125,7 @@ service cloud.firestore {
         resource.data.ownerId == request.auth.uid;
     }
     
+    // Family members - users can read/write if they are a member of that family
     match /familyMembers/{memberId} {
       allow read: if request.auth != null && 
         resource.data.familyId == familyId &&
@@ -150,6 +136,7 @@ service cloud.firestore {
          resource.data.createdBy == request.auth.uid);
     }
     
+    // Family activities - users can read/write if they are a member of that family
     match /familyActivities/{activityId} {
       allow read: if request.auth != null && 
         resource.data.familyId == familyId &&
@@ -181,6 +168,24 @@ service cloud.firestore {
   }
 }
 ```
+
+## How to Apply These Rules
+
+1. **Go to Firebase Console**: https://console.firebase.google.com
+2. **Select your project**
+3. **Go to Firestore Database** → **Rules** tab
+4. **Replace the existing rules** with the enhanced development rules above
+5. **Click "Publish"**
+
+## Why These Rules Work
+
+- ✅ **Proper Security**: Each collection has specific rules
+- ✅ **Development Friendly**: Allows all authenticated users to access family and list features
+- ✅ **User Isolation**: Users can only access their own reminders and countdowns
+- ✅ **Family Sharing**: Allows family creation and management
+- ✅ **Family Membership**: Users can access their current family regardless of ownership
+- ✅ **List Management**: Allows list creation and sharing within families
+- ✅ **Task Type Sharing**: Users can read all task types but only modify their own
 
 ## Automatic Family Creation
 

@@ -11,6 +11,7 @@ import { Colors } from '../../constants/Colors'
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
 import { TimelineGrid } from '../../components/Planner/TimelineGrid';
 import { TimeBlock } from '../../components/Planner/TimeBlock';
+import { formatDate } from '../../utils/dateUtils';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -76,8 +77,8 @@ export default function PlannerScreen({ navigation }: any) {
     return 'Good Evening';
   };
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB');
+  const formatDateLocal = (date: Date) => {
+    return formatDate(date);
   };
 
   const getWeekDates = () => {
@@ -124,8 +125,8 @@ export default function PlannerScreen({ navigation }: any) {
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.dateTitle}>
               {viewMode === 'daily' 
-                ? formatDate(currentDate)
-                : `${formatDate(getWeekDates()[0])} - ${formatDate(getWeekDates()[6])}`
+                ? formatDateLocal(currentDate)
+                : `${formatDateLocal(getWeekDates()[0])} - ${formatDateLocal(getWeekDates()[6])}`
               }
             </Text>
           </View>
@@ -207,7 +208,7 @@ export default function PlannerScreen({ navigation }: any) {
             {getWeekDates().map((date, index) => (
               <View key={index} style={styles.weekDay}>
                 <Text style={styles.weekDayHeader}>
-                  {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                  {formatDateLocal(date)}
                 </Text>
                 <Text style={styles.weekDayDate}>
                   {date.getDate()}

@@ -106,7 +106,7 @@ export default function ListsScreen({ navigation }: any) {
   };
 
   const handleListPress = (list: UserList) => {
-    navigation.navigate('ListDetail', { list });
+    navigation.navigate('ListDetail', { listId: list.id });
   };
 
   const handleCreateList = async () => {

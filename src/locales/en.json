@@ -1,5 +1,7 @@
 {
   "add": {
+    "selectedDate": "Selected Date",
+    "selectedTime": "Selected Time",
     "title": "New Reminder",
     "titlePlaceholder": "What do you need to remember?",
     "type": "Type",
@@ -14,13 +16,62 @@
     "unassigned": "Unassigned",
     "favorite": "Mark as favorite",
     "notifications": "Enable notifications",
+    "notificationTiming": "Notification Timing",
+    "notificationTimingHelp": "Tap + to add when you want to be notified",
     "recurring": "Make recurring",
     "save": "Save",
     "saving": "Saving...",
     "selectDate": "Select date",
     "selectTime": "Select time",
+    "clear": "Clear Form",
+    "clearFormTitle": "Clear Form",
+    "clearFormMessage": "Are you sure you want to clear all form data? This action cannot be undone.",
     "anonymousBanner": "You're using the app anonymously. Sign in to sync your reminders across devices.",
     "signIn": "Sign In",
+    "recurringOptions": {
+      "title": "Repeat Options",
+      "pattern": "Repeat Pattern",
+      "customInterval": "Custom Interval",
+      "intervalPlaceholder": "Enter number of days",
+      "days": "days",
+      "quickOptions": "Quick options:",
+      "smartNudge": "Smart Nudge",
+      "patterns": {
+        "daily": "Daily",
+        "dailyDescription": "Every day",
+        "weekdays": "Weekdays", 
+        "weekdaysDescription": "Monday to Friday",
+        "weekly": "Weekly",
+        "weeklyDescription": "Every week",
+        "monthly": "Monthly",
+        "monthlyDescription": "Every month",
+        "yearly": "Yearly",
+        "yearlyDescription": "Every year",
+        "firstMonday": "First Monday",
+        "firstMondayDescription": "First Monday of each month",
+        "lastFriday": "Last Friday",
+        "lastFridayDescription": "Last Friday of each month",
+        "custom": "Custom",
+        "customDescription": "Set custom interval"
+      },
+      "intervals": {
+        "1day": "1 day",
+        "2days": "2 days", 
+        "3days": "3 days",
+        "1week": "1 week",
+        "2weeks": "2 weeks",
+        "1month": "1 month",
+        "3months": "3 months",
+        "1year": "1 year"
+      },
+      "smartNudges": {
+        "daily": "If missed today, suggest tomorrow",
+        "weekdays": "If missed on Friday, suggest next Monday",
+        "weekly": "If missed this week, suggest next week",
+        "monthly": "If missed this month, suggest next month",
+        "custom": "Smart nudges enabled for custom patterns"
+      }
+    },
     "error": {
       "titleRequired": "Please enter a title for your reminder",
       "authRequired": "Please sign in to create reminders",
@@ -197,7 +248,11 @@
     "success": "Success",
     "retry": "Retry",
     "save": "Save",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "clear": "Clear",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "unknown": "Unknown"
   },
   "taskTypes": {
     "task": "Task",

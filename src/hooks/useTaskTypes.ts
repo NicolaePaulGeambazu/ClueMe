@@ -48,15 +48,22 @@ export const useTaskTypes = () => {
         setUseFallback(false);
         
         // Deduplicate task types by name to prevent duplicate keys
-        const uniqueTypes = types.reduce((acc: TaskType[], current) => {
-          const exists = acc.find(type => type.name === current.name);
-          if (!exists) {
-            acc.push(current);
+        const seen = new Set<string>();
+        const duplicates = new Set<string>();
+        const uniqueTypes: TaskType[] = [];
+        
+        for (const current of types) {
+          if (seen.has(current.name)) {
+            duplicates.add(current.name);
           } else {
-            console.warn(`⚠️ Duplicate task type found: ${current.name}, skipping...`);
+            seen.add(current.name);
+            uniqueTypes.push(current);
           }
-          return acc;
-        }, []);
+        }
+        
+        if (duplicates.size > 0) {
+          console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
+        }
         
         console.log(`✅ Deduplicated to ${uniqueTypes.length} unique task types`);
         setTaskTypes(uniqueTypes);
@@ -242,15 +249,22 @@ export const useTaskTypes = () => {
       console.log('📡 Task types updated via listener:', types.length);
       if (types.length > 0) {
         // Deduplicate task types by name to prevent duplicate keys
-        const uniqueTypes = types.reduce((acc: TaskType[], current) => {
-          const exists = acc.find(type => type.name === current.name);
-          if (!exists) {
-            acc.push(current);
+        const seen = new Set<string>();
+        const duplicates = new Set<string>();
+        const uniqueTypes: TaskType[] = [];
+        
+        for (const current of types) {
+          if (seen.has(current.name)) {
+            duplicates.add(current.name);
           } else {
-            console.warn(`⚠️ Duplicate task type found in listener: ${current.name}, skipping...`);
+            seen.add(current.name);
+            uniqueTypes.push(current);
           }
-          return acc;
-        }, []);
+        }
+        
+        if (duplicates.size > 0) {
+          console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
+        }
         
         console.log(`✅ Deduplicated listener data to ${uniqueTypes.length} unique task types`);
         setTaskTypes(uniqueTypes);

@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Missing Information', 'Please enter both email and password');
+      Alert.alert('Missing Information', 'Please enter both your email address and password to sign in.');
       return;
     }
 
@@ -33,26 +33,60 @@ export default function LoginScreen({ navigation }: any) {
     } catch (error: any) {
       console.error('Login error:', error);
       
-      let errorMessage = 'Failed to sign in. Please try again.';
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      let errorTitle = 'Login Failed';
       
-      // Handle specific Firebase auth errors
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = 'No account found with this email address.';
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = 'Incorrect password. Please try again.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.code === 'auth/too-many-requests') {
-        errorMessage = 'Too many failed attempts. Please try again later.';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection.';
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = 'This account has been disabled.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password sign-in is not enabled.';
+      // Handle specific Firebase auth errors with more descriptive messages
+      switch (error.code) {
+        case 'auth/user-not-found':
+          errorMessage = 'No account found with this email address.\n\nPlease check your email or create a new account.';
+          errorTitle = 'Account Not Found';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'The password you entered is incorrect.\n\nPlease check your password and try again.';
+          errorTitle = 'Incorrect Password';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.\n\nExample: user@example.com';
+          errorTitle = 'Invalid Email';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many failed login attempts.\n\nPlease wait a few minutes before trying again.';
+          errorTitle = 'Too Many Attempts';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Unable to connect to the server.\n\nPlease check your internet connection and try again.';
+          errorTitle = 'Connection Error';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled.\n\nPlease contact support for assistance.';
+          errorTitle = 'Account Disabled';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password sign-in is not enabled for this app.\n\nPlease contact support.';
+          errorTitle = 'Sign-in Disabled';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password.\n\nPlease check your credentials and try again.';
+          errorTitle = 'Invalid Credentials';
+          break;
+        case 'auth/user-token-expired':
+          errorMessage = 'Your session has expired.\n\nPlease sign in again.';
+          errorTitle = 'Session Expired';
+          break;
+        case 'auth/requires-recent-login':
+          errorMessage = 'For security reasons, please sign in again.';
+          errorTitle = 'Re-authentication Required';
+          break;
+        default:
+          // For unknown errors, provide a more helpful message
+          if (error.message) {
+            errorMessage = `Login failed: ${error.message}\n\nPlease try again or contact support if the problem persists.`;
+          }
+          break;
       }
       
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }

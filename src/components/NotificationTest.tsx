@@ -15,6 +15,7 @@ import { Fonts, FontSizes } from '../constants/Fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFamily } from '../hooks/useFamily';
 import { useTranslation } from 'react-i18next';
+import { notificationService } from '../services/notificationService';
 
 export const NotificationTest: React.FC = () => {
   const { theme } = useTheme();
@@ -286,6 +287,27 @@ export const NotificationTest: React.FC = () => {
     }
   };
 
+  const handleTestBackgroundChecking = async () => {
+    try {
+      setIsSending(true);
+      console.log('🧪 Testing background reminder checking...');
+      
+      // This will trigger the background checking manually
+      await notificationService.checkAndNotifyOverdueReminders();
+      await notificationService.checkAndNotifyUpcomingReminders();
+      
+      Alert.alert(
+        t('common.success'), 
+        'Background reminder checking completed! Check console for details.'
+      );
+    } catch (error) {
+      console.error('Background checking test error:', error);
+      Alert.alert(t('common.error'), 'Failed to test background checking');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -379,6 +401,16 @@ export const NotificationTest: React.FC = () => {
         >
           <Text style={styles.buttonText}>
             {isSending ? t('notifications.sending') : t('notifications.testTaskReminder')}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, !isEnabled && styles.buttonDisabled]}
+          onPress={handleTestBackgroundChecking}
+          disabled={!isEnabled || isSending}
+        >
+          <Text style={styles.buttonText}>
+            {isSending ? t('notifications.sending') : 'Test Background Checking'}
           </Text>
         </TouchableOpacity>
       </View>

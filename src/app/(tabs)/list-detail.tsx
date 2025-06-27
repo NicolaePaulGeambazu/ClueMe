@@ -12,24 +12,9 @@ export default function ListDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user } = useAuth();
-  const { list: initialList } = route.params;
+  const { listId } = route.params;
   
-  // Convert Date objects from route params to proper Date instances
-  const [list, setList] = useState<UserList>(() => {
-    if (initialList) {
-      return {
-        ...initialList,
-        createdAt: initialList.createdAt instanceof Date ? initialList.createdAt : new Date(initialList.createdAt),
-        updatedAt: initialList.updatedAt instanceof Date ? initialList.updatedAt : new Date(initialList.updatedAt),
-        items: initialList.items?.map((item: any) => ({
-          ...item,
-          createdAt: item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt),
-          updatedAt: item.updatedAt instanceof Date ? item.updatedAt : new Date(item.updatedAt),
-        })) || [],
-      };
-    }
-    return initialList;
-  });
+  const [list, setList] = useState<UserList | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
@@ -41,12 +26,12 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
   // Load list details
   const loadListDetails = useCallback(async () => {
-    if (!list.id) return;
+    if (!listId) return;
 
     setIsLoading(true);
     try {
       console.log('🔄 Loading list details...');
-      const listDetails = await listService.getListById(list.id);
+      const listDetails = await listService.getListById(listId);
       if (listDetails) {
         setList(listDetails);
       }
@@ -56,7 +41,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
     } finally {
       setIsLoading(false);
     }
-  }, [list.id]);
+  }, [listId]);
 
   // Load list details on mount
   useEffect(() => {
@@ -65,10 +50,10 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
   // Set up real-time listener for this specific list
   useEffect(() => {
-    if (!list.id) return;
+    if (!listId) return;
 
     console.log('👂 Setting up list detail listener...');
-    const unsubscribe = listService.onListChange(list.id, (updatedList) => {
+    const unsubscribe = listService.onListChange(listId, (updatedList) => {
       console.log('📡 List updated via listener:', updatedList.name);
       setList(updatedList);
     });
@@ -77,7 +62,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       console.log('🔇 Cleaning up list detail listener...');
       unsubscribe();
     };
-  }, [list.id]);
+  }, [listId]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -111,9 +96,11 @@ export default function ListDetailScreen({ navigation, route }: any) {
   };
 
   const handleToggleItem = async (item: ListItem) => {
+    if (!list) return;
+    
     try {
       console.log('🔄 Toggling item completion...', { itemId: item.id, currentCompleted: item.completed });
-      await listService.updateListItem(list.id, item.id, {
+      await listService.updateListItem(listId, item.id, {
         completed: !item.completed,
       });
       console.log('✅ Item toggled successfully');
@@ -124,14 +111,14 @@ export default function ListDetailScreen({ navigation, route }: any) {
   };
 
   const handleAddItem = async () => {
-    if (!newItemTitle.trim()) {
+    if (!list || !newItemTitle.trim()) {
       Alert.alert('Error', 'Please enter an item title');
       return;
     }
 
     try {
       console.log('🔄 Adding new item...');
-      await listService.addListItem(list.id, {
+      await listService.addListItem(listId, {
         title: newItemTitle.trim(),
         description: newItemDescription.trim() || undefined,
         completed: false,
@@ -164,7 +151,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
     try {
       console.log('🔄 Updating item...');
-      await listService.updateListItem(list.id, editingItem.id, {
+      await listService.updateListItem(listId, editingItem.id, {
         title: newItemTitle.trim(),
         description: newItemDescription.trim() || undefined,
       });
@@ -192,7 +179,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
           onPress: async () => {
             try {
               console.log('🔄 Deleting item...');
-              await listService.deleteListItem(list.id, item.id);
+              await listService.deleteListItem(listId, item.id);
               console.log('✅ Item deleted successfully');
             } catch (error) {
               console.error('❌ Error deleting item:', error);
@@ -205,6 +192,8 @@ export default function ListDetailScreen({ navigation, route }: any) {
   };
 
   const renderItem = (item: ListItem, index: number) => {
+    if (!list) return null;
+    
     const IconComponent = getFormatIcon(list.format);
     
     return (
@@ -277,7 +266,54 @@ export default function ListDetailScreen({ navigation, route }: any) {
     );
   };
 
-  const sortedItems = [...list.items].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sortedItems = list ? [...list.items].sort((a, b) => a.sortOrder - b.sortOrder) : [];
+
+  // Show loading state if list is not loaded yet
+  if (!list && isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <ArrowLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.listTitle}>Loading...</Text>
+          </View>
+        </View>
+        <View style={styles.loadingState}>
+          <Text style={styles.loadingText}>Loading list...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show error state if list failed to load
+  if (!list && !isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <ArrowLeft size={24} color={colors.text} />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.listTitle}>List Not Found</Text>
+          </View>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>List not found</Text>
+          <Text style={styles.emptyDescription}>
+            The list you're looking for doesn't exist or you don't have permission to view it.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -290,9 +326,9 @@ export default function ListDetailScreen({ navigation, route }: any) {
         </TouchableOpacity>
         
         <View style={styles.headerContent}>
-          <Text style={styles.listTitle}>{list.name}</Text>
-          {list.description && (
-            <Text style={styles.listDescription}>{list.description}</Text>
+          <Text style={styles.listTitle}>{list!.name}</Text>
+          {list!.description && (
+            <Text style={styles.listDescription}>{list!.description}</Text>
           )}
         </View>
         
@@ -319,15 +355,15 @@ export default function ListDetailScreen({ navigation, route }: any) {
         <View style={styles.listInfo}>
           <View style={styles.formatInfo}>
             {(() => {
-              const IconComponent = getFormatIcon(list.format);
+              const IconComponent = getFormatIcon(list!.format);
               return <IconComponent size={20} color={colors.primary} />;
             })()}
-            <Text style={styles.formatText}>{getFormatLabel(list.format)}</Text>
+            <Text style={styles.formatText}>{getFormatLabel(list!.format)}</Text>
           </View>
           
           <View style={styles.statsInfo}>
             <Text style={styles.statsText}>
-              {list.items.filter(item => item.completed).length} of {list.items.length} completed
+              {list!.items.filter(item => item.completed).length} of {list!.items.length} completed
             </Text>
           </View>
         </View>
@@ -444,7 +480,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -477,7 +513,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -500,13 +536,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
   },
   itemsList: {
-    gap: 12,
-    paddingVertical: 16,
+    gap: 8,
+    paddingVertical: 8,
   },
   itemCard: {
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -515,7 +551,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
   itemLeft: {
-    marginRight: 12,
+    marginRight: 8,
   },
   numberBadge: {
     width: 32,

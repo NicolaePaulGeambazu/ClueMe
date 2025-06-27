@@ -1,40 +1,30 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Trash2, RotateCcw, AlertTriangle, Clock, User, Star, CheckCircle } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { formatDate } from '../../utils/dateUtils';
+import { reminderService, Reminder } from '../../services/firebaseService';
 
-interface DeletedReminder {
-  id: string;
-  title: string;
-  description?: string;
-  type: 'task' | 'bill' | 'med' | 'event' | 'note';
-  priority: 'low' | 'medium' | 'high';
-  dueDate?: string;
-  dueTime?: string;
-  location?: string;
-  completed: boolean;
-  isFavorite: boolean;
-  tags: string[];
-  userId: string;
-  assignedTo?: string;
-  deletedAt: string;
-  originalId: string;
+interface DeletedReminder extends Reminder {
+  deletedAt: Date;
 }
 
 export default function TrashScreen() {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
   
   const [deletedReminders, setDeletedReminders] = useState<DeletedReminder[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -46,44 +36,12 @@ export default function TrashScreen() {
   }, []);
 
   const loadDeletedReminders = async () => {
+    if (!user?.uid) return;
+    
     try {
       setIsLoading(true);
-      // Mock data - in real app, fetch from Firebase with deletedAt filter
-      const mockDeletedReminders: DeletedReminder[] = [
-        {
-          id: 'deleted_1',
-          originalId: 'reminder_1',
-          title: 'Pay electricity bill',
-          description: 'Due on the 15th of this month',
-          type: 'bill',
-          priority: 'high',
-          dueDate: '2024-01-15',
-          dueTime: '09:00',
-          completed: false,
-          isFavorite: true,
-          tags: ['bills', 'utilities'],
-          userId: user?.uid || '',
-          deletedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-        },
-        {
-          id: 'deleted_2',
-          originalId: 'reminder_2',
-          title: 'Team meeting',
-          description: 'Weekly standup with development team',
-          type: 'event',
-          priority: 'medium',
-          dueDate: '2024-01-10',
-          dueTime: '10:00',
-          completed: true,
-          isFavorite: false,
-          tags: ['work', 'meeting'],
-          userId: user?.uid || '',
-          assignedTo: 'John Doe',
-          deletedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-        },
-      ];
-      
-      setDeletedReminders(mockDeletedReminders);
+      const deletedReminders = await reminderService.getDeletedReminders(user.uid);
+      setDeletedReminders(deletedReminders as DeletedReminder[]);
     } catch (error) {
       console.error('Error loading deleted reminders:', error);
       Alert.alert('Error', 'Failed to load deleted reminders');
@@ -101,7 +59,7 @@ export default function TrashScreen() {
   const handleRestore = async (reminderId: string) => {
     const restoreAction = async () => {
       try {
-        // In real app, restore from Firebase
+        await reminderService.restoreReminder(reminderId);
         setDeletedReminders(prev => prev.filter(r => r.id !== reminderId));
         Alert.alert('Success', 'Reminder restored successfully');
       } catch (error) {
@@ -124,7 +82,7 @@ export default function TrashScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // In real app, permanently delete from Firebase
+              await reminderService.permanentDeleteReminder(reminderId);
               setDeletedReminders(prev => prev.filter(r => r.id !== reminderId));
               Alert.alert('Success', 'Reminder permanently deleted');
             } catch (error) {
@@ -149,6 +107,7 @@ export default function TrashScreen() {
           text: 'Restore',
           onPress: async () => {
             try {
+              await Promise.all(selectedItems.map(id => reminderService.restoreReminder(id)));
               setDeletedReminders(prev => prev.filter(r => !selectedItems.includes(r.id)));
               setSelectedItems([]);
               setIsSelectionMode(false);
@@ -176,6 +135,7 @@ export default function TrashScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              await Promise.all(selectedItems.map(id => reminderService.permanentDeleteReminder(id)));
               setDeletedReminders(prev => prev.filter(r => !selectedItems.includes(r.id)));
               setSelectedItems([]);
               setIsSelectionMode(false);
@@ -198,16 +158,15 @@ export default function TrashScreen() {
     );
   };
 
-  const formatDeletedDate = (deletedAt: string) => {
-    const deletedDate = new Date(deletedAt);
+  const formatDeletedDate = (deletedAt: Date) => {
     const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.floor((now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diffInDays === 0) return 'Today';
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return deletedDate.toLocaleDateString('en-GB');
+    return formatDate(deletedAt);
   };
 
   const getTypeColor = (type: string) => {

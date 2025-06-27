@@ -9,6 +9,7 @@ import { useReminders } from '../../hooks/useReminders';
 import { Colors } from '../../constants/Colors';
 import { filterReminders, sortReminders } from '../../utils/reminderUtils';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { formatDate, formatTimeOnly } from '../../utils/dateUtils';
 
 interface RemindersScreenProps {
   navigation: any;
@@ -312,7 +313,7 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
               <View style={styles.reminderMetaItem}>
                 <Timer size={14} color={colors.textSecondary} />
                 <Text style={[styles.reminderMetaText, { color: colors.textSecondary }]}>
-                  {reminder.dueDate}{reminder.dueTime ? ` ${reminder.dueTime}` : ''}
+                  {formatDate(reminder.dueDate)}{reminder.dueTime ? ` ${formatTimeOnly(reminder.dueTime)}` : ''}
                 </Text>
               </View>
             )}

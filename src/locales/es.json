@@ -1,5 +1,7 @@
 {
   "add": {
+    "selectedDate": "Fecha Seleccionada",
+    "selectedTime": "Hora Seleccionada",
     "title": "Nuevo Recordatorio",
     "titlePlaceholder": "¿Qué necesitas recordar?",
     "type": "Tipo",
@@ -11,6 +13,7 @@
     "tagPlaceholder": "Agregar una etiqueta",
     "assignTo": "Asignar A (Opcional)",
     "assignToPlaceholder": "Asignar a miembro de la familia",
+    "unassigned": "Sin asignar",
     "favorite": "Marcar como favorito",
     "notifications": "Habilitar notificaciones",
     "recurring": "Hacer recurrente",
@@ -18,12 +21,59 @@
     "saving": "Guardando...",
     "selectDate": "Seleccionar fecha",
     "selectTime": "Seleccionar hora",
+    "clear": "Limpiar Formulario",
+    "clearFormTitle": "Limpiar Formulario",
+    "clearFormMessage": "¿Estás seguro de que quieres limpiar todos los datos del formulario? Esta acción no se puede deshacer.",
     "anonymousBanner": "Estás usando la aplicación de forma anónima. Inicia sesión para sincronizar tus recordatorios en todos los dispositivos.",
     "signIn": "Iniciar Sesión",
+    "recurringOptions": {
+      "title": "Opciones de Repetición",
+      "pattern": "Patrón de Repetición",
+      "customInterval": "Intervalo Personalizado",
+      "intervalPlaceholder": "Ingresa el número de días",
+      "days": "días",
+      "quickOptions": "Opciones rápidas:",
+      "smartNudge": "Sugerencia Inteligente",
+      "patterns": {
+        "daily": "Diario",
+        "dailyDescription": "Todos los días",
+        "weekdays": "Días Laborables",
+        "weekdaysDescription": "Lunes a viernes",
+        "weekly": "Semanal",
+        "weeklyDescription": "Cada semana",
+        "monthly": "Mensual",
+        "monthlyDescription": "Cada mes",
+        "yearly": "Anual",
+        "yearlyDescription": "Cada año",
+        "firstMonday": "Primer Lunes",
+        "firstMondayDescription": "Primer lunes de cada mes",
+        "lastFriday": "Último Viernes",
+        "lastFridayDescription": "Último viernes de cada mes",
+        "custom": "Personalizado",
+        "customDescription": "Establecer intervalo personalizado"
+      },
+      "intervals": {
+        "1day": "1 día",
+        "2days": "2 días",
+        "3days": "3 días",
+        "1week": "1 semana",
+        "2weeks": "2 semanas",
+        "1month": "1 mes",
+        "3months": "3 meses",
+        "1year": "1 año"
+      },
+      "smartNudges": {
+        "daily": "Si se pierde hoy, sugerir mañana",
+        "weekdays": "Si se pierde el viernes, sugerir el próximo lunes",
+        "weekly": "Si se pierde esta semana, sugerir la próxima semana",
+        "monthly": "Si se pierde este mes, sugerir el próximo mes",
+        "custom": "Sugerencias inteligentes habilitadas para patrones personalizados"
+      }
+    },
     "error": {
       "titleRequired": "Por favor ingresa un título para tu recordatorio",
       "authRequired": "Por favor inicia sesión para crear recordatorios",
-      "createFailed": "Error al crear recordatorio. Por favor inténtalo de nuevo.",
+      "createFailed": "Error al crear el recordatorio. Por favor inténtalo de nuevo.",
       "success": "¡Recordatorio creado exitosamente!"
     }
   },
@@ -196,7 +246,11 @@
     "success": "Éxito",
     "retry": "Reintentar",
     "save": "Guardar",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "clear": "Limpiar",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "unknown": "Desconocido"
   },
   "taskTypes": {
     "task": "Tarea",

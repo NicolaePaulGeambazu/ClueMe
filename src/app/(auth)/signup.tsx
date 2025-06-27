@@ -21,23 +21,23 @@ export default function SignupScreen({ navigation }: any) {
 
   const validateForm = () => {
     if (!name.trim()) {
-      Alert.alert('Missing Information', 'Please enter your name');
+      Alert.alert('Missing Information', 'Please enter your full name to continue.');
       return false;
     }
     if (!email.trim()) {
-      Alert.alert('Missing Information', 'Please enter your email address');
+      Alert.alert('Missing Information', 'Please enter your email address to create your account.');
       return false;
     }
     if (!password.trim()) {
-      Alert.alert('Missing Information', 'Please enter a password');
+      Alert.alert('Missing Information', 'Please create a password for your account.');
       return false;
     }
     if (password.length < 6) {
-      Alert.alert('Weak Password', 'Password must be at least 6 characters long');
+      Alert.alert('Password Too Short', 'Your password must be at least 6 characters long for security.');
       return false;
     }
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'Passwords do not match');
+      Alert.alert('Passwords Don\'t Match', 'The passwords you entered do not match.\n\nPlease make sure both passwords are identical.');
       return false;
     }
     return true;
@@ -56,22 +56,56 @@ export default function SignupScreen({ navigation }: any) {
       navigation.replace('MainTabs');
     } catch (error: any) {
       console.error('Signup error:', error);
-      let errorMessage = 'Failed to create account. Please try again.';
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      let errorTitle = 'Signup Failed';
       
-      // Handle specific Firebase auth errors
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'An account with this email already exists.';
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = 'Please enter a valid email address.';
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = 'Password is too weak. Please choose a stronger password.';
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = 'Network error. Please check your connection.';
-      } else if (error.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Email/password sign-up is not enabled.';
+      // Handle specific Firebase auth errors with more descriptive messages
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'An account with this email address already exists.\n\nPlease sign in instead or use a different email address.';
+          errorTitle = 'Email Already Exists';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Please enter a valid email address.\n\nExample: user@example.com';
+          errorTitle = 'Invalid Email';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Your password is too weak.\n\nPlease choose a password that is at least 6 characters long and includes a mix of letters, numbers, and symbols.';
+          errorTitle = 'Weak Password';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = 'Unable to connect to the server.\n\nPlease check your internet connection and try again.';
+          errorTitle = 'Connection Error';
+          break;
+        case 'auth/operation-not-allowed':
+          errorMessage = 'Email/password sign-up is not enabled for this app.\n\nPlease contact support for assistance.';
+          errorTitle = 'Sign-up Disabled';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid email or password format.\n\nPlease check your information and try again.';
+          errorTitle = 'Invalid Information';
+          break;
+        case 'auth/too-many-requests':
+          errorMessage = 'Too many signup attempts.\n\nPlease wait a few minutes before trying again.';
+          errorTitle = 'Too Many Attempts';
+          break;
+        case 'auth/user-disabled':
+          errorMessage = 'This account has been disabled.\n\nPlease contact support for assistance.';
+          errorTitle = 'Account Disabled';
+          break;
+        case 'auth/email-change-needs-verification':
+          errorMessage = 'Email verification is required.\n\nPlease check your email and verify your account.';
+          errorTitle = 'Email Verification Required';
+          break;
+        default:
+          // For unknown errors, provide a more helpful message
+          if (error.message) {
+            errorMessage = `Account creation failed: ${error.message}\n\nPlease try again or contact support if the problem persists.`;
+          }
+          break;
       }
       
-      Alert.alert('Signup Failed', errorMessage);
+      Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
     }

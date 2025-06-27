@@ -31,10 +31,18 @@ export interface Reminder {
   location?: string;
   isFavorite?: boolean;
   isRecurring?: boolean;
+  repeatPattern?: string;
+  customInterval?: number;
   hasNotification?: boolean;
+  notificationTimings?: Array<{
+    type: 'exact' | 'before' | 'after';
+    value: number;
+    label: string;
+  }>;
   assignedTo?: string;
   tags?: string[];
   completed?: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -303,11 +311,24 @@ const getFirestoreInstance = () => {
 };
 
 // Helper function to convert Firestore Timestamp to Date
-const convertTimestamp = (timestamp: FirebaseFirestoreTypes.Timestamp | Date): Date => {
+const convertTimestamp = (timestamp: FirebaseFirestoreTypes.Timestamp | Date | string | undefined | null): Date => {
+  if (!timestamp) {
+    return new Date();
+  }
   if (timestamp instanceof Date) {
     return timestamp;
   }
-  return timestamp.toDate();
+  if (timestamp && typeof timestamp === 'object' && 'toDate' in timestamp && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate();
+  }
+  if (typeof timestamp === 'string') {
+    // Handle string dates from Firebase
+    const parsedDate = new Date(timestamp);
+    if (!isNaN(parsedDate.getTime())) {
+      return parsedDate;
+    }
+  }
+  return new Date();
 };
 
 // User Profile Operations
@@ -456,11 +477,14 @@ export const reminderService = {
     }
   },
 
-  // Get user reminders
+  // Get user reminders (excluding soft-deleted ones)
   async getUserReminders(userId: string, limit: number = 50): Promise<Reminder[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
       const remindersRef = firestoreInstance.collection('reminders');
+      
+      // Get all reminders for the user, then filter out deleted ones in memory
+      // This handles cases where deletedAt field doesn't exist yet
       const query = remindersRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc')
@@ -471,69 +495,49 @@ export const reminderService = {
       
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
+        // Skip reminders that have been soft-deleted
+        if (data.deletedAt) return;
+        
         reminders.push({
+          id: doc.id,
           ...data,
           createdAt: convertTimestamp(data.createdAt),
           updatedAt: convertTimestamp(data.updatedAt),
           dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+          deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
         });
       });
       
       return reminders;
     } catch (error) {
       console.error('Error getting user reminders:', error);
-      // If it's a collection doesn't exist error, return empty array
-      if (error instanceof Error && error.message && error.message.includes('collection')) {
-        console.log('Collection does not exist yet, returning empty array');
-        return [];
-      }
       return [];
     }
   },
 
-  // Update a reminder
-  async updateReminder(reminderId: string, updates: Partial<Reminder>): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      await reminderRef.update({
-        ...updates,
-        updatedAt: new Date(),
-      });
-    } catch (error) {
-      console.error('Error updating reminder:', error);
-      throw error;
-    }
-  },
-
-  // Delete a reminder
-  async deleteReminder(reminderId: string): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      await reminderRef.delete();
-    } catch (error) {
-      console.error('Error deleting reminder:', error);
-      throw error;
-    }
-  },
-
-  // Get reminders by type
-  async getRemindersByType(userId: string, type: Reminder['type']): Promise<Reminder[]> {
+  // Get deleted reminders for trash
+  async getDeletedReminders(userId: string, limit: number = 50): Promise<Reminder[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
       const remindersRef = firestoreInstance.collection('reminders');
+      
+      // Get all reminders for the user, then filter for deleted ones in memory
+      // This handles cases where deletedAt field doesn't exist yet
       const query = remindersRef
         .where('userId', '==', userId)
-        .where('type', '==', type)
-        .orderBy('createdAt', 'desc');
+        .orderBy('createdAt', 'desc')
+        .limit(limit * 2); // Get more to account for filtering
       
       const snapshot = await query.get();
       const reminders: Reminder[] = [];
       
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
+        // Only include reminders that have been soft-deleted
+        if (!data.deletedAt) return;
+        
         reminders.push({
+          id: doc.id,
           ...data,
           createdAt: convertTimestamp(data.createdAt),
           updatedAt: convertTimestamp(data.updatedAt),
@@ -541,39 +545,12 @@ export const reminderService = {
         });
       });
       
-      return reminders;
+      // Sort by deletedAt and limit
+      return reminders
+        .sort((a, b) => b.deletedAt!.getTime() - a.deletedAt!.getTime())
+        .slice(0, limit);
     } catch (error) {
-      console.error('Error getting reminders by type:', error);
-      return [];
-    }
-  },
-
-  // Get reminders by priority
-  async getRemindersByPriority(userId: string, priority: Reminder['priority']): Promise<Reminder[]> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const remindersRef = firestoreInstance.collection('reminders');
-      const query = remindersRef
-        .where('userId', '==', userId)
-        .where('priority', '==', priority)
-        .orderBy('createdAt', 'desc');
-      
-      const snapshot = await query.get();
-      const reminders: Reminder[] = [];
-      
-      snapshot.forEach((doc) => {
-        const data = doc.data() as any;
-        reminders.push({
-          ...data,
-          createdAt: convertTimestamp(data.createdAt),
-          updatedAt: convertTimestamp(data.updatedAt),
-          dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
-        });
-      });
-      
-      return reminders;
-    } catch (error) {
-      console.error('Error getting reminders by priority:', error);
+      console.error('Error getting deleted reminders:', error);
       return [];
     }
   },
@@ -592,10 +569,12 @@ export const reminderService = {
         snapshot.forEach((doc) => {
           const data = doc.data() as any;
           reminders.push({
+            id: doc.id,
             ...data,
             createdAt: convertTimestamp(data.createdAt),
             updatedAt: convertTimestamp(data.updatedAt),
             dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+            deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
           });
         });
         callback(reminders);
@@ -644,6 +623,132 @@ export const reminderService = {
       );
 
     return unsubscribe;
+  },
+
+  // Update a reminder
+  async updateReminder(reminderId: string, updates: Partial<Reminder>): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      await reminderRef.update({
+        ...updates,
+        updatedAt: new Date(),
+      });
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+      throw error;
+    }
+  },
+
+  // Soft delete a reminder (move to trash)
+  async deleteReminder(reminderId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      await reminderRef.update({
+        status: 'cancelled',
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      });
+      console.log('✅ Reminder moved to trash');
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      throw error;
+    }
+  },
+
+  // Restore a deleted reminder
+  async restoreReminder(reminderId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      await reminderRef.update({
+        deletedAt: null,
+        status: 'pending',
+        updatedAt: new Date(),
+      });
+      console.log('✅ Reminder restored successfully');
+    } catch (error) {
+      console.error('Error restoring reminder:', error);
+      throw error;
+    }
+  },
+
+  // Permanently delete a reminder (hard delete)
+  async permanentDeleteReminder(reminderId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      await reminderRef.delete();
+      console.log('✅ Reminder permanently deleted');
+    } catch (error) {
+      console.error('Error permanently deleting reminder:', error);
+      throw error;
+    }
+  },
+
+  // Get reminders by type
+  async getRemindersByType(userId: string, type: Reminder['type']): Promise<Reminder[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const remindersRef = firestoreInstance.collection('reminders');
+      const query = remindersRef
+        .where('userId', '==', userId)
+        .where('type', '==', type)
+        .orderBy('createdAt', 'desc');
+      
+      const snapshot = await query.get();
+      const reminders: Reminder[] = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data() as any;
+        reminders.push({
+          id: doc.id,
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+          dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+          deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+        });
+      });
+      
+      return reminders;
+    } catch (error) {
+      console.error('Error getting reminders by type:', error);
+      return [];
+    }
+  },
+
+  // Get reminders by priority
+  async getRemindersByPriority(userId: string, priority: Reminder['priority']): Promise<Reminder[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const remindersRef = firestoreInstance.collection('reminders');
+      const query = remindersRef
+        .where('userId', '==', userId)
+        .where('priority', '==', priority)
+        .orderBy('createdAt', 'desc');
+      
+      const snapshot = await query.get();
+      const reminders: Reminder[] = [];
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data() as any;
+        reminders.push({
+          id: doc.id,
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+          dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+          deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+        });
+      });
+      
+      return reminders;
+    } catch (error) {
+      console.error('Error getting reminders by priority:', error);
+      return [];
+    }
   },
 };
 
@@ -1122,10 +1227,10 @@ export const familyService = {
       
       console.log('👨‍👩‍👧‍👦 Getting user family...');
       
+      // Get all family memberships for this user
       const memberQuery = await firestoreInstance
         .collection('familyMembers')
         .where('userId', '==', userId)
-        .limit(1)
         .get();
 
       if (memberQuery.empty) {
@@ -1133,8 +1238,18 @@ export const familyService = {
         return null;
       }
 
-      const memberDoc = memberQuery.docs[0];
-      const familyId = memberDoc.data().familyId;
+      // Sort by joinedAt descending and get the most recent
+      const members = memberQuery.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as any)).sort((a, b) => {
+        const aDate = convertTimestamp(a.joinedAt);
+        const bDate = convertTimestamp(b.joinedAt);
+        return bDate.getTime() - aDate.getTime();
+      });
+
+      const mostRecentMember = members[0];
+      const familyId = mostRecentMember.familyId;
 
       const familyDoc = await firestoreInstance
         .collection('families')
@@ -1655,7 +1770,21 @@ export const familyService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       
-      console.log('⏰ Getting countdowns...');
+      console.log('⏰ Getting countdowns for user:', userId);
+      
+      // Check if user is authenticated
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.warn('⚠️ No authenticated user found when getting countdowns');
+        throw new Error('User not authenticated');
+      }
+      
+      if (currentUser.uid !== userId) {
+        console.warn('⚠️ User ID mismatch when getting countdowns:', { 
+          currentUserId: currentUser.uid, 
+          requestedUserId: userId 
+        });
+      }
       
       const querySnapshot = await firestoreInstance
         .collection('countdowns')
@@ -1679,9 +1808,31 @@ export const familyService = {
         });
       });
 
-      console.log(`✅ Retrieved ${countdowns.length} countdowns`);
+      console.log(`✅ Retrieved ${countdowns.length} countdowns for user ${userId}`);
       return countdowns;
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Error in getCountdowns:', error);
+      
+      // Log specific error details for debugging
+      if (error.code) {
+        console.error('❌ Firebase error code:', error.code);
+      }
+      if (error.message) {
+        console.error('❌ Error message:', error.message);
+      }
+      
+      // Handle specific Firebase errors
+      if (error.code === 'permission-denied') {
+        console.error('❌ Permission denied when accessing countdowns');
+        throw new Error('Firebase permission denied. Cannot get countdowns.');
+      } else if (error.code === 'unauthenticated') {
+        console.error('❌ User not authenticated when accessing countdowns');
+        throw new Error('User not authenticated. Please sign in again.');
+      } else if (error.code === 'not-found') {
+        console.error('❌ Countdowns collection not found');
+        throw new Error('Countdowns collection not found.');
+      }
+      
       if (handleFirebaseError(error, 'getCountdowns')) {
         throw error;
       }
@@ -1719,6 +1870,44 @@ export const familyService = {
         throw error;
       }
       throw new Error('Firebase permission denied. Cannot delete countdown.');
+    }
+  },
+
+  // Real-time listener for user countdowns
+  onUserCountdownsChange(userId: string, callback: (countdowns: Countdown[]) => void) {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const countdownsRef = firestoreInstance.collection('countdowns');
+      const query = countdownsRef
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc');
+      
+      return query.onSnapshot((snapshot) => {
+        const countdowns: Countdown[] = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          countdowns.push({
+            id: doc.id,
+            userId: data.userId,
+            title: data.title,
+            description: data.description,
+            targetDate: data.targetDate,
+            targetTime: data.targetTime,
+            color: data.color,
+            createdAt: convertTimestamp(data.createdAt),
+            updatedAt: convertTimestamp(data.updatedAt),
+          });
+        });
+        console.log(`⏰ Countdowns updated via listener: ${countdowns.length} countdowns`);
+        callback(countdowns);
+      }, (error) => {
+        console.error('❌ Error in countdowns listener:', error);
+        callback([]);
+      });
+    } catch (error) {
+      console.error('❌ Error setting up countdowns listener:', error);
+      // Return a no-op unsubscribe function
+      return () => {};
     }
   },
 };
@@ -2184,6 +2373,7 @@ const firebaseService = {
   getCountdowns: familyService.getCountdowns,
   updateCountdown: familyService.updateCountdown,
   deleteCountdown: familyService.deleteCountdown,
+  onUserCountdownsChange: familyService.onUserCountdownsChange,
   
   // List services
   ...listService,

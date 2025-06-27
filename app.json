@@ -1,4 +1,5 @@
 {
-  "name": "ClearCue2",
-  "displayName": "ClearCue"
+  "name": "ClearCue",
+  "displayName": "ClearCue",
+  "icon": "./src/assets/images/icon.png"
 }

@@ -30,6 +30,7 @@ import CategoriesScreen from './src/app/(tabs)/categories';
 import FamilyScreen from './src/app/(tabs)/family';
 import ListsScreen from './src/app/(tabs)/lists';
 import ListDetailScreen from './src/app/(tabs)/list-detail';
+import RemindersDetailScreen from './src/app/(tabs)/reminders-detail';
 import CountdownScreen from './src/app/(tabs)/countdown';
 
 const Stack = createNativeStackNavigator();
@@ -45,6 +46,11 @@ function AppContent() {
         console.log('🔔 Initializing push notifications...');
         await notificationService.initialize();
         console.log('✅ Push notifications initialized successfully');
+        
+        // Start background reminder checking
+        console.log('🔄 Starting background reminder checking...');
+        notificationService.startBackgroundReminderChecking();
+        console.log('✅ Background reminder checking started');
       } catch (error) {
         console.error('❌ Failed to initialize push notifications:', error);
       }
@@ -140,7 +146,14 @@ function AppContent() {
           name="ListDetail" 
           component={ListDetailScreen} 
           options={{ 
-            title: 'List Detail',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="RemindersDetail" 
+          component={RemindersDetailScreen} 
+          options={{ 
+            title: 'Reminders',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, Platform, Switch, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Check, Calendar, Clock, MapPin, Tag, Star, X, CheckSquare, CreditCard, Pill, FileText, User, Bell, Repeat, ChevronRight, Save } from 'lucide-react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
@@ -12,10 +13,13 @@ import { useTaskTypes } from '../../hooks/useTaskTypes';
 import { useFamily } from '../../contexts/FamilyContext';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { RepeatOptions } from '../../components/ReminderForm/RepeatOptions';
+import { NotificationTimingSelector } from '../../components/ReminderForm/NotificationTimingSelector';
 import { Colors } from '../../constants/Colors'
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { Plus } from 'lucide-react-native';
 import { FALLBACK_TASK_TYPES } from '../../constants/config';
+import { NotificationTiming } from '../../services/notificationService';
+import { formatDate, formatTime } from '../../utils/dateUtils';
 
 export default function AddScreen({ navigation, route }: any) {
   const { t } = useTranslation();
@@ -23,7 +27,7 @@ export default function AddScreen({ navigation, route }: any) {
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  const { createReminder, useFirebase } = useReminders();
+  const { createReminder } = useReminders();
   const { taskTypes, isLoading: taskTypesLoading, seedDefaultTaskTypes } = useTaskTypes();
   const { familyMembers } = useFamily();
   
@@ -38,6 +42,9 @@ export default function AddScreen({ navigation, route }: any) {
     tags: [] as string[],
     isFavorite: false,
     hasNotification: true,
+    notificationTimings: [
+      { type: 'before', value: 15, label: '15 minutes before' }
+    ] as NotificationTiming[],
     isRecurring: false,
     assignedTo: '' as string,
   });
@@ -45,8 +52,8 @@ export default function AddScreen({ navigation, route }: any) {
   const [newTag, setNewTag] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [pickerMode, setPickerMode] = useState<'date' | 'time' | 'datetime'>('date');
+  const [pickerValue, setPickerValue] = useState<Date>(new Date());
   const [repeatPattern, setRepeatPattern] = useState('daily');
   const [customInterval, setCustomInterval] = useState(1);
   
@@ -62,6 +69,24 @@ export default function AddScreen({ navigation, route }: any) {
     }
   }, [route.params]);
 
+  // Reset form when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      // Reset picker states when component unmounts
+      setShowDatePicker(false);
+      setShowTimePicker(false);
+    };
+  }, []);
+
+  // Reset picker states when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Ensure picker states are reset when screen comes into focus
+      setShowDatePicker(false);
+      setShowTimePicker(false);
+    }, [])
+  );
+
   // Seed default task types if none exist
   useEffect(() => {
     if (taskTypes.length === 0 && !taskTypesLoading && user?.uid) {
@@ -70,12 +95,53 @@ export default function AddScreen({ navigation, route }: any) {
     }
   }, [taskTypes.length, taskTypesLoading, user?.uid, seedDefaultTaskTypes]);
 
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
+  const formatDateLocal = (date: Date) => {
+    return formatDate(date);
   };
 
-  const formatTime = (date: Date) => {
-    return date.toTimeString().slice(0, 5);
+  const formatTimeLocal = (date: Date) => {
+    return formatTime(date);
+  };
+
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return formatDate(date);
+  };
+
+  const formatDisplayTime = (timeString: string) => {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return formatTime(date);
+  };
+
+  // Reset form to initial state
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      type: 'task' as string,
+      priority: 'medium' as 'low' | 'medium' | 'high',
+      dueDate: '',
+      dueTime: '',
+      location: '',
+      tags: [] as string[],
+      isFavorite: false,
+      hasNotification: true,
+      notificationTimings: [
+        { type: 'before', value: 15, label: '15 minutes before' }
+      ] as NotificationTiming[],
+      isRecurring: false,
+      assignedTo: '' as string,
+    });
+    setNewTag('');
+    setPickerValue(new Date());
+    setRepeatPattern('daily');
+    setCustomInterval(1);
+    setShowDatePicker(false);
+    setShowTimePicker(false);
   };
 
   const handleSave = async () => {
@@ -97,21 +163,23 @@ export default function AddScreen({ navigation, route }: any) {
         description: formData.description.trim(),
         type: formData.type as any,
         priority: formData.priority,
-        dueDate: formData.dueDate || undefined,
+        status: 'pending',
+        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
         dueTime: formData.dueTime || undefined,
         location: formData.location.trim() || undefined,
         tags: formData.tags,
         isFavorite: formData.isFavorite,
         hasNotification: formData.hasNotification,
+        notificationTimings: formData.notificationTimings,
         isRecurring: formData.isRecurring,
         assignedTo: formData.assignedTo || undefined,
         completed: false,
         userId: user.uid,
       });
 
-      Alert.alert(t('common.success'), t('add.error.success'), [
-        { text: t('common.ok'), onPress: () => navigation.navigate('index') }
-      ]);
+      // Auto-reset form on success
+      resetForm();
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error creating reminder:', error);
       Alert.alert(t('common.error'), t('add.error.createFailed'));
@@ -177,33 +245,82 @@ export default function AddScreen({ navigation, route }: any) {
     }
   }
 
+  // Handler to open the native picker
+  const openPicker = (mode: 'date' | 'time' | 'datetime') => {
+    setPickerMode(mode);
+    
+    // Set picker value based on current form data or current date
+    let initialValue = new Date();
+    
+    if (mode === 'date' && formData.dueDate) {
+      initialValue = new Date(formData.dueDate);
+    } else if (mode === 'time' && formData.dueTime) {
+      const [hours, minutes] = formData.dueTime.split(':');
+      initialValue = new Date();
+      initialValue.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    } else if (mode === 'datetime') {
+      if (formData.dueDate) {
+        initialValue = new Date(formData.dueDate);
+        if (formData.dueTime) {
+          const [hours, minutes] = formData.dueTime.split(':');
+          initialValue.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        }
+      }
+    }
+    
+    setPickerValue(initialValue);
+    
+    if (mode === 'date') {
+      setShowDatePicker(true);
+    } else {
+      setShowTimePicker(true);
+    }
+  };
+
   if (showLoginPrompt) {
     return <LoginPrompt visible={showLoginPrompt} onClose={() => setShowLoginPrompt(false)} onSuccess={handleLoginSuccess} />;
   }
 
+  // Disable the floating save button if required fields are not filled
+  const isSaveDisabled =
+    isLoading ||
+    !formData.title.trim() ||
+    !formData.dueDate;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => {
+          resetForm();
+          setShowDatePicker(false);
+          setShowTimePicker(false);
+          navigation.goBack();
+        }} style={styles.backButton}>
           <X size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('add.title')}</Text>
+        
         <TouchableOpacity 
-          onPress={handleSaveWithAuth} 
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
-          disabled={isLoading}
+          onPress={() => {
+            Alert.alert(
+              t('add.clearFormTitle'),
+              t('add.clearFormMessage'),
+              [
+                { text: t('common.cancel'), style: 'cancel' },
+                { 
+                  text: t('common.clear'), 
+                  style: 'destructive',
+                  onPress: resetForm 
+                }
+              ]
+            );
+          }} 
+          style={styles.clearButton}
         >
-          {isLoading ? (
-            <Text style={[styles.saveButtonText, styles.saveButtonTextDisabled]}>
-              {t('add.saving')}
-            </Text>
-          ) : (
-            <Save size={20} color={colors.primary} strokeWidth={2} />
-          )}
+          <Text style={styles.clearButtonText}>{t('add.clear')}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
         {isAnonymous && (
           <View style={styles.anonymousBanner}>
             <Text style={styles.anonymousText}>
@@ -289,22 +406,22 @@ export default function AddScreen({ navigation, route }: any) {
             <View style={styles.dateTimeRow}>
               <TouchableOpacity 
                 style={styles.inputContainer}
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => openPicker('date')}
               >
                 <Calendar size={20} color={colors.textSecondary} />
                 <Text style={[styles.input, !formData.dueDate && { color: colors.textTertiary }]}>
-                  {formData.dueDate || t('add.selectDate')}
+                  {formatDisplayDate(formData.dueDate) || t('add.selectDate')}
                 </Text>
                 <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
               
               <TouchableOpacity 
                 style={styles.inputContainer}
-                onPress={() => setShowTimePicker(true)}
+                onPress={() => openPicker('time')}
               >
                 <Clock size={20} color={colors.textSecondary} />
                 <Text style={[styles.input, !formData.dueTime && { color: colors.textTertiary }]}>
-                  {formData.dueTime || t('add.selectTime')}
+                  {formatDisplayTime(formData.dueTime) || t('add.selectTime')}
                 </Text>
                 <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -432,68 +549,119 @@ export default function AddScreen({ navigation, route }: any) {
           </View>
 
           <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <View style={styles.switchLabelContainer}>
-                <Bell size={20} color={colors.primary} />
-                <Text style={styles.switchLabel}>{t('add.notifications')}</Text>
-              </View>
-              <Switch
-                value={formData.hasNotification}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, hasNotification: value }))}
-                trackColor={{ false: colors.border, true: colors.primary + '40' }}
-                thumbColor={formData.hasNotification ? colors.primary : colors.textSecondary}
-              />
-            </View>
+            <NotificationTimingSelector
+              hasNotification={formData.hasNotification}
+              onNotificationChange={(value) => setFormData(prev => ({ ...prev, hasNotification: value }))}
+              notificationTimings={formData.notificationTimings}
+              onNotificationTimingsChange={(timings) => setFormData(prev => ({ ...prev, notificationTimings: timings }))}
+              colors={colors}
+            />
           </View>
 
           <View style={styles.section}>
-            <View style={styles.switchRow}>
-              <View style={styles.switchLabelContainer}>
-                <Repeat size={20} color={colors.secondary} />
-                <Text style={styles.switchLabel}>{t('add.recurring')}</Text>
-              </View>
-              <Switch
-                value={formData.isRecurring}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, isRecurring: value }))}
-                trackColor={{ false: colors.border, true: colors.secondary + '40' }}
-                thumbColor={formData.isRecurring ? colors.secondary : colors.textSecondary}
-              />
-            </View>
+            <RepeatOptions
+              isRecurring={formData.isRecurring}
+              onRecurringChange={(value) => setFormData(prev => ({ ...prev, isRecurring: value }))}
+              repeatPattern={repeatPattern}
+              onRepeatPatternChange={setRepeatPattern}
+              customInterval={customInterval}
+              onCustomIntervalChange={setCustomInterval}
+              colors={colors}
+            />
           </View>
         </View>
       </ScrollView>
 
-      {/* Date Picker Modal */}
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display="default"
-          onChange={(event, date) => {
-            setShowDatePicker(false);
-            if (date) {
-              setSelectedDate(date);
-              setFormData(prev => ({ ...prev, dueDate: formatDate(date) }));
-            }
-          }}
-        />
-      )}
+      {/* Floating Save Button */}
+      <View style={styles.floatingSaveContainer}>
+        <TouchableOpacity 
+          onPress={handleSaveWithAuth} 
+          style={[styles.floatingSaveButton, isSaveDisabled && styles.floatingSaveButtonDisabled]}
+          disabled={isSaveDisabled}
+        >
+          {isLoading ? (
+            <Text style={styles.floatingSaveButtonText}>
+              {t('add.saving')}
+            </Text>
+          ) : (
+            <>
+              <Save size={24} color="#FFFFFF" strokeWidth={2} />
+              <Text style={styles.floatingSaveButtonText}>{t('add.save')}</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
 
-      {/* Time Picker Modal */}
-      {showTimePicker && (
-        <DateTimePicker
-          value={selectedTime}
-          mode="time"
-          display="default"
-          onChange={(event, time) => {
-            setShowTimePicker(false);
-            if (time) {
-              setSelectedTime(time);
-              setFormData(prev => ({ ...prev, dueTime: formatTime(time) }));
-            }
-          }}
-        />
-      )}
+      {/* Native Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => setShowDatePicker(false)}
+        >
+          <TouchableOpacity 
+            style={styles.pickerContainer}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <DateTimePicker
+              value={pickerValue}
+              mode="date"
+              display="spinner"
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (event.type === 'set' && date) {
+                  setPickerValue(date);
+                  setFormData(prev => ({ ...prev, dueDate: date.toISOString().split('T')[0] }));
+                }
+              }}
+              locale="en-GB"
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Native Time Picker Modal */}
+      <Modal
+        visible={showTimePicker}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowTimePicker(false)}
+      >
+        <TouchableOpacity 
+          style={styles.pickerOverlay}
+          activeOpacity={1}
+          onPress={() => setShowTimePicker(false)}
+        >
+          <TouchableOpacity 
+            style={styles.pickerContainer}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <DateTimePicker
+              value={pickerValue}
+              mode="time"
+              display="spinner"
+              onChange={(event, date) => {
+                setShowTimePicker(false);
+                if (event.type === 'set' && date) {
+                  setPickerValue(date);
+                  const hours = date.getHours().toString().padStart(2, '0');
+                  const minutes = date.getMinutes().toString().padStart(2, '0');
+                  setFormData(prev => ({ ...prev, dueTime: `${hours}:${minutes}` }));
+                }
+              }}
+              locale="en-GB"
+              is24Hour={true}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -526,37 +694,23 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    fontFamily: Fonts.display.bold,
-    fontSize: 20,
-    color: colors.text,
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '20',
-    borderRadius: 20,
+  clearButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.error + '15',
     borderWidth: 1,
-    borderColor: colors.primary + '30',
-    gap: 6,
+    borderColor: colors.error + '30',
   },
-  saveButtonDisabled: {
-    backgroundColor: colors.borderLight,
-    borderColor: colors.border,
-  },
-  saveButtonText: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: 16,
-    color: colors.primary,
-  },
-  saveButtonTextDisabled: {
-    color: colors.textTertiary,
+  clearButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: colors.error,
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
+    paddingBottom: 100,
   },
   anonymousBanner: {
     backgroundColor: colors.primary + '15',
@@ -813,5 +967,56 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: Fonts.text.semibold,
     fontSize: 14,
     color: colors.primary,
+  },
+  floatingSaveContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 24,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingSaveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 24,
+    padding: 16,
+    gap: 8,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  floatingSaveButtonDisabled: {
+    backgroundColor: colors.borderLight,
+    shadowOpacity: 0,
+    elevation: 0,
+    opacity: 0.6,
+  },
+  floatingSaveButtonText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerContainer: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 24,
   },
 });

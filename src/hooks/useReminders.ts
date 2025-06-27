@@ -1,32 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { mockDataService, Reminder as MockReminder } from '../services/mockData';
 import { reminderService, Reminder as FirebaseReminder } from '../services/firebaseService';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from './useNotifications';
 import { useFamily } from './useFamily';
 
-// Convert between Firebase and Mock reminder types
-const convertToFirebaseReminder = (mockReminder: MockReminder): Omit<FirebaseReminder, 'id'> => ({
-  userId: mockReminder.userId,
-  title: mockReminder.title,
-  description: mockReminder.description,
-  type: mockReminder.type === 'bill' ? 'bill' : mockReminder.type === 'med' ? 'med' : mockReminder.type,
-  priority: mockReminder.priority,
-  status: mockReminder.completed ? 'completed' : 'pending',
-  dueDate: mockReminder.dueDate ? new Date(mockReminder.dueDate) : undefined,
-  dueTime: mockReminder.dueTime,
-  location: mockReminder.location,
-  isFavorite: mockReminder.isFavorite,
-  isRecurring: mockReminder.isRecurring,
-  hasNotification: mockReminder.hasNotification,
-  assignedTo: mockReminder.assignedTo,
-  tags: mockReminder.tags,
-  completed: mockReminder.completed,
-  createdAt: new Date(mockReminder.createdAt),
-  updatedAt: new Date(mockReminder.updatedAt),
-});
-
-const convertToMockReminder = (firebaseReminder: FirebaseReminder): MockReminder => ({
+// Convert Firebase reminder to a simpler format for the UI
+const convertToUIReminder = (firebaseReminder: FirebaseReminder) => ({
   id: firebaseReminder.id,
   userId: firebaseReminder.userId,
   title: firebaseReminder.title,
@@ -40,6 +19,7 @@ const convertToMockReminder = (firebaseReminder: FirebaseReminder): MockReminder
   isFavorite: firebaseReminder.isFavorite || false,
   isRecurring: firebaseReminder.isRecurring || false,
   hasNotification: firebaseReminder.hasNotification || false,
+  notificationTimings: firebaseReminder.notificationTimings,
   assignedTo: firebaseReminder.assignedTo || '',
   tags: firebaseReminder.tags || [],
   createdAt: firebaseReminder.createdAt.toISOString(),
@@ -50,10 +30,9 @@ export const useReminders = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { family } = useFamily();
   const { notifyTaskCreated, notifyTaskAssigned } = useNotifications();
-  const [reminders, setReminders] = useState<MockReminder[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useFirebase, setUseFirebase] = useState(true);
   const unsubscribeRef = useRef<null | (() => void)>(null);
 
   const loadReminders = useCallback(async () => {
@@ -63,80 +42,25 @@ export const useReminders = () => {
       setIsLoading(true);
       setError(null);
       
-      if (useFirebase) {
-        try {
-          const firebaseReminders = await reminderService.getUserReminders(user.uid);
-          const mockReminders = firebaseReminders.map(convertToMockReminder);
-          setReminders(mockReminders);
-          return;
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      const fetchedReminders = await mockDataService.getReminders(user.uid);
-      setReminders(fetchedReminders);
+      const firebaseReminders = await reminderService.getUserReminders(user.uid);
+      const uiReminders = firebaseReminders.map(convertToUIReminder);
+      setReminders(uiReminders);
     } catch (err) {
       setError('Failed to load reminders');
       console.error('Error loading reminders:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [user, authLoading, useFirebase]);
+  }, [user, authLoading]);
 
-  const createReminder = useCallback(async (reminderData: Omit<MockReminder, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const createReminder = useCallback(async (reminderData: Omit<FirebaseReminder, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error('User not authenticated');
     
     try {
-      if (useFirebase) {
-        try {
-          const firebaseReminderData = convertToFirebaseReminder({
-            ...reminderData,
-            id: '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-          
-          const id = await reminderService.createReminder(firebaseReminderData);
-          await loadReminders();
-          
-          // Send notifications if this is a family task with assigned members
-          if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
-            const taskNotificationData = {
-              taskId: id,
-              taskTitle: reminderData.title,
-              taskDescription: reminderData.description,
-              assignedBy: user.uid,
-              assignedByDisplayName: user.displayName || user.email || 'Family Member',
-              assignedTo: [reminderData.assignedTo], // Convert to array
-              dueDate: reminderData.dueDate,
-              priority: reminderData.priority,
-            };
-            
-            // Notify family about new task
-            await notifyTaskCreated(taskNotificationData);
-            
-            // Notify assigned member specifically
-            await notifyTaskAssigned(taskNotificationData);
-          }
-          
-          return id;
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      const id = await mockDataService.createReminder({
-        ...reminderData,
-        userId: user.uid,
-      });
+      const id = await reminderService.createReminder(reminderData);
       await loadReminders();
       
-      // Send notifications for mock data as well
+      // Send notifications if this is a family task with assigned members
       if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
         const taskNotificationData = {
           taskId: id,
@@ -145,7 +69,7 @@ export const useReminders = () => {
           assignedBy: user.uid,
           assignedByDisplayName: user.displayName || user.email || 'Family Member',
           assignedTo: [reminderData.assignedTo], // Convert to array
-          dueDate: reminderData.dueDate,
+          dueDate: reminderData.dueDate?.toISOString(),
           priority: reminderData.priority,
         };
         
@@ -161,222 +85,141 @@ export const useReminders = () => {
       setError('Failed to create reminder');
       throw err;
     }
-  }, [user, loadReminders, useFirebase, notifyTaskCreated, notifyTaskAssigned, family]);
+  }, [user, loadReminders, notifyTaskCreated, notifyTaskAssigned, family]);
 
-  const updateReminder = useCallback(async (id: string, updates: Partial<MockReminder>) => {
+  const updateReminder = useCallback(async (reminderId: string, updates: Partial<FirebaseReminder>) => {
+    if (!user) throw new Error('User not authenticated');
+    
     try {
-      if (useFirebase) {
-        try {
-          const firebaseUpdates: Partial<FirebaseReminder> = {};
-          if (updates.title) firebaseUpdates.title = updates.title;
-          if (updates.description !== undefined) firebaseUpdates.description = updates.description;
-          if (updates.type) firebaseUpdates.type = updates.type === 'bill' ? 'bill' : updates.type === 'med' ? 'med' : updates.type;
-          if (updates.priority) firebaseUpdates.priority = updates.priority;
-          if (updates.completed !== undefined) firebaseUpdates.status = updates.completed ? 'completed' : 'pending';
-          if (updates.dueDate) firebaseUpdates.dueDate = new Date(updates.dueDate);
-          if (updates.isFavorite !== undefined) firebaseUpdates.isFavorite = updates.isFavorite;
-          if (updates.tags) firebaseUpdates.tags = updates.tags;
-          
-          await reminderService.updateReminder(id, firebaseUpdates);
-          setReminders(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
-          return;
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      await mockDataService.updateReminder(id, updates);
-      setReminders(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+      await reminderService.updateReminder(reminderId, updates);
+      await loadReminders();
     } catch (err) {
       setError('Failed to update reminder');
       throw err;
     }
-  }, [useFirebase]);
+  }, [user, loadReminders]);
 
-  const deleteReminder = useCallback(async (id: string) => {
+  const deleteReminder = useCallback(async (reminderId: string) => {
+    if (!user) throw new Error('User not authenticated');
+    
     try {
-      if (useFirebase) {
-        try {
-          await reminderService.deleteReminder(id);
-          setReminders(prev => prev.filter(r => r.id !== id));
-          return;
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      await mockDataService.deleteReminder(id);
-      setReminders(prev => prev.filter(r => r.id !== id));
+      await reminderService.deleteReminder(reminderId);
+      await loadReminders();
     } catch (err) {
       setError('Failed to delete reminder');
       throw err;
     }
-  }, [useFirebase]);
+  }, [user, loadReminders]);
 
-  const toggleComplete = useCallback(async (id: string) => {
-    const reminder = reminders.find(r => r.id === id);
-    if (!reminder) return;
-
-    const newCompletedState = !reminder.completed;
-    await updateReminder(id, { completed: newCompletedState });
-  }, [reminders, updateReminder]);
-
-  const toggleFavorite = useCallback(async (id: string) => {
-    const reminder = reminders.find(r => r.id === id);
-    if (!reminder) return;
-
-    const newFavoriteState = !reminder.isFavorite;
-    await updateReminder(id, { isFavorite: newFavoriteState });
-  }, [reminders, updateReminder]);
-
-  const searchReminders = useCallback(async (searchTerm: string) => {
-    if (!user) return [];
+  const toggleReminderCompletion = useCallback(async (reminderId: string, completed: boolean) => {
+    if (!user) throw new Error('User not authenticated');
     
     try {
-      if (useFirebase) {
-        try {
-          // For now, search locally since Firebase doesn't have a search method
-          const firebaseReminders = await reminderService.getUserReminders(user.uid);
-          const mockReminders = firebaseReminders.map(convertToMockReminder);
-          const term = searchTerm.toLowerCase();
-          
-          return mockReminders.filter(reminder =>
-            reminder.title.toLowerCase().includes(term) ||
-            reminder.description?.toLowerCase().includes(term) ||
-            reminder.tags.some(tag => tag.toLowerCase().includes(term))
-          );
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      return await mockDataService.searchReminders(searchTerm, user.uid);
+      await reminderService.updateReminder(reminderId, {
+        status: completed ? 'completed' : 'pending',
+        completed: completed,
+      });
+      await loadReminders();
     } catch (err) {
-      console.error('Error searching reminders:', err);
-      return [];
+      setError('Failed to update reminder');
+      throw err;
     }
-  }, [user, useFirebase]);
+  }, [user, loadReminders]);
+
+  const toggleFavorite = useCallback(async (reminderId: string, isFavorite: boolean) => {
+    if (!user) throw new Error('User not authenticated');
+    
+    try {
+      await reminderService.updateReminder(reminderId, { isFavorite });
+      await loadReminders();
+    } catch (err) {
+      setError('Failed to update reminder');
+      throw err;
+    }
+  }, [user, loadReminders]);
+
+  // Set up real-time listener
+  useEffect(() => {
+    if (!user || authLoading) return;
+
+    try {
+      const unsubscribe = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
+        const uiReminders = firebaseReminders.map(convertToUIReminder);
+        setReminders(uiReminders);
+        setIsLoading(false);
+      });
+
+      unsubscribeRef.current = unsubscribe;
+
+      return () => {
+        if (unsubscribeRef.current) {
+          unsubscribeRef.current();
+        }
+      };
+    } catch (error) {
+      console.error('Error setting up reminders listener:', error);
+      // Fallback to manual loading
+      loadReminders();
+    }
+  }, [user, authLoading, loadReminders]);
+
+  // Load reminders when user changes
+  useEffect(() => {
+    if (user && !authLoading) {
+      loadReminders();
+    }
+  }, [user, authLoading, loadReminders]);
 
   const getRemindersByType = useCallback(async (type: string) => {
     if (!user) return [];
     
     try {
-      if (useFirebase) {
-        try {
-          const firebaseReminders = await reminderService.getRemindersByType(user.uid, type as any);
-          return firebaseReminders.map(convertToMockReminder);
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      return await mockDataService.getRemindersByType(type, user.uid);
+      const firebaseReminders = await reminderService.getRemindersByType(user.uid, type as any);
+      return firebaseReminders.map(convertToUIReminder);
     } catch (err) {
       console.error('Error getting reminders by type:', err);
       return [];
     }
-  }, [user, useFirebase]);
+  }, [user]);
+
+  const getRemindersByPriority = useCallback(async (priority: string) => {
+    if (!user) return [];
+    
+    try {
+      const firebaseReminders = await reminderService.getRemindersByPriority(user.uid, priority as any);
+      return firebaseReminders.map(convertToUIReminder);
+    } catch (err) {
+      console.error('Error getting reminders by priority:', err);
+      return [];
+    }
+  }, [user]);
 
   const getFavoriteReminders = useCallback(async () => {
     if (!user) return [];
     
     try {
-      if (useFirebase) {
-        try {
-          const firebaseReminders = await reminderService.getUserReminders(user.uid);
-          const mockReminders = firebaseReminders.map(convertToMockReminder);
-          return mockReminders.filter(r => r.isFavorite);
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      return await mockDataService.getFavoriteReminders(user.uid);
+      const firebaseReminders = await reminderService.getUserReminders(user.uid);
+      const uiReminders = firebaseReminders.map(convertToUIReminder);
+      return uiReminders.filter(r => r.isFavorite);
     } catch (err) {
       console.error('Error getting favorite reminders:', err);
       return [];
     }
-  }, [user, useFirebase]);
+  }, [user]);
 
   const getOverdueReminders = useCallback(async () => {
     if (!user) return [];
     
     try {
-      if (useFirebase) {
-        try {
-          const firebaseReminders = await reminderService.getUserReminders(user.uid);
-          const mockReminders = firebaseReminders.map(convertToMockReminder);
-          const today = new Date().toISOString().split('T')[0];
-          return mockReminders.filter(r => r.dueDate && r.dueDate < today && !r.completed);
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      return await mockDataService.getOverdueReminders(user.uid);
+      const firebaseReminders = await reminderService.getUserReminders(user.uid);
+      const uiReminders = firebaseReminders.map(convertToUIReminder);
+      const today = new Date().toISOString().split('T')[0];
+      return uiReminders.filter(r => r.dueDate && r.dueDate < today && !r.completed);
     } catch (err) {
       console.error('Error getting overdue reminders:', err);
       return [];
     }
-  }, [user, useFirebase]);
-
-  const getTodayReminders = useCallback(async () => {
-    if (!user) return [];
-    
-    try {
-      if (useFirebase) {
-        try {
-          const firebaseReminders = await reminderService.getUserReminders(user.uid);
-          const mockReminders = firebaseReminders.map(convertToMockReminder);
-          const today = new Date().toISOString().split('T')[0];
-          return mockReminders.filter(r => r.dueDate === today);
-        } catch (firebaseError) {
-          console.warn('Firebase failed, falling back to local storage:', firebaseError);
-          setUseFirebase(false);
-        }
-      }
-      
-      // Fallback to mock data
-      return await mockDataService.getTodayReminders(user.uid);
-    } catch (err) {
-      console.error('Error getting today reminders:', err);
-      return [];
-    }
-  }, [user, useFirebase]);
-
-  // Real-time Firestore listener
-  useEffect(() => {
-    if (!user || authLoading || !useFirebase) return;
-    setIsLoading(true);
-    setError(null);
-    // Subscribe to Firestore changes
-    unsubscribeRef.current = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
-      const mockReminders = firebaseReminders.map(convertToMockReminder);
-      setReminders(mockReminders);
-      setIsLoading(false);
-    });
-    return () => {
-      if (unsubscribeRef.current) unsubscribeRef.current();
-    };
-  }, [user, authLoading, useFirebase]);
-
-  useEffect(() => {
-    if (!authLoading) {
-      loadReminders();
-    }
-  }, [loadReminders, authLoading]);
+  }, [user]);
 
   return {
     reminders,
@@ -386,13 +229,12 @@ export const useReminders = () => {
     createReminder,
     updateReminder,
     deleteReminder,
-    toggleComplete,
+    toggleReminderCompletion,
     toggleFavorite,
-    searchReminders,
     getRemindersByType,
+    getRemindersByPriority,
     getFavoriteReminders,
     getOverdueReminders,
-    getTodayReminders,
-    useFirebase,
+    useFirebase: true,
   };
 };

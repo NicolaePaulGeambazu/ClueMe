@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { Calendar, Clock, Repeat, X, ChevronRight } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Fonts } from '../../constants/Fonts';
 
 interface RepeatOptionsProps {
@@ -16,63 +17,47 @@ interface RepeatOptionsProps {
 const REPEAT_PRESETS = [
   {
     id: 'daily',
-    label: 'Daily',
-    description: 'Every day',
     icon: '📅',
   },
   {
     id: 'weekdays',
-    label: 'Weekdays',
-    description: 'Monday to Friday',
     icon: '💼',
   },
   {
     id: 'weekly',
-    label: 'Weekly',
-    description: 'Every week',
     icon: '📆',
   },
   {
     id: 'monthly',
-    label: 'Monthly',
-    description: 'Every month',
     icon: '🗓️',
   },
   {
     id: 'yearly',
-    label: 'Yearly',
-    description: 'Every year',
     icon: '🎉',
   },
   {
     id: 'first_monday',
-    label: 'First Monday',
-    description: 'First Monday of each month',
     icon: '📋',
   },
   {
     id: 'last_friday',
-    label: 'Last Friday',
-    description: 'Last Friday of each month',
     icon: '📋',
   },
   {
     id: 'custom',
-    label: 'Custom',
-    description: 'Set custom interval',
     icon: '⚙️',
   },
 ];
 
 const INTERVAL_OPTIONS = [
-  { value: 1, label: '1 day' },
-  { value: 2, label: '2 days' },
-  { value: 3, label: '3 days' },
-  { value: 7, label: '1 week' },
-  { value: 14, label: '2 weeks' },
-  { value: 30, label: '1 month' },
-  { value: 90, label: '3 months' },
-  { value: 365, label: '1 year' },
+  { value: 1, key: '1day' },
+  { value: 2, key: '2days' },
+  { value: 3, key: '3days' },
+  { value: 7, key: '1week' },
+  { value: 14, key: '2weeks' },
+  { value: 30, key: '1month' },
+  { value: 90, key: '3months' },
+  { value: 365, key: '1year' },
 ];
 
 export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
@@ -84,6 +69,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   onCustomIntervalChange,
   colors
 }) => {
+  const { t } = useTranslation();
   const [showCustomInterval, setShowCustomInterval] = useState(false);
   const styles = createStyles(colors);
 
@@ -104,25 +90,17 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   };
 
   const getPatternDescription = (pattern: string) => {
-    const preset = REPEAT_PRESETS.find(p => p.id === pattern);
-    return preset ? preset.description : 'Custom interval';
+    const patternKey = pattern === 'first_monday' ? 'firstMonday' : 
+                      pattern === 'last_friday' ? 'lastFriday' : pattern;
+    return t(`add.recurringOptions.patterns.${patternKey}Description`);
   };
 
   const getSmartNudgeText = () => {
     if (!isRecurring) return null;
     
-    switch (repeatPattern) {
-      case 'daily':
-        return "If missed today, suggest tomorrow";
-      case 'weekdays':
-        return "If missed on Friday, suggest next Monday";
-      case 'weekly':
-        return "If missed this week, suggest next week";
-      case 'monthly':
-        return "If missed this month, suggest next month";
-      default:
-        return "Smart nudges enabled for custom patterns";
-    }
+    const patternKey = repeatPattern === 'first_monday' ? 'firstMonday' : 
+                      repeatPattern === 'last_friday' ? 'lastFriday' : repeatPattern;
+    return t(`add.recurringOptions.smartNudges.${patternKey}`);
   };
 
   return (
@@ -130,7 +108,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Repeat size={20} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.headerTitle}>Repeat Options</Text>
+          <Text style={styles.headerTitle}>{t('add.recurringOptions.title')}</Text>
         </View>
         <TouchableOpacity
           style={[styles.toggleButton, isRecurring && styles.toggleButtonActive]}
@@ -142,55 +120,59 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
 
       {isRecurring && (
         <View style={styles.content}>
-          <Text style={styles.sectionLabel}>Repeat Pattern</Text>
+          <Text style={styles.sectionLabel}>{t('add.recurringOptions.pattern')}</Text>
           
           <ScrollView 
             horizontal 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.presetsContainer}
           >
-            {REPEAT_PRESETS.map((preset) => (
-              <TouchableOpacity
-                key={preset.id}
-                style={[
-                  styles.presetOption,
-                  repeatPattern === preset.id && styles.presetOptionSelected
-                ]}
-                onPress={() => handlePatternSelect(preset.id)}
-              >
-                <Text style={styles.presetIcon}>{preset.icon}</Text>
-                <Text style={[
-                  styles.presetLabel,
-                  repeatPattern === preset.id && styles.presetLabelSelected
-                ]}>
-                  {preset.label}
-                </Text>
-                <Text style={[
-                  styles.presetDescription,
-                  repeatPattern === preset.id && styles.presetDescriptionSelected
-                ]}>
-                  {preset.description}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {REPEAT_PRESETS.map((preset) => {
+              const patternKey = preset.id === 'first_monday' ? 'firstMonday' : 
+                                preset.id === 'last_friday' ? 'lastFriday' : preset.id;
+              return (
+                <TouchableOpacity
+                  key={preset.id}
+                  style={[
+                    styles.presetOption,
+                    repeatPattern === preset.id && styles.presetOptionSelected
+                  ]}
+                  onPress={() => handlePatternSelect(preset.id)}
+                >
+                  <Text style={styles.presetIcon}>{preset.icon}</Text>
+                  <Text style={[
+                    styles.presetLabel,
+                    repeatPattern === preset.id && styles.presetLabelSelected
+                  ]}>
+                    {t(`add.recurringOptions.patterns.${patternKey}`)}
+                  </Text>
+                  <Text style={[
+                    styles.presetDescription,
+                    repeatPattern === preset.id && styles.presetDescriptionSelected
+                  ]}>
+                    {getPatternDescription(preset.id)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
 
           {showCustomInterval && (
             <View style={styles.customIntervalContainer}>
-              <Text style={styles.sectionLabel}>Custom Interval</Text>
+              <Text style={styles.sectionLabel}>{t('add.recurringOptions.customInterval')}</Text>
               <View style={styles.intervalInputContainer}>
                 <TextInput
                   style={styles.intervalInput}
-                  placeholder="Enter number of days"
+                  placeholder={t('add.recurringOptions.intervalPlaceholder')}
                   value={customInterval.toString()}
                   onChangeText={handleCustomIntervalChange}
                   keyboardType="numeric"
                   placeholderTextColor={colors.textTertiary}
                 />
-                <Text style={styles.intervalUnit}>days</Text>
+                <Text style={styles.intervalUnit}>{t('add.recurringOptions.days')}</Text>
               </View>
               
-              <Text style={styles.quickOptionsLabel}>Quick options:</Text>
+              <Text style={styles.quickOptionsLabel}>{t('add.recurringOptions.quickOptions')}</Text>
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
@@ -209,7 +191,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
                       styles.quickOptionText,
                       customInterval === option.value && styles.quickOptionTextSelected
                     ]}>
-                      {option.label}
+                      {t(`add.recurringOptions.intervals.${option.key}`)}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -217,17 +199,9 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
             </View>
           )}
 
-          {repeatPattern && !showCustomInterval && (
-            <View style={styles.selectedPattern}>
-              <Text style={styles.selectedPatternText}>
-                {getPatternDescription(repeatPattern)}
-              </Text>
-            </View>
-          )}
-
           {getSmartNudgeText() && (
             <View style={styles.smartNudgeContainer}>
-              <Clock size={16} color={colors.success} strokeWidth={2} />
+              <Text style={styles.smartNudgeIcon}>💡</Text>
               <Text style={styles.smartNudgeText}>{getSmartNudgeText()}</Text>
             </View>
           )}
@@ -381,19 +355,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   quickOptionTextSelected: {
     color: colors.primary,
   },
-  selectedPattern: {
-    backgroundColor: colors.success + '15',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.success + '30',
-  },
-  selectedPatternText: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.success,
-    textAlign: 'center',
-  },
   smartNudgeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -403,11 +364,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.success + '20',
   },
+  smartNudgeIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
   smartNudgeText: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.success,
-    marginLeft: 8,
     flex: 1,
   },
 }); 
