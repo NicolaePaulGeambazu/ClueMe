@@ -7,8 +7,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { listService, UserList, familyService } from '../../services/firebaseService';
+import { useTranslation } from 'react-i18next';
 
 export default function ListsScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user } = useAuth();
@@ -23,7 +25,7 @@ export default function ListsScreen({ navigation }: any) {
   const [selectedFormat, setSelectedFormat] = useState<'checkmark' | 'line' | 'number' | 'plain'>('checkmark');
   const [isPrivate, setIsPrivate] = useState(false);
   const [editingList, setEditingList] = useState<UserList | null>(null);
-  
+
   const styles = createStyles(colors);
 
   // Load lists
@@ -54,7 +56,7 @@ export default function ListsScreen({ navigation }: any) {
 
   // Set up real-time listener for lists
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {return;}
 
     console.log('👂 Setting up lists listener...');
     const unsubscribe = listService.onUserListsChange(user.uid, (userLists) => {
@@ -122,7 +124,7 @@ export default function ListsScreen({ navigation }: any) {
 
     try {
       console.log('🔄 Creating new list...');
-      
+
       // Get user's family if the list is not private
       let familyId: string | undefined;
       if (!isPrivate) {
@@ -142,7 +144,7 @@ export default function ListsScreen({ navigation }: any) {
           setIsPrivate(true);
         }
       }
-      
+
       await listService.createList({
         name: newListName.trim(),
         description: newListDescription.trim() || undefined,
@@ -152,7 +154,7 @@ export default function ListsScreen({ navigation }: any) {
         familyId: familyId || undefined,
         createdBy: user.uid,
       });
-      
+
       console.log('✅ List created successfully');
       setNewListName('');
       setNewListDescription('');
@@ -187,7 +189,7 @@ export default function ListsScreen({ navigation }: any) {
 
     try {
       console.log('🔄 Updating list...');
-      
+
       // Get user's family if the list is not private
       let familyId: string | undefined;
       if (!isPrivate) {
@@ -207,7 +209,7 @@ export default function ListsScreen({ navigation }: any) {
           setIsPrivate(true);
         }
       }
-      
+
       await listService.updateList(editingList.id, {
         name: newListName.trim(),
         description: newListDescription.trim() || undefined,
@@ -215,7 +217,7 @@ export default function ListsScreen({ navigation }: any) {
         isPrivate: isPrivate,
         familyId: familyId || undefined,
       });
-      
+
       console.log('✅ List updated successfully');
       setNewListName('');
       setNewListDescription('');
@@ -279,7 +281,7 @@ export default function ListsScreen({ navigation }: any) {
       <View style={styles.header}>
         <Text style={styles.title}>Lists</Text>
         <View style={styles.headerActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={() => setIsCreateModalVisible(true)}
           >
@@ -288,8 +290,8 @@ export default function ListsScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -313,7 +315,7 @@ export default function ListsScreen({ navigation }: any) {
           {filteredLists.map((list) => {
             const stats = getListStats(list);
             const FormatIcon = getFormatIcon(list.format);
-            
+
             return (
               <TouchableOpacity
                 key={list.id}
@@ -336,7 +338,7 @@ export default function ListsScreen({ navigation }: any) {
                     </View>
                   </View>
                   <View style={styles.listActions}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() => handleToggleFavorite(list)}
                     >
@@ -346,13 +348,13 @@ export default function ListsScreen({ navigation }: any) {
                     </TouchableOpacity>
                     {list.createdBy === user?.uid && (
                       <>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleEditList(list)}
                         >
                           <Edit size={16} color={colors.textSecondary} />
                         </TouchableOpacity>
-                        <TouchableOpacity 
+                        <TouchableOpacity
                           style={styles.actionButton}
                           onPress={() => handleDeleteList(list)}
                         >
@@ -362,12 +364,12 @@ export default function ListsScreen({ navigation }: any) {
                     )}
                   </View>
                 </View>
-                
+
                 <View style={styles.listContent}>
                   {list.description && (
                     <Text style={styles.listDescription}>{list.description}</Text>
                   )}
-                  
+
                   <View style={styles.listStats}>
                     <View style={styles.statItem}>
                       <Text style={styles.statNumber}>{stats.total}</Text>
@@ -379,7 +381,7 @@ export default function ListsScreen({ navigation }: any) {
                     </View>
                   </View>
                 </View>
-                
+
                 <View style={styles.listFooter}>
                   <ChevronRight size={14} color={colors.textSecondary} />
                 </View>
@@ -392,12 +394,12 @@ export default function ListsScreen({ navigation }: any) {
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No lists found</Text>
             <Text style={styles.emptyDescription}>
-              {searchQuery 
+              {searchQuery
                 ? `No lists match "${searchQuery}"`
                 : 'Create your first list to get started'
               }
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.createButton, { backgroundColor: colors.primary }]}
               onPress={() => setIsCreateModalVisible(true)}
             >
@@ -430,7 +432,7 @@ export default function ListsScreen({ navigation }: any) {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => {
                 setIsCreateModalVisible(false);
                 setEditingList(null);
@@ -445,7 +447,7 @@ export default function ListsScreen({ navigation }: any) {
             <Text style={styles.modalTitle}>
               {editingList ? 'Edit List' : 'Create List'}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={editingList ? handleUpdateList : handleCreateList}
             >
               <Text style={[styles.modalButton, { color: colors.primary }]}>
@@ -458,14 +460,14 @@ export default function ListsScreen({ navigation }: any) {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>List Name</Text>
               <TextInput
-                style={[styles.textInput, { 
+                style={[styles.textInput, {
                   borderColor: colors.border,
                   backgroundColor: colors.surface,
-                  color: colors.text 
+                  color: colors.text,
                 }]}
+                placeholder={t('forms.placeholders.enterListName')}
                 value={newListName}
                 onChangeText={setNewListName}
-                placeholder="Enter list name"
                 placeholderTextColor={colors.textSecondary}
                 autoFocus
               />
@@ -474,17 +476,17 @@ export default function ListsScreen({ navigation }: any) {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Description (Optional)</Text>
               <TextInput
-                style={[styles.textArea, { 
+                style={[styles.textArea, {
                   borderColor: colors.border,
                   backgroundColor: colors.surface,
-                  color: colors.text 
+                  color: colors.text,
                 }]}
+                placeholder={t('forms.placeholders.enterDescription')}
                 value={newListDescription}
                 onChangeText={setNewListDescription}
-                placeholder="Enter description"
-                placeholderTextColor={colors.textSecondary}
                 multiline
                 numberOfLines={3}
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
 
@@ -499,26 +501,26 @@ export default function ListsScreen({ navigation }: any) {
                 ].map((format) => {
                   const IconComponent = format.icon;
                   const isSelected = selectedFormat === format.value;
-                  
+
                   return (
                     <TouchableOpacity
                       key={format.value}
                       style={[
                         styles.formatOption,
-                        { 
+                        {
                           borderColor: isSelected ? colors.primary : colors.border,
                           backgroundColor: isSelected ? colors.primary + '15' : colors.surface,
-                        }
+                        },
                       ]}
                       onPress={() => setSelectedFormat(format.value as any)}
                     >
-                      <IconComponent 
-                        size={20} 
-                        color={isSelected ? colors.primary : colors.textSecondary} 
+                      <IconComponent
+                        size={20}
+                        color={isSelected ? colors.primary : colors.textSecondary}
                       />
                       <Text style={[
                         styles.formatOptionText,
-                        { color: isSelected ? colors.primary : colors.text }
+                        { color: isSelected ? colors.primary : colors.text },
                       ]}>
                         {format.label}
                       </Text>
@@ -534,16 +536,16 @@ export default function ListsScreen({ navigation }: any) {
                 <TouchableOpacity
                   style={[
                     styles.privacyOption,
-                    { 
+                    {
                       borderColor: !isPrivate ? colors.primary : colors.border,
                       backgroundColor: !isPrivate ? colors.primary + '15' : colors.surface,
-                    }
+                    },
                   ]}
                   onPress={() => setIsPrivate(false)}
                 >
                   <Text style={[
                     styles.privacyOptionText,
-                    { color: !isPrivate ? colors.primary : colors.text }
+                    { color: !isPrivate ? colors.primary : colors.text },
                   ]}>
                     Shared with Family
                   </Text>
@@ -551,24 +553,24 @@ export default function ListsScreen({ navigation }: any) {
                 <TouchableOpacity
                   style={[
                     styles.privacyOption,
-                    { 
+                    {
                       borderColor: isPrivate ? colors.primary : colors.border,
                       backgroundColor: isPrivate ? colors.primary + '15' : colors.surface,
-                    }
+                    },
                   ]}
                   onPress={() => setIsPrivate(true)}
                 >
                   <Text style={[
                     styles.privacyOptionText,
-                    { color: isPrivate ? colors.primary : colors.text }
+                    { color: isPrivate ? colors.primary : colors.text },
                   ]}>
                     Private (Owner Only)
                   </Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.privacyDescription}>
-                {isPrivate 
-                  ? 'Only you can see this list' 
+                {isPrivate
+                  ? 'Only you can see this list'
                   : 'Family members can view this list'
                 }
               </Text>
@@ -872,4 +874,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     lineHeight: 20,
     marginTop: 8,
   },
-}); 
+});

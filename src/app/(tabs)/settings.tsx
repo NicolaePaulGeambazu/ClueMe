@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, TextInput, Modal, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Moon, 
-  Bell, 
-  Shield, 
-  CircleHelp as HelpCircle, 
-  Info, 
-  ChevronRight, 
-  User, 
+import {
+  Moon,
+  Bell,
+  Shield,
+  CircleHelp as HelpCircle,
+  Info,
+  ChevronRight,
+  User,
   LogOut,
   Calendar,
   Mail,
@@ -17,7 +17,7 @@ import {
   Save,
   X,
   Settings as SettingsIcon,
-  User as UserIcon
+  User as UserIcon,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -34,11 +34,11 @@ export default function SettingsScreen() {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { signOut, user, isAnonymous, updateUserProfile } = useAuth();
-  const { 
-    isEnabled: notificationsEnabled, 
+  const {
+    isEnabled: notificationsEnabled,
     isLoading: notificationsLoading,
     requestPermissions,
-    error: notificationError 
+    error: notificationError,
   } = useNotifications();
   const colors = Colors[theme];
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -46,17 +46,17 @@ export default function SettingsScreen() {
   const [modalConfig, setModalConfig] = useState({
     title: '',
     content: '',
-    type: 'info' as 'info' | 'help' | 'privacy' | 'warning'
+    type: 'info' as 'info' | 'help' | 'privacy' | 'warning',
   });
-  
+
   // Tab state
   const [activeTab, setActiveTab] = useState<'account' | 'general'>('account');
-  
+
   // Name editing state
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [isUpdatingName, setIsUpdatingName] = useState(false);
-  
+
   const styles = createStyles(colors);
 
   // Update newDisplayName when user changes
@@ -131,7 +131,7 @@ export default function SettingsScreen() {
     setModalConfig({
       title: t('settings.helpSupport'),
       content: t('settings.helpContent'),
-      type: 'help'
+      type: 'help',
     });
     setModalVisible(true);
   };
@@ -140,7 +140,7 @@ export default function SettingsScreen() {
     setModalConfig({
       title: t('settings.aboutClearCue'),
       content: t('settings.aboutContent'),
-      type: 'info'
+      type: 'info',
     });
     setModalVisible(true);
   };
@@ -149,7 +149,7 @@ export default function SettingsScreen() {
     setModalConfig({
       title: t('settings.dataPrivacy'),
       content: t('settings.privacyContent'),
-      type: 'privacy'
+      type: 'privacy',
     });
     setModalVisible(true);
   };
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
               <User size={32} color="#FFFFFF" strokeWidth={2} />
             </View>
             {!isAnonymous && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.editAvatarButton}
                 onPress={handleEditName}
               >
@@ -175,7 +175,7 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             )}
           </View>
-          
+
           <View style={styles.profileInfo}>
             <Text style={styles.displayName}>
               {user?.displayName || t('settings.welcomeUser')}
@@ -183,7 +183,7 @@ export default function SettingsScreen() {
             <Text style={styles.email}>
               {user?.email || t('settings.userEmail')}
             </Text>
-            
+
             {isAnonymous && (
               <View style={styles.anonymousBadge}>
                 <Text style={styles.anonymousText}>{t('settings.anonymousUser')}</Text>
@@ -200,7 +200,7 @@ export default function SettingsScreen() {
       {/* Account Information */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.accountInfo')}</Text>
-        
+
         <View style={styles.infoItem}>
           <View style={styles.infoIcon}>
             <Mail size={20} color={colors.primary} strokeWidth={2} />
@@ -218,7 +218,7 @@ export default function SettingsScreen() {
       {!isAnonymous && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
-          
+
           <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
@@ -241,7 +241,7 @@ export default function SettingsScreen() {
       {/* Appearance */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
-        
+
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.secondary + '15' }]}>
@@ -264,7 +264,7 @@ export default function SettingsScreen() {
       {/* Language */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('language.title')}</Text>
-        
+
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.tertiary + '15' }]}>
@@ -276,7 +276,7 @@ export default function SettingsScreen() {
             </View>
           </View>
         </View>
-        
+
         <LanguageSelector
           currentLanguage={i18n.language}
           onLanguageChange={handleLanguageChange}
@@ -286,7 +286,7 @@ export default function SettingsScreen() {
       {/* Notifications */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
-        
+
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -295,9 +295,9 @@ export default function SettingsScreen() {
             <View style={styles.settingContent}>
               <Text style={styles.settingLabel}>{t('settings.pushNotifications')}</Text>
               <Text style={styles.settingDescription}>
-                {notificationsLoading 
+                {notificationsLoading
                   ? t('settings.loadingNotifications')
-                  : notificationError 
+                  : notificationError
                   ? t('settings.notificationError')
                   : t('settings.pushNotificationsDescription')
                 }
@@ -317,7 +317,7 @@ export default function SettingsScreen() {
       {/* Privacy & Security */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.privacySecurity')}</Text>
-        
+
         <TouchableOpacity style={styles.settingItem} onPress={handleDataPrivacy}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.success + '15' }]}>
@@ -335,7 +335,7 @@ export default function SettingsScreen() {
       {/* Support */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
-        
+
         <TouchableOpacity style={styles.settingItem} onPress={handleHelpSupport}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
@@ -389,14 +389,14 @@ export default function SettingsScreen() {
         <TouchableOpacity
           style={[
             styles.tab,
-            activeTab === 'account' && { backgroundColor: colors.primary }
+            activeTab === 'account' && { backgroundColor: colors.primary },
           ]}
           onPress={() => setActiveTab('account')}
         >
           <UserIcon size={20} color={activeTab === 'account' ? 'white' : colors.textSecondary} strokeWidth={2} />
           <Text style={[
             styles.tabLabel,
-            { color: activeTab === 'account' ? 'white' : colors.textSecondary }
+            { color: activeTab === 'account' ? 'white' : colors.textSecondary },
           ]}>
             {t('settings.account')}
           </Text>
@@ -405,14 +405,14 @@ export default function SettingsScreen() {
         <TouchableOpacity
           style={[
             styles.tab,
-            activeTab === 'general' && { backgroundColor: colors.primary }
+            activeTab === 'general' && { backgroundColor: colors.primary },
           ]}
           onPress={() => setActiveTab('general')}
         >
           <SettingsIcon size={20} color={activeTab === 'general' ? 'white' : colors.textSecondary} strokeWidth={2} />
           <Text style={[
             styles.tabLabel,
-            { color: activeTab === 'general' ? 'white' : colors.textSecondary }
+            { color: activeTab === 'general' ? 'white' : colors.textSecondary },
           ]}>
             {t('settings.general')}
           </Text>
@@ -451,12 +451,12 @@ export default function SettingsScreen() {
                 <X size={24} color={colors.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.modalBody}>
               <Text style={styles.modalDescription}>
                 {t('settings.nameEditDescription')}
               </Text>
-              
+
               <View style={styles.inputContainer}>
                 <TextInput
                   style={styles.nameInput}
@@ -470,21 +470,21 @@ export default function SettingsScreen() {
                 <View style={styles.inputBorder} />
               </View>
             </View>
-            
+
             <View style={styles.modalActions}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={handleCancelNameEdit}
                 disabled={isUpdatingName}
               >
                 <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[
-                  styles.modalButton, 
-                  styles.saveButton, 
-                  isUpdatingName && styles.disabledButton
+                  styles.modalButton,
+                  styles.saveButton,
+                  isUpdatingName && styles.disabledButton,
                 ]}
                 onPress={handleSaveName}
                 disabled={isUpdatingName}

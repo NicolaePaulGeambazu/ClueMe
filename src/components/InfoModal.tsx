@@ -23,12 +23,12 @@ interface InfoModalProps {
 
 const { width: screenWidth } = Dimensions.get('window');
 
-export default function InfoModal({ 
-  visible, 
-  onClose, 
-  title, 
-  content, 
-  type = 'info' 
+export default function InfoModal({
+  visible,
+  onClose,
+  title,
+  content,
+  type = 'info',
 }: InfoModalProps) {
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -211,4 +211,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: 16,
     color: '#FFFFFF',
   },
-}); 
+});

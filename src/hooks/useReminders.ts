@@ -36,12 +36,12 @@ export const useReminders = () => {
   const unsubscribeRef = useRef<null | (() => void)>(null);
 
   const loadReminders = useCallback(async () => {
-    if (!user || authLoading) return;
-    
+    if (!user || authLoading) {return;}
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const firebaseReminders = await reminderService.getUserReminders(user.uid);
       const uiReminders = firebaseReminders.map(convertToUIReminder);
       setReminders(uiReminders);
@@ -54,12 +54,12 @@ export const useReminders = () => {
   }, [user, authLoading]);
 
   const createReminder = useCallback(async (reminderData: Omit<FirebaseReminder, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) throw new Error('User not authenticated');
-    
+    if (!user) {throw new Error('User not authenticated');}
+
     try {
       const id = await reminderService.createReminder(reminderData);
       await loadReminders();
-      
+
       // Send notifications if this is a family task with assigned members
       if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
         const taskNotificationData = {
@@ -72,14 +72,14 @@ export const useReminders = () => {
           dueDate: reminderData.dueDate?.toISOString(),
           priority: reminderData.priority,
         };
-        
+
         // Notify family about new task
         await notifyTaskCreated(taskNotificationData);
-        
+
         // Notify assigned member specifically
         await notifyTaskAssigned(taskNotificationData);
       }
-      
+
       return id;
     } catch (err) {
       setError('Failed to create reminder');
@@ -88,8 +88,8 @@ export const useReminders = () => {
   }, [user, loadReminders, notifyTaskCreated, notifyTaskAssigned, family]);
 
   const updateReminder = useCallback(async (reminderId: string, updates: Partial<FirebaseReminder>) => {
-    if (!user) throw new Error('User not authenticated');
-    
+    if (!user) {throw new Error('User not authenticated');}
+
     try {
       await reminderService.updateReminder(reminderId, updates);
       await loadReminders();
@@ -100,8 +100,8 @@ export const useReminders = () => {
   }, [user, loadReminders]);
 
   const deleteReminder = useCallback(async (reminderId: string) => {
-    if (!user) throw new Error('User not authenticated');
-    
+    if (!user) {throw new Error('User not authenticated');}
+
     try {
       await reminderService.deleteReminder(reminderId);
       await loadReminders();
@@ -112,8 +112,8 @@ export const useReminders = () => {
   }, [user, loadReminders]);
 
   const toggleReminderCompletion = useCallback(async (reminderId: string, completed: boolean) => {
-    if (!user) throw new Error('User not authenticated');
-    
+    if (!user) {throw new Error('User not authenticated');}
+
     try {
       await reminderService.updateReminder(reminderId, {
         status: completed ? 'completed' : 'pending',
@@ -127,8 +127,8 @@ export const useReminders = () => {
   }, [user, loadReminders]);
 
   const toggleFavorite = useCallback(async (reminderId: string, isFavorite: boolean) => {
-    if (!user) throw new Error('User not authenticated');
-    
+    if (!user) {throw new Error('User not authenticated');}
+
     try {
       await reminderService.updateReminder(reminderId, { isFavorite });
       await loadReminders();
@@ -140,7 +140,7 @@ export const useReminders = () => {
 
   // Set up real-time listener
   useEffect(() => {
-    if (!user || authLoading) return;
+    if (!user || authLoading) {return;}
 
     try {
       const unsubscribe = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
@@ -171,8 +171,8 @@ export const useReminders = () => {
   }, [user, authLoading, loadReminders]);
 
   const getRemindersByType = useCallback(async (type: string) => {
-    if (!user) return [];
-    
+    if (!user) {return [];}
+
     try {
       const firebaseReminders = await reminderService.getRemindersByType(user.uid, type as any);
       return firebaseReminders.map(convertToUIReminder);
@@ -183,8 +183,8 @@ export const useReminders = () => {
   }, [user]);
 
   const getRemindersByPriority = useCallback(async (priority: string) => {
-    if (!user) return [];
-    
+    if (!user) {return [];}
+
     try {
       const firebaseReminders = await reminderService.getRemindersByPriority(user.uid, priority as any);
       return firebaseReminders.map(convertToUIReminder);
@@ -195,8 +195,8 @@ export const useReminders = () => {
   }, [user]);
 
   const getFavoriteReminders = useCallback(async () => {
-    if (!user) return [];
-    
+    if (!user) {return [];}
+
     try {
       const firebaseReminders = await reminderService.getUserReminders(user.uid);
       const uiReminders = firebaseReminders.map(convertToUIReminder);
@@ -208,8 +208,8 @@ export const useReminders = () => {
   }, [user]);
 
   const getOverdueReminders = useCallback(async () => {
-    if (!user) return [];
-    
+    if (!user) {return [];}
+
     try {
       const firebaseReminders = await reminderService.getUserReminders(user.uid);
       const uiReminders = firebaseReminders.map(convertToUIReminder);

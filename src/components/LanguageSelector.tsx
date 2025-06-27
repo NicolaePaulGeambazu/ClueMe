@@ -51,7 +51,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);
     setModalVisible(false);
-    
+
     try {
       onLanguageChange(languageCode);
     } catch (error) {
@@ -67,7 +67,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       style={[
         styles.languageItem,
         { borderBottomColor: colors.border },
-        isSelected && { backgroundColor: colors.primary + '10' }
+        isSelected && { backgroundColor: colors.primary + '10' },
       ]}
       onPress={() => handleLanguageSelect(language.code)}
     >
@@ -77,14 +77,14 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           <Text style={[
             styles.languageName,
             { color: colors.text },
-            isSelected && { color: colors.primary, fontFamily: Fonts.text.semibold }
+            isSelected && { color: colors.primary, fontFamily: Fonts.text.semibold },
           ]}>
             {language.nativeName}
           </Text>
           <Text style={[
             styles.languageEnglish,
             { color: colors.textSecondary },
-            isSelected && { color: colors.primary }
+            isSelected && { color: colors.primary },
           ]}>
             {language.name}
           </Text>
@@ -141,7 +141,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 <X size={24} color={colors.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
-            
+
             <ScrollView style={styles.languageList} showsVerticalScrollIndicator={false}>
               {languages.map((language) => (
                 <LanguageItem
@@ -262,4 +262,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-}); 
+});

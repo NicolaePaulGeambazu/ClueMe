@@ -24,9 +24,9 @@ export const useFamily = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       let userFamily = await familyService.getUserFamily(user.uid);
-      
+
       // If no family exists, create a default one
       if (!userFamily) {
         console.log('🏠 No family found, creating default family...');
@@ -36,14 +36,14 @@ export const useFamily = () => {
           user.email || ''
         );
       }
-      
+
       setFamily(userFamily);
-      
+
       if (userFamily) {
         // Load family members
         const familyMembers = await familyService.getFamilyMembers(userFamily.id);
         setMembers(familyMembers);
-        
+
         // Load family activities
         const familyActivities = await familyService.getFamilyActivities(userFamily.id);
         setActivities(familyActivities);
@@ -71,10 +71,10 @@ export const useFamily = () => {
     try {
       setError(null);
       const familyId = await familyService.createFamily(familyData);
-      
+
       // Reload family data
       await loadFamily();
-      
+
       return familyId;
     } catch (err) {
       console.error('Error creating family:', err);
@@ -92,10 +92,10 @@ export const useFamily = () => {
     try {
       setError(null);
       const memberId = await familyService.addFamilyMember(memberData);
-      
+
       // Reload family data
       await loadFamily();
-      
+
       return memberId;
     } catch (err) {
       console.error('Error adding family member:', err);
@@ -113,7 +113,7 @@ export const useFamily = () => {
     try {
       setError(null);
       await familyService.removeFamilyMember(memberId, family.id);
-      
+
       // Reload family data
       await loadFamily();
     } catch (err) {
@@ -132,11 +132,11 @@ export const useFamily = () => {
     try {
       setError(null);
       const activityId = await familyService.createFamilyActivity(activityData);
-      
+
       // Reload activities
       const familyActivities = await familyService.getFamilyActivities(family.id);
       setActivities(familyActivities);
-      
+
       return activityId;
     } catch (err) {
       console.error('Error creating family activity:', err);
@@ -177,7 +177,7 @@ export const useFamily = () => {
         inviterEmail: user.email,
         inviteeEmail,
       });
-      
+
       return invitationId;
     } catch (err) {
       console.error('Error sending invitation:', err);
@@ -200,7 +200,7 @@ export const useFamily = () => {
         user.displayName || user.email.split('@')[0],
         user.email
       );
-      
+
       // Reload family data and invitations
       await loadFamily();
       await loadPendingInvitations();
@@ -216,7 +216,7 @@ export const useFamily = () => {
     try {
       setError(null);
       await familyService.declineFamilyInvitation(invitationId);
-      
+
       // Reload invitations
       await loadPendingInvitations();
     } catch (err) {
@@ -240,7 +240,7 @@ export const useFamily = () => {
     try {
       setError(null);
       await familyService.leaveFamily(family.id, currentMember.id);
-      
+
       // Clear family data
       setFamily(null);
       setMembers([]);
@@ -254,7 +254,7 @@ export const useFamily = () => {
 
   // Set up real-time listeners
   useEffect(() => {
-    if (!family?.id) return;
+    if (!family?.id) {return;}
 
     const unsubscribeMembers = familyService.onFamilyMembersChange(family.id, (newMembers) => {
       setMembers(newMembers);
@@ -297,4 +297,4 @@ export const useFamily = () => {
     isMember: !!family,
     hasPendingInvitations: pendingInvitations.length > 0,
   };
-}; 
+};

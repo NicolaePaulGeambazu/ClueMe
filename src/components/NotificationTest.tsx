@@ -24,7 +24,7 @@ export const NotificationTest: React.FC = () => {
     isInitialized,
     isEnabled,
     isLoading: hookIsLoading,
-    error, 
+    error,
     requestPermissions,
     getFCMToken,
     registerDeviceForRemoteMessages,
@@ -79,16 +79,16 @@ export const NotificationTest: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Starting FCM token retrieval...');
-      
+
       // First register device for remote messages
       console.log('Registering device for remote messages...');
       await registerDeviceForRemoteMessages();
-      
+
       // Then get FCM token
       console.log('Getting FCM token...');
       const token = await getFCMToken();
       setFcmToken(token);
-      
+
       if (token) {
         console.log('FCM token retrieved successfully:', token.substring(0, 20) + '...');
         Alert.alert(
@@ -130,7 +130,7 @@ export const NotificationTest: React.FC = () => {
     setIsLoading(true);
     try {
       console.log('Testing notification sending...');
-      
+
       // Test sending a notification to the current user
       await sendNotificationToUser('test-user-id', {
         title: 'Test Notification',
@@ -141,7 +141,7 @@ export const NotificationTest: React.FC = () => {
           timestamp: Date.now().toString(),
         },
       });
-      
+
       Alert.alert(
         'Test Notification',
         'Test notification sent! Check your notification center.',
@@ -291,13 +291,13 @@ export const NotificationTest: React.FC = () => {
     try {
       setIsSending(true);
       console.log('🧪 Testing background reminder checking...');
-      
+
       // This will trigger the background checking manually
       await notificationService.checkAndNotifyOverdueReminders();
       await notificationService.checkAndNotifyUpcomingReminders();
-      
+
       Alert.alert(
-        t('common.success'), 
+        t('common.success'),
         'Background reminder checking completed! Check console for details.'
       );
     } catch (error) {
@@ -319,7 +319,7 @@ export const NotificationTest: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{t('notifications.testingTitle')}</Text>
-      
+
       <View style={styles.statusContainer}>
         <Text style={styles.statusLabel}>{t('notifications.status')}:</Text>
         <Text style={[styles.statusValue, { color: isEnabled ? '#4CAF50' : '#F44336' }]}>
@@ -329,7 +329,7 @@ export const NotificationTest: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('notifications.basicNotifications')}</Text>
-        
+
         <TouchableOpacity
           style={[styles.button, !isEnabled && styles.buttonDisabled]}
           onPress={handleRequestPermissions}
@@ -353,7 +353,7 @@ export const NotificationTest: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('notifications.taskNotifications')}</Text>
-        
+
         <TouchableOpacity
           style={[styles.button, !isEnabled && styles.buttonDisabled]}
           onPress={handleTestTaskCreated}
@@ -533,4 +533,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
   },
-}); 
+});

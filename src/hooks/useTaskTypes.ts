@@ -23,7 +23,7 @@ export const useTaskTypes = () => {
     try {
       console.log('🔄 Loading task types...');
       const types = await taskTypeService.getAllTaskTypes();
-      
+
       if (types.length === 0) {
         console.log('📋 No task types found in Firebase, using fallback types');
         setUseFallback(true);
@@ -46,12 +46,12 @@ export const useTaskTypes = () => {
       } else {
         console.log(`✅ Loaded ${types.length} task types from Firebase`);
         setUseFallback(false);
-        
+
         // Deduplicate task types by name to prevent duplicate keys
         const seen = new Set<string>();
         const duplicates = new Set<string>();
         const uniqueTypes: TaskType[] = [];
-        
+
         for (const current of types) {
           if (seen.has(current.name)) {
             duplicates.add(current.name);
@@ -60,23 +60,23 @@ export const useTaskTypes = () => {
             uniqueTypes.push(current);
           }
         }
-        
+
         if (duplicates.size > 0) {
           console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
         }
-        
+
         console.log(`✅ Deduplicated to ${uniqueTypes.length} unique task types`);
         setTaskTypes(uniqueTypes);
       }
     } catch (err) {
       console.error('❌ Error loading task types:', err);
-      
+
       // If it's a permission denied error, use fallback types
       if (err instanceof Error && err.message.includes('permission denied')) {
         console.log('📋 Using fallback task types due to Firebase permission issues');
         setUseFallback(true);
         setError('Firebase permission denied. Using fallback task types.');
-        
+
         // Convert fallback types to TaskType format
         const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
           id: type.id,
@@ -119,10 +119,10 @@ export const useTaskTypes = () => {
         createdBy: user.uid,
       });
       console.log('✅ Task type created with ID:', id);
-      
+
       // Reload task types to get the updated list
       await loadTaskTypes();
-      
+
       return id;
     } catch (err) {
       console.error('❌ Error creating task type:', err);
@@ -141,7 +141,7 @@ export const useTaskTypes = () => {
       console.log('🔄 Updating task type...');
       await taskTypeService.updateTaskType(id, updates);
       console.log('✅ Task type updated');
-      
+
       // Reload task types to get the updated list
       await loadTaskTypes();
     } catch (err) {
@@ -161,7 +161,7 @@ export const useTaskTypes = () => {
       console.log('🔄 Deleting task type...');
       await taskTypeService.deleteTaskType(id);
       console.log('✅ Task type deleted');
-      
+
       // Reload task types to get the updated list
       await loadTaskTypes();
     } catch (err) {
@@ -186,18 +186,18 @@ export const useTaskTypes = () => {
       console.log('🔄 Seeding default task types...');
       await taskTypeService.seedDefaultTaskTypes();
       console.log('✅ Default task types seeded');
-      
+
       // Reload task types to get the updated list
       await loadTaskTypes();
     } catch (err) {
       console.error('❌ Error seeding default task types:', err);
-      
+
       // If seeding fails due to permissions, switch to fallback mode
       if (err instanceof Error && err.message.includes('permission denied')) {
         console.log('📋 Switching to fallback task types due to Firebase permission issues');
         setUseFallback(true);
         setError('Firebase permission denied. Using fallback task types.');
-        
+
         // Convert fallback types to TaskType format
         const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
           id: type.id,
@@ -242,7 +242,7 @@ export const useTaskTypes = () => {
 
   // Set up real-time listener for task types (only if not using fallback)
   useEffect(() => {
-    if (!user?.uid || useFallback) return;
+    if (!user?.uid || useFallback) {return;}
 
     console.log('👂 Setting up task types listener...');
     const unsubscribe = taskTypeService.onTaskTypesChange((types) => {
@@ -252,7 +252,7 @@ export const useTaskTypes = () => {
         const seen = new Set<string>();
         const duplicates = new Set<string>();
         const uniqueTypes: TaskType[] = [];
-        
+
         for (const current of types) {
           if (seen.has(current.name)) {
             duplicates.add(current.name);
@@ -261,11 +261,11 @@ export const useTaskTypes = () => {
             uniqueTypes.push(current);
           }
         }
-        
+
         if (duplicates.size > 0) {
           console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
         }
-        
+
         console.log(`✅ Deduplicated listener data to ${uniqueTypes.length} unique task types`);
         setTaskTypes(uniqueTypes);
         setUseFallback(false);
@@ -311,4 +311,4 @@ export const useTaskTypes = () => {
     getTaskTypeById,
     getDefaultTaskTypes,
   };
-}; 
+};

@@ -26,7 +26,7 @@ export default function HomeScreen({ navigation }: any) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
   const loggedMissingUsers = useRef(new Set<string>());
-  
+
   const styles = createStyles(colors);
 
   const stats = getReminderStats(reminders);
@@ -58,7 +58,7 @@ export default function HomeScreen({ navigation }: any) {
 
   // Helper to get assigned user's name
   const getAssignedUserName = (userId: string) => {
-    if (!familyMembers || familyMembers.length === 0) return t('common.unknown');
+    if (!familyMembers || familyMembers.length === 0) {return t('common.unknown');}
     const member = familyMembers.find(m => m.userId === userId);
     if (!member) {
       // Only log this once per user ID to avoid spam
@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.bannerDescription}>
             {t('home.anonymousBannerDescription')}
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.signInButton}
             onPress={() => setShowLoginPrompt(true)}
           >
@@ -152,7 +152,7 @@ export default function HomeScreen({ navigation }: any) {
       {!isAnonymous && (
         <View style={styles.storageBanner}>
           <Text style={styles.storageText}>
-            {useFirebase 
+            {useFirebase
               ? t('home.firebaseConnected')
               : t('home.localStorage')
             }
@@ -161,12 +161,12 @@ export default function HomeScreen({ navigation }: any) {
       )}
 
       <View style={styles.mainContent}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.statsContainer}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'total' })}
           >
@@ -174,8 +174,8 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.statsValue}>{stats.total}</Text>
             <Text style={styles.statsLabel}>{t('home.stats.total')}</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'pending' })}
           >
@@ -183,8 +183,8 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.statsValue}>{stats.pending}</Text>
             <Text style={styles.statsLabel}>{t('home.stats.pending')}</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'favorites' })}
           >
@@ -193,7 +193,7 @@ export default function HomeScreen({ navigation }: any) {
             <Text style={styles.statsLabel}>{t('home.stats.favorites')}</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.statCard}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'overdue' })}
           >
@@ -205,24 +205,24 @@ export default function HomeScreen({ navigation }: any) {
 
         {showQuickActions ? (
           <View style={styles.quickActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.quickActionsHeader}
               onPress={() => setShowQuickActions(!showQuickActions)}
             >
               <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
-              <ChevronRight 
-                size={20} 
-                color={colors.textSecondary} 
+              <ChevronRight
+                size={20}
+                color={colors.textSecondary}
                 strokeWidth={2}
                 style={[
                   styles.chevron,
-                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
+                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] },
                 ]}
               />
             </TouchableOpacity>
-            
+
             <View style={styles.actionsGrid}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionCard}
                 onPress={() => handleQuickAction('view_calendar')}
               >
@@ -231,8 +231,8 @@ export default function HomeScreen({ navigation }: any) {
                 </View>
                 <Text style={styles.actionLabel}>{t('home.calendar')}</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.actionCard}
                 onPress={() => handleQuickAction('family')}
               >
@@ -242,7 +242,7 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.actionLabel}>{t('home.family')}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionCard}
                 onPress={() => handleQuickAction('countdown')}
               >
@@ -252,7 +252,7 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={styles.actionLabel}>{t('home.countdown')}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionCard}
                 onPress={() => handleQuickAction('lists')}
               >
@@ -265,18 +265,18 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         ) : (
           <View style={styles.quickActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.collapsedQuickActionsHeader}
               onPress={() => setShowQuickActions(!showQuickActions)}
             >
               <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
-              <ChevronRight 
-                size={20} 
-                color={colors.textSecondary} 
+              <ChevronRight
+                size={20}
+                color={colors.textSecondary}
                 strokeWidth={2}
                 style={[
                   styles.chevron,
-                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
+                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] },
                 ]}
               />
             </TouchableOpacity>
@@ -284,8 +284,8 @@ export default function HomeScreen({ navigation }: any) {
         )}
       </View>
 
-      <ScrollView 
-        style={[styles.content, { flex: showQuickActions ? 1 : undefined }]} 
+      <ScrollView
+        style={[styles.content, { flex: showQuickActions ? 1 : undefined }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl

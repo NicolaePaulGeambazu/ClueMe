@@ -4,19 +4,21 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { Search, Filter, Star, Clock, CheckCircle, AlertCircle, X } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 
-export default function SearchScreen() {
+export default function SearchScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  
+
   const styles = createStyles(colors);
 
   const handleSearch = () => {
@@ -57,7 +59,7 @@ export default function SearchScreen() {
             </TouchableOpacity>
           )}
         </View>
-        
+
         <TouchableOpacity style={styles.filterButton}>
           <Filter size={20} color={colors.textSecondary} strokeWidth={2} />
         </TouchableOpacity>
@@ -67,7 +69,7 @@ export default function SearchScreen() {
         {isAnonymous && (
           <View style={styles.anonymousNotice}>
             <Text style={styles.noticeText}>
-              Sign in to search through all your saved reminders and access advanced search features.
+              {t('add.anonymousBanner')}
             </Text>
           </View>
         )}
@@ -102,9 +104,9 @@ export default function SearchScreen() {
       <LoginPrompt
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
-        onSuccess={handleLoginSuccess}
-        title="Search Reminders"
-        message="Sign in to search through all your saved reminders and access advanced search features."
+        onSuccess={() => executeAfterAuth(() => console.log('Search access granted'))}
+        title={t('navigation.access.searchReminders')}
+        message={t('add.anonymousBanner')}
       />
     </View>
   );

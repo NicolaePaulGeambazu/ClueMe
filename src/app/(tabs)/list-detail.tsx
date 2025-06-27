@@ -7,13 +7,15 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { listService, UserList, ListItem } from '../../services/firebaseService';
+import { useTranslation } from 'react-i18next';
 
 export default function ListDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user } = useAuth();
   const { listId } = route.params;
-  
+  const { t } = useTranslation();
+
   const [list, setList] = useState<UserList | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -21,12 +23,12 @@ export default function ListDetailScreen({ navigation, route }: any) {
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemDescription, setNewItemDescription] = useState('');
   const [editingItem, setEditingItem] = useState<ListItem | null>(null);
-  
+
   const styles = createStyles(colors);
 
   // Load list details
   const loadListDetails = useCallback(async () => {
-    if (!listId) return;
+    if (!listId) {return;}
 
     setIsLoading(true);
     try {
@@ -50,7 +52,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
   // Set up real-time listener for this specific list
   useEffect(() => {
-    if (!listId) return;
+    if (!listId) {return;}
 
     console.log('👂 Setting up list detail listener...');
     const unsubscribe = listService.onListChange(listId, (updatedList) => {
@@ -96,8 +98,8 @@ export default function ListDetailScreen({ navigation, route }: any) {
   };
 
   const handleToggleItem = async (item: ListItem) => {
-    if (!list) return;
-    
+    if (!list) {return;}
+
     try {
       console.log('🔄 Toggling item completion...', { itemId: item.id, currentCompleted: item.completed });
       await listService.updateListItem(listId, item.id, {
@@ -125,7 +127,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
         format: list.format,
         sortOrder: list.items.length + 1,
       });
-      
+
       console.log('✅ Item added successfully');
       setNewItemTitle('');
       setNewItemDescription('');
@@ -155,7 +157,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
         title: newItemTitle.trim(),
         description: newItemDescription.trim() || undefined,
       });
-      
+
       console.log('✅ Item updated successfully');
       setNewItemTitle('');
       setNewItemDescription('');
@@ -192,10 +194,10 @@ export default function ListDetailScreen({ navigation, route }: any) {
   };
 
   const renderItem = (item: ListItem, index: number) => {
-    if (!list) return null;
-    
+    if (!list) {return null;}
+
     const IconComponent = getFormatIcon(list.format);
-    
+
     return (
       <View key={item.id} style={styles.itemCard}>
         <View style={styles.itemHeader}>
@@ -212,7 +214,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
                   {
                     borderColor: item.completed ? colors.success : colors.border,
                     backgroundColor: item.completed ? colors.success : 'transparent',
-                  }
+                  },
                 ]}
                 onPress={() => handleToggleItem(item)}
               >
@@ -226,35 +228,35 @@ export default function ListDetailScreen({ navigation, route }: any) {
               <View style={[styles.plainIndicator, { backgroundColor: colors.textSecondary }]} />
             )}
           </View>
-          
+
           <View style={styles.itemContent}>
             <Text style={[
               styles.itemTitle,
-              { 
+              {
                 color: item.completed ? colors.textSecondary : colors.text,
-                textDecorationLine: item.completed ? 'line-through' : 'none'
-              }
+                textDecorationLine: item.completed ? 'line-through' : 'none',
+              },
             ]}>
               {item.title}
             </Text>
             {item.description && (
               <Text style={[
                 styles.itemDescription,
-                { color: item.completed ? colors.textSecondary : colors.textSecondary }
+                { color: item.completed ? colors.textSecondary : colors.textSecondary },
               ]}>
                 {item.description}
               </Text>
             )}
           </View>
-          
+
           <View style={styles.itemActions}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleEditItem(item)}
             >
               <Edit size={16} color={colors.textSecondary} />
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleDeleteItem(item)}
             >
@@ -273,7 +275,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -295,7 +297,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
@@ -318,21 +320,21 @@ export default function ListDetailScreen({ navigation, route }: any) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <ArrowLeft size={24} color={colors.text} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <Text style={styles.listTitle}>{list!.name}</Text>
           {list!.description && (
             <Text style={styles.listDescription}>{list!.description}</Text>
           )}
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.addButton}
           onPress={() => setIsAddModalVisible(true)}
         >
@@ -340,8 +342,8 @@ export default function ListDetailScreen({ navigation, route }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -360,7 +362,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
             })()}
             <Text style={styles.formatText}>{getFormatLabel(list!.format)}</Text>
           </View>
-          
+
           <View style={styles.statsInfo}>
             <Text style={styles.statsText}>
               {list!.items.filter(item => item.completed).length} of {list!.items.length} completed
@@ -378,7 +380,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
             <Text style={styles.emptyDescription}>
               Add your first item to get started
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.createButton, { backgroundColor: colors.primary }]}
               onPress={() => setIsAddModalVisible(true)}
             >
@@ -409,7 +411,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       >
         <SafeAreaView style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => {
                 setIsAddModalVisible(false);
                 setEditingItem(null);
@@ -422,7 +424,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
             <Text style={styles.modalTitle}>
               {editingItem ? 'Edit Item' : 'Add Item'}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={editingItem ? handleUpdateItem : handleAddItem}
             >
               <Text style={[styles.modalButton, { color: colors.primary }]}>
@@ -435,15 +437,15 @@ export default function ListDetailScreen({ navigation, route }: any) {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Item Title</Text>
               <TextInput
-                style={[styles.textInput, { 
+                style={[styles.textInput, {
                   borderColor: colors.border,
                   backgroundColor: colors.surface,
-                  color: colors.text 
+                  color: colors.text,
                 }]}
                 value={newItemTitle}
                 onChangeText={setNewItemTitle}
-                placeholder="Enter item title"
-                placeholderTextColor={colors.textSecondary}
+                placeholder={t('forms.placeholders.enterItemTitle')}
+                placeholderTextColor={colors.textTertiary}
                 autoFocus
               />
             </View>
@@ -451,15 +453,15 @@ export default function ListDetailScreen({ navigation, route }: any) {
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Description (Optional)</Text>
               <TextInput
-                style={[styles.textArea, { 
+                style={[styles.textArea, {
                   borderColor: colors.border,
                   backgroundColor: colors.surface,
-                  color: colors.text 
+                  color: colors.text,
                 }]}
                 value={newItemDescription}
                 onChangeText={setNewItemDescription}
-                placeholder="Enter description"
-                placeholderTextColor={colors.textSecondary}
+                placeholder={t('forms.placeholders.enterDescription')}
+                placeholderTextColor={colors.textTertiary}
                 multiline
                 numberOfLines={3}
               />
@@ -694,4 +696,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-}); 
+});

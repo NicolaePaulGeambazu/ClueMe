@@ -18,7 +18,7 @@ export default function IndexScreen({ navigation }: any) {
         // Always go to tabs (anonymous users can use the app)
         navigation.replace('MainTabs');
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isLoading, navigation]);

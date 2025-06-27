@@ -1,5 +1,79 @@
 {
   "name": "ClearCue",
   "displayName": "ClearCue",
-  "icon": "./src/assets/images/icon.png"
+  "icon": "./src/assets/images/icon.png",
+  "version": "1.0.0",
+  "description": "A simple, private, and effective reminder app designed to help you stay organized without the clutter.",
+  "author": "ClearCue Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NicolaePaulGeambazu/ClueMe.git"
+  },
+  "keywords": [
+    "react-native",
+    "reminders",
+    "productivity",
+    "family",
+    "calendar",
+    "tasks"
+  ],
+  "platforms": ["ios", "android"],
+  "expo": {
+    "name": "ClearCue",
+    "slug": "clearcue",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./src/assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.clearcue.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleDisplayName": "ClearCue",
+        "CFBundleName": "ClearCue",
+        "NSUserNotificationUsageDescription": "ClearCue uses notifications to remind you about important tasks and family updates.",
+        "NSLocationWhenInUseUsageDescription": "ClearCue uses location to provide location-based reminders.",
+        "UIBackgroundModes": [
+          "remote-notification",
+          "processing",
+          "fetch",
+          "location"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.clearcue.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./src/assets/images/favicon.png"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/firestore",
+      "@react-native-firebase/messaging"
+    ]
+  }
 }

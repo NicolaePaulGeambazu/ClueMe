@@ -49,7 +49,7 @@ class NotificationService {
    * Initialize the notification service
    */
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
 
     try {
       // Request permission on iOS
@@ -158,7 +158,7 @@ class NotificationService {
   private scheduleLocalNotification(reminder: any, timing: NotificationTiming): void {
     try {
       const dueDate = new Date(reminder.dueDate);
-      
+
       // If there's a due time, combine it with the due date
       if (reminder.dueTime) {
         const [hours, minutes] = reminder.dueTime.split(':');
@@ -186,7 +186,7 @@ class NotificationService {
       }
 
       const notificationId = `${reminder.id}-${timing.type}-${timing.value}`;
-      
+
       PushNotification.localNotificationSchedule({
         id: notificationId,
         channelId: 'reminders',
@@ -245,7 +245,7 @@ class NotificationService {
   async checkAndNotifyOverdueReminders(): Promise<void> {
     try {
       console.log('🔍 Checking for overdue reminders...');
-      
+
       const currentUser = auth().currentUser;
       if (!currentUser) {
         console.log('No authenticated user, skipping overdue check');
@@ -254,26 +254,26 @@ class NotificationService {
 
       // Get all user reminders from Firebase
       const userReminders = await reminderService.getUserReminders(currentUser.uid);
-      
+
       // Filter for overdue reminders that have notifications enabled
       const overdueReminders = userReminders.filter(reminder => {
         if (!reminder.hasNotification || reminder.status === 'completed') {
           return false;
         }
-        
+
         if (!reminder.dueDate) {
           return false;
         }
-        
+
         const now = new Date();
         const dueDate = new Date(reminder.dueDate);
-        
+
         // If there's a due time, combine it with the due date
         if (reminder.dueTime) {
           const [hours, minutes] = reminder.dueTime.split(':');
           dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         return dueDate < now;
       });
 
@@ -317,7 +317,7 @@ class NotificationService {
   async checkAndNotifyUpcomingReminders(): Promise<void> {
     try {
       console.log('🔍 Checking for upcoming reminders...');
-      
+
       const currentUser = auth().currentUser;
       if (!currentUser) {
         console.log('No authenticated user, skipping upcoming check');
@@ -327,25 +327,25 @@ class NotificationService {
       // Get all user reminders from Firebase
       const userReminders = await reminderService.getUserReminders(currentUser.uid);
       const now = new Date();
-      
+
       // Filter for upcoming reminders that have notifications enabled
       const upcomingReminders = userReminders.filter(reminder => {
         if (!reminder.hasNotification || reminder.status === 'completed') {
           return false;
         }
-        
+
         if (!reminder.dueDate) {
           return false;
         }
-        
+
         const dueDate = new Date(reminder.dueDate);
-        
+
         // If there's a due time, combine it with the due date
         if (reminder.dueTime) {
           const [hours, minutes] = reminder.dueTime.split(':');
           dueDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
         }
-        
+
         // Only include reminders that are in the future
         return dueDate > now;
       });
@@ -368,7 +368,7 @@ class NotificationService {
     try {
       // Get notification timing preferences (default to 15 minutes before)
       const notificationTimings = reminder.notificationTimings || [
-        { type: 'before', value: 15, label: '15 minutes before' }
+        { type: 'before', value: 15, label: '15 minutes before' },
       ];
 
       // Schedule a notification for each timing
@@ -400,11 +400,11 @@ class NotificationService {
    */
   startBackgroundReminderChecking(): void {
     console.log('🔄 Starting background reminder checking...');
-    
+
     // Check immediately
     this.checkAndNotifyOverdueReminders();
     this.checkAndNotifyUpcomingReminders();
-    
+
     console.log('✅ Background reminder checking started');
   }
 
@@ -413,13 +413,13 @@ class NotificationService {
    */
   cleanup(): void {
     console.log('🧹 Cleaning up notification service...');
-    
+
     // Cancel all scheduled notifications
     PushNotification.cancelAllLocalNotifications();
-    
+
     // Cancel background job
     BackgroundJob.cancel({ jobKey: this.backgroundJobId });
-    
+
     this.isInitialized = false;
   }
 
@@ -429,31 +429,31 @@ class NotificationService {
   private async getFCMToken(): Promise<void> {
     try {
       console.log('🔔 Getting FCM token...');
-      
+
       // On iOS, we need to register for remote messages first
       if (Platform.OS === 'ios') {
         console.log('Registering device for remote messages...');
         await messaging().registerDeviceForRemoteMessages();
         console.log('Device registered for remote messages');
-        
+
         // Wait a moment for registration to complete
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      
+
       console.log('Requesting FCM token...');
       const token = await messaging().getToken();
       console.log('FCM token received:', token ? token.substring(0, 20) + '...' : 'null');
-      
+
       this.fcmToken = token;
-      
+
       // Save token to user's profile in Firestore
       const currentUser = auth().currentUser;
       if (currentUser && token) {
         console.log('Saving FCM token to user profile...');
-        
+
         // First, try to get the existing user profile
         let userProfile = await userService.getUserProfile(currentUser.uid);
-        
+
         // If user profile doesn't exist, create it first
         if (!userProfile) {
           console.log('User profile does not exist, creating it first...');
@@ -465,7 +465,7 @@ class NotificationService {
           });
           console.log('User profile created successfully');
         }
-        
+
         // Now update the user profile with the FCM token
         await userService.updateUserProfile(currentUser.uid, {
           fcmToken: token,
@@ -477,25 +477,25 @@ class NotificationService {
       console.log('FCM Token process completed');
     } catch (error) {
       console.error('Failed to get FCM token:', error);
-      
+
       // In iOS simulator, this is expected behavior
       if (Platform.OS === 'ios') {
         console.log('FCM token retrieval failed - this is normal in iOS simulator');
         console.log('Real FCM tokens only work on physical iOS devices');
-        
+
         // Create a mock token for testing purposes
         const mockToken = 'simulator-mock-fcm-token-' + Date.now();
         this.fcmToken = mockToken;
         console.log('Using mock FCM token for simulator:', mockToken);
-        
+
         // Save mock token to user's profile for testing
         const currentUser = auth().currentUser;
         if (currentUser) {
           console.log('Saving mock FCM token to user profile...');
-          
+
           // First, try to get the existing user profile
           let userProfile = await userService.getUserProfile(currentUser.uid);
-          
+
           // If user profile doesn't exist, create it first
           if (!userProfile) {
             console.log('User profile does not exist, creating it first...');
@@ -507,7 +507,7 @@ class NotificationService {
             });
             console.log('User profile created successfully');
           }
-          
+
           // Now update the user profile with the mock FCM token
           await userService.updateUserProfile(currentUser.uid, {
             fcmToken: mockToken,
@@ -526,7 +526,7 @@ class NotificationService {
     // Handle messages when app is in foreground
     const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
       console.log('Received foreground message:', remoteMessage);
-      
+
       // Show local notification for foreground messages
       this.showLocalNotification(remoteMessage);
     });
@@ -557,7 +557,7 @@ class NotificationService {
     // Handle background message delivery (when app is closed/backgrounded)
     messaging().setBackgroundMessageHandler(async (remoteMessage) => {
       console.log('Received background message:', remoteMessage);
-      
+
       // The notification will automatically appear on the phone
       // This handler is for any additional processing needed
       return Promise.resolve();
@@ -569,7 +569,7 @@ class NotificationService {
    */
   private showLocalNotification(remoteMessage: any): void {
     const { notification, data } = remoteMessage;
-    
+
     if (notification) {
       Alert.alert(
         notification.title || 'ClearCue',
@@ -590,8 +590,8 @@ class NotificationService {
    */
   private handleNotificationOpen(remoteMessage: any): void {
     const { data } = remoteMessage;
-    
-    if (!data) return;
+
+    if (!data) {return;}
 
     switch (data.type) {
       case 'reminder':
@@ -787,7 +787,7 @@ class NotificationService {
   ): Promise<void> {
     try {
       console.log('🔔 Sending task creation notification to family:', familyId);
-      
+
       // Get family members
       const familyMembers = await familyService.getFamilyMembers(familyId);
       if (!familyMembers || familyMembers.length === 0) {
@@ -835,7 +835,7 @@ class NotificationService {
   ): Promise<void> {
     try {
       console.log('🔔 Sending task assignment notifications');
-      
+
       // Create notification data
       const notification: NotificationData = {
         title: 'Task Assigned to You',
@@ -873,10 +873,10 @@ class NotificationService {
   ): Promise<void> {
     try {
       console.log('🔔 Sending task update notification');
-      
+
       let title = 'Task Updated';
       let body = `${taskData.assignedByDisplayName} updated: "${taskData.taskTitle}"`;
-      
+
       // Customize message based on update type
       switch (updateType) {
         case 'due_date':
@@ -929,7 +929,7 @@ class NotificationService {
   ): Promise<void> {
     try {
       console.log('🔔 Sending task completion notification');
-      
+
       const notification: NotificationData = {
         title: 'Task Completed',
         body: `${completedByDisplayName} completed: "${taskData.taskTitle}"`,
@@ -966,10 +966,10 @@ class NotificationService {
   ): Promise<void> {
     try {
       console.log('🔔 Sending task reminder notification');
-      
+
       let title = 'Task Reminder';
       let body = `Reminder: "${taskData.taskTitle}"`;
-      
+
       switch (reminderType) {
         case 'due_soon':
           title = 'Task Due Soon';
@@ -981,7 +981,7 @@ class NotificationService {
           break;
         case 'daily_digest':
           title = 'Daily Task Summary';
-          body = `You have tasks to complete today!`;
+          body = 'You have tasks to complete today!';
           break;
       }
 
@@ -1008,4 +1008,4 @@ class NotificationService {
   }
 }
 
-export const notificationService = new NotificationService(); 
+export const notificationService = new NotificationService();

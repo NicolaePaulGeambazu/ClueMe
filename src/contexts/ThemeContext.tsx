@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const toggleTheme = async () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-    
+
   };
 
   return (
@@ -27,7 +27,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       theme,
       colors: Colors[theme],
       isDark: theme === 'dark',
-      toggleTheme
+      toggleTheme,
     }}>
       {children}
     </ThemeContext.Provider>

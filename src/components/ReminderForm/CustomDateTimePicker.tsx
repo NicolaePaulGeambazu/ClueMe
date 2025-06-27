@@ -68,14 +68,14 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
 
   const isToday = (day: number) => {
     const today = new Date();
-    return day === today.getDate() && 
-           displayMonth === today.getMonth() && 
+    return day === today.getDate() &&
+           displayMonth === today.getMonth() &&
            displayYear === today.getFullYear();
   };
 
   const isSelected = (day: number) => {
-    return day === selectedDate.getDate() && 
-           displayMonth === selectedDate.getMonth() && 
+    return day === selectedDate.getDate() &&
+           displayMonth === selectedDate.getMonth() &&
            displayYear === selectedDate.getFullYear();
   };
 
@@ -111,7 +111,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -190,11 +190,11 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
                 >
                   <ChevronLeft size={24} color={colors.text} />
                 </TouchableOpacity>
-                
+
                 <Text style={styles.monthTitle}>
                   {monthNames[displayMonth]} {displayYear}
                 </Text>
-                
+
                 <TouchableOpacity
                   onPress={() => {
                     if (displayMonth === 11) {
@@ -509,4 +509,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: 16,
     color: colors.text,
   },
-}); 
+});

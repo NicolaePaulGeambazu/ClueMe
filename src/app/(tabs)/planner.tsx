@@ -7,11 +7,12 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { useReminders } from '../../hooks/useReminders';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { TimelineGrid } from '../../components/Planner/TimelineGrid';
 import { TimeBlock } from '../../components/Planner/TimeBlock';
 import { formatDate } from '../../utils/dateUtils';
+import { useTranslation } from 'react-i18next';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -21,12 +22,13 @@ export default function PlannerScreen({ navigation }: any) {
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
   const { reminders, isLoading, loadReminders, useFirebase } = useReminders();
-  
+  const { t } = useTranslation();
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  
+
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -52,9 +54,9 @@ export default function PlannerScreen({ navigation }: any) {
   const handleTimeSlotPress = (timeSlot: string) => {
     const createReminderAction = () => {
       setSelectedTimeSlot(timeSlot);
-      navigation.navigate('Add', { 
+      navigation.navigate('Add', {
         prefillTime: timeSlot,
-        prefillDate: currentDate.toISOString().split('T')[0]
+        prefillDate: currentDate.toISOString().split('T')[0],
       });
     };
 
@@ -72,8 +74,8 @@ export default function PlannerScreen({ navigation }: any) {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
+    if (hour < 12) {return 'Good Morning';}
+    if (hour < 17) {return 'Good Afternoon';}
     return 'Good Evening';
   };
 
@@ -85,7 +87,7 @@ export default function PlannerScreen({ navigation }: any) {
     const dates = [];
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(startOfWeek);
       date.setDate(date.getDate() + i);
@@ -96,15 +98,15 @@ export default function PlannerScreen({ navigation }: any) {
 
   const getRemindersForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return reminders.filter(reminder => 
+    return reminders.filter(reminder =>
       reminder.dueDate === dateStr && !reminder.completed
     );
   };
 
   const getRemindersForTimeSlot = (date: Date, timeSlot: string) => {
     const dateStr = date.toISOString().split('T')[0];
-    return reminders.filter(reminder => 
-      reminder.dueDate === dateStr && 
+    return reminders.filter(reminder =>
+      reminder.dueDate === dateStr &&
       reminder.dueTime === timeSlot &&
       !reminder.completed
     );
@@ -114,24 +116,24 @@ export default function PlannerScreen({ navigation }: any) {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.navButton}
             onPress={() => navigateDate('prev')}
           >
             <ChevronLeft size={24} color={colors.text} strokeWidth={2} />
           </TouchableOpacity>
-          
+
           <View style={styles.headerCenter}>
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.dateTitle}>
-              {viewMode === 'daily' 
+              {viewMode === 'daily'
                 ? formatDateLocal(currentDate)
                 : `${formatDateLocal(getWeekDates()[0])} - ${formatDateLocal(getWeekDates()[6])}`
               }
             </Text>
           </View>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.navButton}
             onPress={() => navigateDate('next')}
           >
@@ -141,33 +143,33 @@ export default function PlannerScreen({ navigation }: any) {
 
         <View style={styles.headerControls}>
           <View style={styles.viewModeToggle}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.toggleButton,
-                viewMode === 'daily' && styles.toggleButtonActive
+                viewMode === 'daily' && styles.toggleButtonActive,
               ]}
               onPress={() => setViewMode('daily')}
             >
               <Text style={[
                 styles.toggleText,
-                viewMode === 'daily' && styles.toggleTextActive
+                viewMode === 'daily' && styles.toggleTextActive,
               ]}>Day</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.toggleButton,
-                viewMode === 'weekly' && styles.toggleButtonActive
+                viewMode === 'weekly' && styles.toggleButtonActive,
               ]}
               onPress={() => setViewMode('weekly')}
             >
               <Text style={[
                 styles.toggleText,
-                viewMode === 'weekly' && styles.toggleTextActive
+                viewMode === 'weekly' && styles.toggleTextActive,
               ]}>Week</Text>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={() => guardAction(() => navigation.navigate('Add'))}
           >
@@ -179,13 +181,13 @@ export default function PlannerScreen({ navigation }: any) {
       {isAnonymous && (
         <View style={styles.anonymousNotice}>
           <Text style={styles.noticeText}>
-            Sign in to access the full planner with all your reminders and family sharing features.
+            {t('add.anonymousBanner')}
           </Text>
         </View>
       )}
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -239,8 +241,8 @@ export default function PlannerScreen({ navigation }: any) {
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
         onSuccess={() => executeAfterAuth(() => console.log('Planner access granted'))}
-        title="Planner Access"
-        message="Sign in to access the full planner with all your reminders and family sharing features."
+        title={t('navigation.access.plannerAccess')}
+        message={t('add.anonymousBanner')}
       />
     </SafeAreaView>
   );
@@ -365,4 +367,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     textAlign: 'center',
     marginTop: 4,
   },
-}); 
+});

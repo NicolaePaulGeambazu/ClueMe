@@ -459,6 +459,67 @@
     "delete": "Eliminar",
     "deleteReminder": "Eliminar Recordatorio",
     "deleteConfirm": "¿Estás seguro de que quieres eliminar este recordatorio?",
-    "deleteError": "Error al eliminar recordatorio. Por favor inténtalo de nuevo."
+    "deleteError": "Error al eliminar el recordatorio. Inténtalo de nuevo."
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de Vuelta",
+      "subtitle": "Inicia sesión para continuar en ClearCue",
+      "emailPlaceholder": "Dirección de correo",
+      "passwordPlaceholder": "Contraseña",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "signIn": "Iniciar Sesión",
+      "signingIn": "Iniciando Sesión...",
+      "noAccount": "¿No tienes una cuenta? ",
+      "signUp": "Registrarse"
+    },
+    "signup": {
+      "title": "Crear Cuenta",
+      "subtitle": "Únete a ClearCue para comenzar",
+      "fullNamePlaceholder": "Nombre completo",
+      "emailPlaceholder": "Dirección de correo",
+      "passwordPlaceholder": "Contraseña",
+      "confirmPasswordPlaceholder": "Confirmar contraseña",
+      "signUp": "Registrarse",
+      "signingUp": "Creando Cuenta...",
+      "hasAccount": "¿Ya tienes una cuenta? ",
+      "signIn": "Iniciar Sesión"
+    },
+    "forgotPassword": {
+      "title": "Restablecer Contraseña",
+      "subtitle": "Ingresa tu correo para recibir instrucciones de restablecimiento",
+      "emailPlaceholder": "Dirección de correo",
+      "sendReset": "Enviar Enlace de Restablecimiento",
+      "sending": "Enviando...",
+      "backToLogin": "Volver al Inicio de Sesión"
+    }
+  },
+  "forms": {
+    "placeholders": {
+      "enterItemTitle": "Ingresa el título del elemento",
+      "enterDescription": "Ingresa la descripción",
+      "enterListName": "Ingresa el nombre de la lista"
+    }
+  },
+  "navigation": {
+    "screens": {
+      "home": "Inicio",
+      "add": "Agregar",
+      "settings": "Configuración",
+      "search": "Buscar",
+      "calendar": "Calendario",
+      "categories": "Categorías",
+      "family": "Familia",
+      "lists": "Listas",
+      "countdown": "Cuenta Regresiva",
+      "reminders": "Recordatorios",
+      "planner": "Planificador",
+      "trash": "Papelera"
+    },
+    "access": {
+      "plannerAccess": "Acceso al Planificador",
+      "trashAccess": "Acceso a la Papelera",
+      "searchReminders": "Buscar Recordatorios"
+    }
   }
 } 

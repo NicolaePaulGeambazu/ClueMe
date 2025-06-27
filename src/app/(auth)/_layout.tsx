@@ -26,4 +26,4 @@ export default function AuthLayout() {
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     </Stack.Navigator>
   );
-} 
+}

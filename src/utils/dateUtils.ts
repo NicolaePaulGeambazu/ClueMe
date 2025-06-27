@@ -5,7 +5,7 @@ import i18n from '../i18n';
 // Date format preferences
 export type DateFormat = 'european' | 'american' | 'iso';
 
-// Time format preferences  
+// Time format preferences
 export type TimeFormat = '12h' | '24h';
 
 // Locale mapping
@@ -37,9 +37,9 @@ export class DateUtils {
     timeFormat?: TimeFormat;
     locale?: string;
   }) {
-    if (options.dateFormat) this.dateFormat = options.dateFormat;
-    if (options.timeFormat) this.timeFormat = options.timeFormat;
-    if (options.locale) this.locale = options.locale;
+    if (options.dateFormat) {this.dateFormat = options.dateFormat;}
+    if (options.timeFormat) {this.timeFormat = options.timeFormat;}
+    if (options.locale) {this.locale = options.locale;}
   }
 
   // Get current date in ISO format (YYYY-MM-DD)
@@ -57,7 +57,7 @@ export class DateUtils {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     const useFormat = format || this.dateFormat;
     const locale = this.getCurrentLocale();
-    
+
     switch (useFormat) {
       case 'european':
         return formatDateFns(dateObj, 'dd/MM/yyyy', { locale });
@@ -75,7 +75,7 @@ export class DateUtils {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     const useFormat = format || this.timeFormat;
     const locale = this.getCurrentLocale();
-    
+
     switch (useFormat) {
       case '12h':
         return formatDateFns(dateObj, 'hh:mm a', { locale });
@@ -110,7 +110,7 @@ export class DateUtils {
   static getRelativeDate(date: Date | string): string {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     const locale = this.getCurrentLocale();
-    
+
     if (isTodayFns(dateObj)) {
       return 'Today';
     }
@@ -173,7 +173,7 @@ export class DateUtils {
   static formatForActivity(date: Date | string): string {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     const locale = this.getCurrentLocale();
-    
+
     if (isTodayFns(dateObj)) {
       return `Today, ${this.formatTime(dateObj)}`;
     }
@@ -189,14 +189,14 @@ export class DateUtils {
   // Get greeting based on time of day
   static getGreeting(): string {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
+    if (hour < 12) {return 'Good morning';}
+    if (hour < 17) {return 'Good afternoon';}
     return 'Good evening';
   }
 
   // Check if a reminder is overdue
   static isOverdue(dueDate?: string, completed?: boolean): boolean {
-    if (!dueDate || completed) return false;
+    if (!dueDate || completed) {return false;}
     const today = this.getTodayISO();
     return dueDate < today;
   }
@@ -218,32 +218,32 @@ export class DateUtils {
     const diffInHours = Math.floor(diffInMinutes / 60);
     const diffInDays = Math.floor(diffInHours / 24);
 
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInDays < 7) return `${diffInDays}d ago`;
-    
+    if (diffInMinutes < 1) {return 'Just now';}
+    if (diffInMinutes < 60) {return `${diffInMinutes}m ago`;}
+    if (diffInHours < 24) {return `${diffInHours}h ago`;}
+    if (diffInDays < 7) {return `${diffInDays}d ago`;}
+
     return this.formatDate(date);
   }
 
   // Format time-only string (e.g., "14:30" -> "2:30 PM")
   static formatTimeOnly(timeString: string, format?: TimeFormat): string {
-    if (!timeString) return '';
-    
+    if (!timeString) {return '';}
+
     try {
       // If it's already a time string like "14:30", parse it directly
       if (timeString.includes(':') && !timeString.includes('T')) {
         const [hours, minutes] = timeString.split(':');
         const hour = parseInt(hours, 10);
         const minute = parseInt(minutes, 10);
-        
+
         if (isNaN(hour) || isNaN(minute)) {
           return timeString; // Return original if parsing fails
         }
-        
+
         const useFormat = format || this.timeFormat;
         const locale = this.getCurrentLocale();
-        
+
         switch (useFormat) {
           case '12h':
             const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -271,7 +271,7 @@ export const getTodayFormatted = () => DateUtils.getTodayFormatted();
 export const formatDate = (date: Date | string, format?: DateFormat) => DateUtils.formatDate(date, format);
 export const formatTime = (date: Date | string, format?: TimeFormat) => DateUtils.formatTime(date, format);
 export const formatTimeOnly = (timeString: string, format?: TimeFormat) => DateUtils.formatTimeOnly(timeString, format);
-export const formatDateTime = (date: Date | string, dateFormat?: DateFormat, timeFormat?: TimeFormat) => 
+export const formatDateTime = (date: Date | string, dateFormat?: DateFormat, timeFormat?: TimeFormat) =>
   DateUtils.formatDateTime(date, dateFormat, timeFormat);
 export const isToday = (date: Date | string) => DateUtils.isToday(date);
 export const isYesterday = (date: Date | string) => DateUtils.isYesterday(date);

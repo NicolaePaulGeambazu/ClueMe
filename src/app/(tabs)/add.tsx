@@ -14,7 +14,7 @@ import { useFamily } from '../../contexts/FamilyContext';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
 import { RepeatOptions } from '../../components/ReminderForm/RepeatOptions';
 import { NotificationTimingSelector } from '../../components/ReminderForm/NotificationTimingSelector';
-import { Colors } from '../../constants/Colors'
+import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { Plus } from 'lucide-react-native';
 import { FALLBACK_TASK_TYPES } from '../../constants/config';
@@ -30,7 +30,7 @@ export default function AddScreen({ navigation, route }: any) {
   const { createReminder } = useReminders();
   const { taskTypes, isLoading: taskTypesLoading, seedDefaultTaskTypes } = useTaskTypes();
   const { familyMembers } = useFamily();
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -43,7 +43,7 @@ export default function AddScreen({ navigation, route }: any) {
     isFavorite: false,
     hasNotification: true,
     notificationTimings: [
-      { type: 'before', value: 15, label: '15 minutes before' }
+      { type: 'before', value: 15, label: '15 minutes before' },
     ] as NotificationTiming[],
     isRecurring: false,
     assignedTo: '' as string,
@@ -56,7 +56,7 @@ export default function AddScreen({ navigation, route }: any) {
   const [pickerValue, setPickerValue] = useState<Date>(new Date());
   const [repeatPattern, setRepeatPattern] = useState('daily');
   const [customInterval, setCustomInterval] = useState(1);
-  
+
   const styles = createStyles(colors);
 
   // Prefill form data if passed from navigation
@@ -104,13 +104,13 @@ export default function AddScreen({ navigation, route }: any) {
   };
 
   const formatDisplayDate = (dateString: string) => {
-    if (!dateString) return '';
+    if (!dateString) {return '';}
     const date = new Date(dateString);
     return formatDate(date);
   };
 
   const formatDisplayTime = (timeString: string) => {
-    if (!timeString) return '';
+    if (!timeString) {return '';}
     const [hours, minutes] = timeString.split(':');
     const date = new Date();
     date.setHours(parseInt(hours), parseInt(minutes));
@@ -131,7 +131,7 @@ export default function AddScreen({ navigation, route }: any) {
       isFavorite: false,
       hasNotification: true,
       notificationTimings: [
-        { type: 'before', value: 15, label: '15 minutes before' }
+        { type: 'before', value: 15, label: '15 minutes before' },
       ] as NotificationTiming[],
       isRecurring: false,
       assignedTo: '' as string,
@@ -204,7 +204,7 @@ export default function AddScreen({ navigation, route }: any) {
     if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...prev.tags, newTag.trim()],
       }));
       setNewTag('');
     }
@@ -213,13 +213,13 @@ export default function AddScreen({ navigation, route }: any) {
   const removeTag = (tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter(tag => tag !== tagToRemove),
     }));
   };
 
   // Use Firebase task types if available, otherwise use fallback
   const availableTaskTypes = taskTypes.length > 0 ? taskTypes : FALLBACK_TASK_TYPES;
-  
+
   const typeOptions = availableTaskTypes.map(taskType => ({
     id: 'name' in taskType ? taskType.name : taskType.id,
     label: taskType.label,
@@ -248,10 +248,10 @@ export default function AddScreen({ navigation, route }: any) {
   // Handler to open the native picker
   const openPicker = (mode: 'date' | 'time' | 'datetime') => {
     setPickerMode(mode);
-    
+
     // Set picker value based on current form data or current date
     let initialValue = new Date();
-    
+
     if (mode === 'date' && formData.dueDate) {
       initialValue = new Date(formData.dueDate);
     } else if (mode === 'time' && formData.dueTime) {
@@ -267,9 +267,9 @@ export default function AddScreen({ navigation, route }: any) {
         }
       }
     }
-    
+
     setPickerValue(initialValue);
-    
+
     if (mode === 'date') {
       setShowDatePicker(true);
     } else {
@@ -298,22 +298,22 @@ export default function AddScreen({ navigation, route }: any) {
         }} style={styles.backButton}>
           <X size={24} color={colors.text} />
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           onPress={() => {
             Alert.alert(
               t('add.clearFormTitle'),
               t('add.clearFormMessage'),
               [
                 { text: t('common.cancel'), style: 'cancel' },
-                { 
-                  text: t('common.clear'), 
+                {
+                  text: t('common.clear'),
                   style: 'destructive',
-                  onPress: resetForm 
-                }
+                  onPress: resetForm,
+                },
               ]
             );
-          }} 
+          }}
           style={styles.clearButton}
         >
           <Text style={styles.clearButtonText}>{t('add.clear')}</Text>
@@ -347,8 +347,8 @@ export default function AddScreen({ navigation, route }: any) {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('add.type')}</Text>
             <View style={styles.typeContainer}>
-              <ScrollView 
-                horizontal 
+              <ScrollView
+                horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.typeScrollContainer}
                 style={styles.typeScrollView}
@@ -360,12 +360,12 @@ export default function AddScreen({ navigation, route }: any) {
                       key={option.id}
                       style={[
                         styles.typeOption,
-                        formData.type === option.id && { 
-                          backgroundColor: option.color + '20', 
+                        formData.type === option.id && {
+                          backgroundColor: option.color + '20',
                           borderColor: option.color,
                           shadowOpacity: 0.15,
                           shadowColor: option.color,
-                        }
+                        },
                       ]}
                       onPress={() => setFormData(prev => ({ ...prev, type: option.id }))}
                     >
@@ -388,7 +388,7 @@ export default function AddScreen({ navigation, route }: any) {
                   key={option.id}
                   style={[
                     styles.priorityOption,
-                    formData.priority === option.id && { backgroundColor: option.color + '15', borderColor: option.color }
+                    formData.priority === option.id && { backgroundColor: option.color + '15', borderColor: option.color },
                   ]}
                   onPress={() => setFormData(prev => ({ ...prev, priority: option.id as any }))}
                 >
@@ -404,7 +404,7 @@ export default function AddScreen({ navigation, route }: any) {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('add.dateTime')}</Text>
             <View style={styles.dateTimeRow}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.inputContainer}
                 onPress={() => openPicker('date')}
               >
@@ -414,8 +414,8 @@ export default function AddScreen({ navigation, route }: any) {
                 </Text>
                 <ChevronRight size={16} color={colors.textSecondary} />
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={styles.inputContainer}
                 onPress={() => openPicker('time')}
               >
@@ -461,7 +461,7 @@ export default function AddScreen({ navigation, route }: any) {
                   <Plus size={20} color={colors.primary} />
                 </TouchableOpacity>
               </View>
-              
+
               {formData.tags.length > 0 && (
                 <View style={styles.tagsList}>
                   {formData.tags.map((tag, index) => (
@@ -481,40 +481,40 @@ export default function AddScreen({ navigation, route }: any) {
             <Text style={styles.sectionLabel}>{t('add.assignTo')}</Text>
             {familyMembers && familyMembers.length > 0 ? (
               <View style={styles.familyMembersContainer}>
-                <ScrollView 
-                  horizontal 
+                <ScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.familyMembersScrollContainer}
                 >
                   <TouchableOpacity
                     style={[
                       styles.familyMemberOption,
-                      !formData.assignedTo && styles.familyMemberOptionSelected
+                      !formData.assignedTo && styles.familyMemberOptionSelected,
                     ]}
                     onPress={() => setFormData(prev => ({ ...prev, assignedTo: '' }))}
                   >
                     <User size={16} color={!formData.assignedTo ? colors.primary : colors.textSecondary} />
                     <Text style={[
                       styles.familyMemberLabel,
-                      !formData.assignedTo && styles.familyMemberLabelSelected
+                      !formData.assignedTo && styles.familyMemberLabelSelected,
                     ]}>
                       {t('add.unassigned')}
                     </Text>
                   </TouchableOpacity>
-                  
+
                   {familyMembers.map((member) => (
                     <TouchableOpacity
                       key={member.id}
                       style={[
                         styles.familyMemberOption,
-                        formData.assignedTo === member.id && styles.familyMemberOptionSelected
+                        formData.assignedTo === member.id && styles.familyMemberOptionSelected,
                       ]}
                       onPress={() => setFormData(prev => ({ ...prev, assignedTo: member.id }))}
                     >
                       <User size={16} color={formData.assignedTo === member.id ? colors.primary : colors.textSecondary} />
                       <Text style={[
                         styles.familyMemberLabel,
-                        formData.assignedTo === member.id && styles.familyMemberLabelSelected
+                        formData.assignedTo === member.id && styles.familyMemberLabelSelected,
                       ]}>
                         {member.name}
                       </Text>
@@ -574,8 +574,8 @@ export default function AddScreen({ navigation, route }: any) {
 
       {/* Floating Save Button */}
       <View style={styles.floatingSaveContainer}>
-        <TouchableOpacity 
-          onPress={handleSaveWithAuth} 
+        <TouchableOpacity
+          onPress={handleSaveWithAuth}
           style={[styles.floatingSaveButton, isSaveDisabled && styles.floatingSaveButtonDisabled]}
           disabled={isSaveDisabled}
         >
@@ -599,12 +599,12 @@ export default function AddScreen({ navigation, route }: any) {
         animationType="fade"
         onRequestClose={() => setShowDatePicker(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.pickerOverlay}
           activeOpacity={1}
           onPress={() => setShowDatePicker(false)}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.pickerContainer}
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
@@ -633,12 +633,12 @@ export default function AddScreen({ navigation, route }: any) {
         animationType="fade"
         onRequestClose={() => setShowTimePicker(false)}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.pickerOverlay}
           activeOpacity={1}
           onPress={() => setShowTimePicker(false)}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.pickerContainer}
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}

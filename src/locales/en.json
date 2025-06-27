@@ -462,5 +462,66 @@
     "deleteReminder": "Delete Reminder",
     "deleteConfirm": "Are you sure you want to delete this reminder?",
     "deleteError": "Failed to delete reminder. Please try again."
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to continue to ClearCue",
+      "emailPlaceholder": "Email address",
+      "passwordPlaceholder": "Password",
+      "forgotPassword": "Forgot Password?",
+      "signIn": "Sign In",
+      "signingIn": "Signing In...",
+      "noAccount": "Don't have an account? ",
+      "signUp": "Sign Up"
+    },
+    "signup": {
+      "title": "Create Account",
+      "subtitle": "Join ClearCue to get started",
+      "fullNamePlaceholder": "Full name",
+      "emailPlaceholder": "Email address",
+      "passwordPlaceholder": "Password",
+      "confirmPasswordPlaceholder": "Confirm password",
+      "signUp": "Sign Up",
+      "signingUp": "Creating Account...",
+      "hasAccount": "Already have an account? ",
+      "signIn": "Sign In"
+    },
+    "forgotPassword": {
+      "title": "Reset Password",
+      "subtitle": "Enter your email to receive reset instructions",
+      "emailPlaceholder": "Email address",
+      "sendReset": "Send Reset Link",
+      "sending": "Sending...",
+      "backToLogin": "Back to Login"
+    }
+  },
+  "forms": {
+    "placeholders": {
+      "enterItemTitle": "Enter item title",
+      "enterDescription": "Enter description",
+      "enterListName": "Enter list name"
+    }
+  },
+  "navigation": {
+    "screens": {
+      "home": "Home",
+      "add": "Add",
+      "settings": "Settings",
+      "search": "Search",
+      "calendar": "Calendar",
+      "categories": "Categories",
+      "family": "Family",
+      "lists": "Lists",
+      "countdown": "Countdown",
+      "reminders": "Reminders",
+      "planner": "Planner",
+      "trash": "Trash"
+    },
+    "access": {
+      "plannerAccess": "Planner Access",
+      "trashAccess": "Trash Access",
+      "searchReminders": "Search Reminders"
+    }
   }
 } 

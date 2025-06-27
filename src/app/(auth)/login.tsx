@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { useTranslation } from 'react-i18next';
 
 export default function LoginScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { signIn } = useAuth();
   const colors = Colors[theme];
@@ -18,24 +20,24 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Missing Information', 'Please enter both your email address and password to sign in.');
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
     setIsLoading(true);
     try {
       await signIn(email.trim(), password);
-      
+
       // Wait a moment for authentication state to update
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       navigation.replace('MainTabs');
     } catch (error: any) {
       console.error('Login error:', error);
-      
+
       let errorMessage = 'An unexpected error occurred. Please try again.';
       let errorTitle = 'Login Failed';
-      
+
       // Handle specific Firebase auth errors with more descriptive messages
       switch (error.code) {
         case 'auth/user-not-found':
@@ -85,7 +87,7 @@ export default function LoginScreen({ navigation }: any) {
           }
           break;
       }
-      
+
       Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
@@ -96,18 +98,18 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to continue to ClearCue</Text>
+            <Text style={styles.title}>{t('auth.login.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.login.subtitle')}</Text>
           </View>
 
           <View style={styles.form}>
@@ -115,7 +117,7 @@ export default function LoginScreen({ navigation }: any) {
               <Mail size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Email address"
+                placeholder={t('auth.login.emailPlaceholder')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -129,7 +131,7 @@ export default function LoginScreen({ navigation }: any) {
               <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('auth.login.passwordPlaceholder')}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -149,11 +151,11 @@ export default function LoginScreen({ navigation }: any) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.forgotPassword}
               onPress={() => navigation.navigate('ForgotPassword')}
             >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              <Text style={styles.forgotPasswordText}>{t('auth.login.forgotPassword')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -162,7 +164,7 @@ export default function LoginScreen({ navigation }: any) {
               disabled={isLoading}
             >
               <Text style={styles.loginButtonText}>
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? t('auth.login.signingIn') : t('auth.login.signIn')}
               </Text>
               {!isLoading && (
                 <ArrowRight size={20} color="#FFFFFF" strokeWidth={2} />
@@ -171,9 +173,9 @@ export default function LoginScreen({ navigation }: any) {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.login.noAccount')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
+              <Text style={styles.signupLink}>{t('auth.login.signUp')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

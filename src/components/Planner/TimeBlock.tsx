@@ -15,7 +15,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
   reminder,
   onPress,
   colors,
-  compact = false
+  compact = false,
 }) => {
   const styles = createStyles(colors);
 
@@ -51,7 +51,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
   };
 
   const isOverdue = () => {
-    if (!reminder.dueDate) return false;
+    if (!reminder.dueDate) {return false;}
     const dueDate = new Date(reminder.dueDate);
     const now = new Date();
     return dueDate < now && !reminder.completed;
@@ -67,7 +67,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
         style={[
           styles.compactBlock,
           { borderLeftColor: typeColor },
-          overdue && styles.overdueBlock
+          overdue && styles.overdueBlock,
         ]}
         onPress={onPress}
       >
@@ -86,7 +86,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       style={[
         styles.block,
         { borderLeftColor: typeColor },
-        overdue && styles.overdueBlock
+        overdue && styles.overdueBlock,
       ]}
       onPress={onPress}
     >
@@ -100,7 +100,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
             <Star size={14} color={colors.warning} fill={colors.warning} />
           )}
         </View>
-        
+
         <View style={styles.blockMeta}>
           {reminder.dueTime && (
             <View style={styles.timeMeta}>
@@ -108,7 +108,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
               <Text style={styles.timeText}>{formatTimeOnly(reminder.dueTime)}</Text>
             </View>
           )}
-          
+
           <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '15' }]}>
             <Text style={[styles.priorityText, { color: priorityColor }]}>
               {reminder.priority}
@@ -130,7 +130,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
             <Text style={styles.assignedText}>{reminder.assignedTo}</Text>
           </View>
         )}
-        
+
         {overdue && (
           <View style={styles.overdueIndicator}>
             <AlertCircle size={12} color={colors.error} strokeWidth={2} />
@@ -250,4 +250,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.error,
     marginLeft: 4,
   },
-}); 
+});

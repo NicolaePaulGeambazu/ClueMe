@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               console.log('🔥 Firebase user authenticated:', firebaseUser.uid, firebaseUser.isAnonymous ? '(anonymous)' : '');
               const convertedUser = convertFirebaseUserToUser(firebaseUser);
               setUser(convertedUser);
-              
+
               // If user is authenticated and not anonymous, try to seed default task types
               if (!convertedUser.isAnonymous) {
                 try {
@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userCredential = await auth().signInWithEmailAndPassword(email, password);
       const firebaseUser = userCredential.user;
-      
+
       // Try to create user profile in Firebase
       try {
         await userService.createUserProfile({
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.warn('Could not create/update Firebase user profile:', error);
       }
-      
+
       // Seed default task types for new users
       try {
         const existingTypes = await taskTypeService.getAllTaskTypes();
@@ -117,11 +117,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.warn('Could not seed task types:', error);
       }
-      
+
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
-      
+
     } catch (error: any) {
       console.error('Firebase sign in error:', error);
       throw error;
@@ -135,12 +135,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
       const firebaseUser = userCredential.user;
-      
+
       // Update display name if provided
       if (displayName) {
         await firebaseUser.updateProfile({ displayName });
       }
-      
+
       // Try to create user profile in Firebase
       try {
         await userService.createUserProfile({
@@ -152,18 +152,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.warn('Could not create Firebase user profile:', error);
       }
-      
+
       // Seed default task types for new users
       try {
         await taskTypeService.seedDefaultTaskTypes();
       } catch (error) {
         console.warn('Could not seed task types:', error);
       }
-      
+
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
-      
+
     } catch (error) {
       console.error('Firebase sign up error:', error);
       throw error;
@@ -219,16 +219,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Create credential
       const credential = auth.EmailAuthProvider.credential(email, password);
-      
+
       // Link the credential
       const userCredential = await currentUser.linkWithCredential(credential);
       const firebaseUser = userCredential.user;
-      
+
       // Update display name if provided
       if (displayName) {
         await firebaseUser.updateProfile({ displayName });
       }
-      
+
       // Try to create user profile in Firebase
       try {
         await userService.createUserProfile({
@@ -240,18 +240,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (error) {
         console.warn('Could not create Firebase user profile:', error);
       }
-      
+
       // Seed default task types for upgraded users
       try {
         await taskTypeService.seedDefaultTaskTypes();
       } catch (error) {
         console.warn('Could not seed task types:', error);
       }
-      
+
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
-      
+
     } catch (error) {
       console.error('Firebase upgrade error:', error);
       throw error;

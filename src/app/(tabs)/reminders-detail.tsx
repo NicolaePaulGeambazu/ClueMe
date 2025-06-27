@@ -13,7 +13,7 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { title, reminders } = route.params || {};
-  
+
   const styles = createStyles(colors);
 
   // Debug: Log the reminders data
@@ -25,7 +25,7 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
         title: reminder.title,
         dueTime: reminder.dueTime,
         dueTimeType: typeof reminder.dueTime,
-        dueDate: reminder.dueDate
+        dueDate: reminder.dueDate,
       });
     });
   }
@@ -62,7 +62,7 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
           <Text style={styles.headerTitle}>{title || t('reminders.title')}</Text>
           <View style={styles.headerSpacer} />
         </View>
-        
+
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>{t('reminders.noRemindersForDate')}</Text>
         </View>
@@ -88,11 +88,11 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
               <Text style={styles.reminderTitle}>{reminder.title}</Text>
               {reminder.isFavorite && <Star size={16} color={colors.warning} />}
             </View>
-            
+
             {reminder.description && (
               <Text style={styles.reminderDescription}>{reminder.description}</Text>
             )}
-            
+
             <View style={styles.reminderMeta}>
               {reminder.dueTime && (
                 <View style={styles.metaItem}>
@@ -102,14 +102,14 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
                   </Text>
                 </View>
               )}
-              
+
               {reminder.priority && (
                 <View style={styles.metaItem}>
                   <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(reminder.priority) }]} />
                   <Text style={styles.metaText}>{reminder.priority}</Text>
                 </View>
               )}
-              
+
               {reminder.completed && (
                 <View style={styles.metaItem}>
                   <CheckCircle size={14} color={colors.success} />
@@ -117,7 +117,7 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
                 </View>
               )}
             </View>
-            
+
             {reminder.tags && reminder.tags.length > 0 && (
               <View style={styles.tagsContainer}>
                 {reminder.tags.map((tag: string, tagIndex: number) => (
@@ -251,4 +251,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: FontSizes.footnote,
     color: colors.primary,
   },
-}); 
+});

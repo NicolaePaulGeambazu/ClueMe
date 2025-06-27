@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
+import { useTranslation } from 'react-i18next';
 
 export default function SignupScreen({ navigation }: any) {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const { signUp } = useAuth();
   const colors = Colors[theme];
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -20,7 +22,7 @@ export default function SignupScreen({ navigation }: any) {
   const [isLoading, setIsLoading] = useState(false);
 
   const validateForm = () => {
-    if (!name.trim()) {
+    if (!fullName.trim()) {
       Alert.alert('Missing Information', 'Please enter your full name to continue.');
       return false;
     }
@@ -44,21 +46,21 @@ export default function SignupScreen({ navigation }: any) {
   };
 
   const handleSignup = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {return;}
 
     setIsLoading(true);
     try {
-      await signUp(email.trim(), password, name.trim());
-      
+      await signUp(email.trim(), password, fullName.trim());
+
       // Wait a moment for Firebase to complete the signup process and state to update
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       navigation.replace('MainTabs');
     } catch (error: any) {
       console.error('Signup error:', error);
       let errorMessage = 'An unexpected error occurred. Please try again.';
       let errorTitle = 'Signup Failed';
-      
+
       // Handle specific Firebase auth errors with more descriptive messages
       switch (error.code) {
         case 'auth/email-already-in-use':
@@ -104,7 +106,7 @@ export default function SignupScreen({ navigation }: any) {
           }
           break;
       }
-      
+
       Alert.alert(errorTitle, errorMessage);
     } finally {
       setIsLoading(false);
@@ -115,18 +117,18 @@ export default function SignupScreen({ navigation }: any) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
-            <Text style={styles.title}>Create Account</Text>
-            <Text style={styles.subtitle}>Join ClearCue to organize your reminders</Text>
+            <Text style={styles.title}>{t('auth.signup.title')}</Text>
+            <Text style={styles.subtitle}>{t('auth.signup.subtitle')}</Text>
           </View>
 
           <View style={styles.form}>
@@ -134,9 +136,9 @@ export default function SignupScreen({ navigation }: any) {
               <User size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Full name"
-                value={name}
-                onChangeText={setName}
+                placeholder={t('auth.signup.fullNamePlaceholder')}
+                value={fullName}
+                onChangeText={setFullName}
                 autoCapitalize="words"
                 autoCorrect={false}
                 placeholderTextColor={colors.textTertiary}
@@ -147,7 +149,7 @@ export default function SignupScreen({ navigation }: any) {
               <Mail size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Email address"
+                placeholder={t('auth.signup.emailPlaceholder')}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -161,7 +163,7 @@ export default function SignupScreen({ navigation }: any) {
               <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('auth.signup.passwordPlaceholder')}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -185,7 +187,7 @@ export default function SignupScreen({ navigation }: any) {
               <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Confirm password"
+                placeholder={t('auth.signup.confirmPasswordPlaceholder')}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
@@ -211,7 +213,7 @@ export default function SignupScreen({ navigation }: any) {
               disabled={isLoading}
             >
               <Text style={styles.signupButtonText}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? t('auth.signup.signingUp') : t('auth.signup.signUp')}
               </Text>
               {!isLoading && (
                 <ArrowRight size={20} color="#FFFFFF" strokeWidth={2} />
@@ -220,9 +222,9 @@ export default function SignupScreen({ navigation }: any) {
           </View>
 
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.signup.hasAccount')}</Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Sign In</Text>
+              <Text style={styles.loginLink}>{t('auth.signup.signIn')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

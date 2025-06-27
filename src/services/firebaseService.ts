@@ -158,14 +158,14 @@ export interface UserList {
 
 // Helper function to check if error is a permission denied error
 const isPermissionDeniedError = (error: any): boolean => {
-  return error?.code === 'permission-denied' || 
+  return error?.code === 'permission-denied' ||
          error?.message?.includes('permission-denied') ||
          error?.message?.includes('permission denied');
 };
 
 // Helper function to check if error is a collection not found error
 const isCollectionNotFoundError = (error: any): boolean => {
-  return error?.code === 'not-found' || 
+  return error?.code === 'not-found' ||
          error?.message?.includes('collection') ||
          error?.message?.includes('not found');
 };
@@ -198,20 +198,20 @@ const checkFirestoreAvailability = (): boolean => {
       console.warn('❌ Firebase not configured for Android (missing google-services.json)');
       return false;
     }
-    
+
     const firestoreInstance = firestore();
     if (!firestoreInstance) {
       console.warn('❌ Firestore instance not available');
       return false;
     }
-    
+
     // Test if we can create a collection reference
     const testRef = firestoreInstance.collection('_test');
     if (!testRef) {
       console.warn('❌ Cannot create collection reference');
       return false;
     }
-    
+
     return true;
   } catch (error) {
     console.warn('❌ Error checking Firestore availability:', error);
@@ -223,19 +223,19 @@ const checkFirestoreAvailability = (): boolean => {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const initializeFirebase = async (): Promise<boolean> => {
-  if (isFirebaseInitialized) return true;
-  
-  if (firebaseInitPromise) return firebaseInitPromise;
-  
+  if (isFirebaseInitialized) {return true;}
+
+  if (firebaseInitPromise) {return firebaseInitPromise;}
+
   firebaseInitPromise = new Promise(async (resolve) => {
     try {
       console.log('🔍 Checking Firebase initialization...');
-      
+
       // Try multiple times with delays to wait for native module to be ready
       for (let attempt = 1; attempt <= 5; attempt++) {
         try {
           console.log(`🔄 Firebase initialization attempt ${attempt}/5...`);
-          
+
           // Check if Firestore is available
           if (!checkFirestoreAvailability()) {
             console.warn(`❌ Firestore not available (attempt ${attempt})`);
@@ -247,15 +247,15 @@ export const initializeFirebase = async (): Promise<boolean> => {
             resolve(false);
             return;
           }
-          
+
           console.log('✅ Firestore is available');
-          
+
           // Try a simple operation to test if Firestore is working
           try {
             const firestoreInstance = firestore();
             const testRef = firestoreInstance.collection('_test_connection');
             console.log('✅ Collection reference created successfully');
-            
+
             isFirebaseInitialized = true;
             console.log('🎉 Firebase Firestore is properly initialized');
             resolve(true);
@@ -281,7 +281,7 @@ export const initializeFirebase = async (): Promise<boolean> => {
           return;
         }
       }
-      
+
       // If we get here, all attempts failed
       console.warn('❌ All Firebase initialization attempts failed');
       isFirebaseInitialized = false;
@@ -292,7 +292,7 @@ export const initializeFirebase = async (): Promise<boolean> => {
       resolve(false);
     }
   });
-  
+
   return firebaseInitPromise;
 };
 
@@ -336,7 +336,7 @@ export const userService = {
   // Create or update user profile
   async createUserProfile(userData: Partial<UserProfile>): Promise<void> {
     const userId = userData.uid || auth().currentUser?.uid;
-    if (!userId) throw new Error('No user ID available');
+    if (!userId) {throw new Error('No user ID available');}
 
     console.log('👤 Creating user profile for:', userId);
 
@@ -369,20 +369,20 @@ export const userService = {
         console.log(`🔄 Profile creation attempt ${attempt + 1}...`);
         const firestoreInstance = getFirestoreInstance();
         const userRef = firestoreInstance.collection('users').doc(userId);
-        
+
         console.log('📝 Setting user profile data...');
         await userRef.set(profileData, { merge: true });
         console.log(`✅ User profile created/updated successfully (attempt ${attempt + 1})`);
         return;
       } catch (error) {
         console.error(`❌ Error creating user profile (attempt ${attempt + 1}):`, error);
-        
+
         // If this is the first attempt and it's a collection error, try again
         if (attempt === 0 && error instanceof Error && error.message && error.message.includes('collection')) {
           console.log('🔄 Users collection does not exist, retrying to create first document...');
           continue; // Try again
         }
-        
+
         // If we get here, either it's the second attempt or a different error
         console.error('❌ Failed to create user profile after retry:', error);
         console.warn('⚠️ User profile creation failed, continuing without Firestore...');
@@ -397,7 +397,7 @@ export const userService = {
       const firestoreInstance = getFirestoreInstance();
       const userRef = firestoreInstance.collection('users').doc(userId);
       const doc = await userRef.get();
-      
+
       if (doc.exists) {
         const data = doc.data() as any;
         return {
@@ -461,14 +461,14 @@ export const reminderService = {
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc();
       const reminderId = reminderRef.id;
-      
+
       const newReminder: Reminder = {
         ...reminderData,
         id: reminderId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       await reminderRef.set(removeUndefinedFields(newReminder) as any);
       return reminderId;
     } catch (error) {
@@ -482,22 +482,22 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const remindersRef = firestoreInstance.collection('reminders');
-      
+
       // Get all reminders for the user, then filter out deleted ones in memory
       // This handles cases where deletedAt field doesn't exist yet
       const query = remindersRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc')
         .limit(limit);
-      
+
       const snapshot = await query.get();
       const reminders: Reminder[] = [];
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
         // Skip reminders that have been soft-deleted
-        if (data.deletedAt) return;
-        
+        if (data.deletedAt) {return;}
+
         reminders.push({
           id: doc.id,
           ...data,
@@ -507,7 +507,7 @@ export const reminderService = {
           deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
         });
       });
-      
+
       return reminders;
     } catch (error) {
       console.error('Error getting user reminders:', error);
@@ -520,22 +520,22 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const remindersRef = firestoreInstance.collection('reminders');
-      
+
       // Get all reminders for the user, then filter for deleted ones in memory
       // This handles cases where deletedAt field doesn't exist yet
       const query = remindersRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc')
         .limit(limit * 2); // Get more to account for filtering
-      
+
       const snapshot = await query.get();
       const reminders: Reminder[] = [];
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
         // Only include reminders that have been soft-deleted
-        if (!data.deletedAt) return;
-        
+        if (!data.deletedAt) {return;}
+
         reminders.push({
           id: doc.id,
           ...data,
@@ -544,7 +544,7 @@ export const reminderService = {
           dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
         });
       });
-      
+
       // Sort by deletedAt and limit
       return reminders
         .sort((a, b) => b.deletedAt!.getTime() - a.deletedAt!.getTime())
@@ -563,7 +563,7 @@ export const reminderService = {
       const query = remindersRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc');
-      
+
       return query.onSnapshot((snapshot) => {
         const reminders: Reminder[] = [];
         snapshot.forEach((doc) => {
@@ -696,10 +696,10 @@ export const reminderService = {
         .where('userId', '==', userId)
         .where('type', '==', type)
         .orderBy('createdAt', 'desc');
-      
+
       const snapshot = await query.get();
       const reminders: Reminder[] = [];
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
         reminders.push({
@@ -711,7 +711,7 @@ export const reminderService = {
           deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
         });
       });
-      
+
       return reminders;
     } catch (error) {
       console.error('Error getting reminders by type:', error);
@@ -728,10 +728,10 @@ export const reminderService = {
         .where('userId', '==', userId)
         .where('priority', '==', priority)
         .orderBy('createdAt', 'desc');
-      
+
       const snapshot = await query.get();
       const reminders: Reminder[] = [];
-      
+
       snapshot.forEach((doc) => {
         const data = doc.data() as any;
         reminders.push({
@@ -743,7 +743,7 @@ export const reminderService = {
           deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
         });
       });
-      
+
       return reminders;
     } catch (error) {
       console.error('Error getting reminders by priority:', error);
@@ -759,7 +759,7 @@ export const taskTypeService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = taskTypeData.createdBy || auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('📝 Creating task type:', taskTypeData.name);
 
@@ -772,7 +772,7 @@ export const taskTypeService = {
 
       const docRef = await firestoreInstance.collection('taskTypes').add(taskType);
       console.log('✅ Task type created with ID:', docRef.id);
-      
+
       return docRef.id;
     } catch (error) {
       if (handleFirebaseError(error, 'createTaskType')) {
@@ -787,9 +787,9 @@ export const taskTypeService = {
   async getAllTaskTypes(): Promise<TaskType[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📋 Fetching all task types...');
-      
+
       const snapshot = await firestoreInstance
         .collection('taskTypes')
         .where('isActive', '==', true)
@@ -832,9 +832,9 @@ export const taskTypeService = {
   async getDefaultTaskTypes(): Promise<TaskType[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📋 Fetching default task types...');
-      
+
       const snapshot = await firestoreInstance
         .collection('taskTypes')
         .where('isDefault', '==', true)
@@ -877,11 +877,11 @@ export const taskTypeService = {
   async getTaskTypeById(id: string): Promise<TaskType | null> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📋 Fetching task type by ID:', id);
-      
+
       const doc = await firestoreInstance.collection('taskTypes').doc(id).get();
-      
+
       if (!doc.exists) {
         console.log('❌ Task type not found');
         return null;
@@ -917,9 +917,9 @@ export const taskTypeService = {
   async updateTaskType(id: string, updates: Partial<TaskType>): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Updating task type:', id);
-      
+
       const updateData = {
         ...removeUndefinedFields(updates),
         updatedAt: new Date(),
@@ -939,14 +939,14 @@ export const taskTypeService = {
   async deleteTaskType(id: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('🗑️ Soft deleting task type:', id);
-      
+
       await firestoreInstance.collection('taskTypes').doc(id).update({
         isActive: false,
         updatedAt: new Date(),
       });
-      
+
       console.log('✅ Task type soft deleted successfully');
     } catch (error) {
       if (handleFirebaseError(error, 'deleteTaskType')) {
@@ -960,11 +960,11 @@ export const taskTypeService = {
   async hardDeleteTaskType(id: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('🗑️ Hard deleting task type:', id);
-      
+
       await firestoreInstance.collection('taskTypes').doc(id).delete();
-      
+
       console.log('✅ Task type hard deleted successfully');
     } catch (error) {
       if (handleFirebaseError(error, 'hardDeleteTaskType')) {
@@ -979,14 +979,14 @@ export const taskTypeService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('🌱 Seeding default task types...');
 
       // First, check if default task types already exist
       const existingTypes = await this.getAllTaskTypes();
       const existingNames = existingTypes.map(type => type.name);
-      
+
       console.log(`📋 Found ${existingTypes.length} existing task types:`, existingNames);
 
       const defaultTaskTypes = [
@@ -1049,7 +1049,7 @@ export const taskTypeService = {
 
       // Filter out task types that already exist
       const newTaskTypes = defaultTaskTypes.filter(taskType => !existingNames.includes(taskType.name));
-      
+
       if (newTaskTypes.length === 0) {
         console.log('✅ All default task types already exist, skipping seeding');
         return;
@@ -1058,7 +1058,7 @@ export const taskTypeService = {
       console.log(`🌱 Creating ${newTaskTypes.length} new default task types:`, newTaskTypes.map(t => t.name));
 
       const batch = firestoreInstance.batch();
-      
+
       for (const taskType of newTaskTypes) {
         const docRef = firestoreInstance.collection('taskTypes').doc();
         batch.set(docRef, {
@@ -1083,7 +1083,7 @@ export const taskTypeService = {
   onTaskTypesChange(callback: (taskTypes: TaskType[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       const unsubscribe = firestoreInstance
         .collection('taskTypes')
         .where('isActive', '==', true)
@@ -1138,13 +1138,13 @@ export const familyService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('👨‍👩‍👧‍👦 Creating family...');
-      
+
       const docRef = firestoreInstance.collection('families').doc();
       const familyId = docRef.id;
-      
+
       const family: Family = {
         id: familyId,
         ...familyData,
@@ -1153,7 +1153,7 @@ export const familyService = {
       };
 
       await docRef.set(family);
-      
+
       // Add the creator as the first member
       await this.addFamilyMember({
         familyId,
@@ -1177,7 +1177,7 @@ export const familyService = {
   async createDefaultFamilyIfNeeded(userId: string, userName: string, userEmail: string): Promise<Family | null> {
     try {
       console.log('🔍 Checking if user has a family...');
-      
+
       // First check if user already has a family
       const existingFamily = await this.getUserFamily(userId);
       if (existingFamily) {
@@ -1186,7 +1186,7 @@ export const familyService = {
       }
 
       console.log('🏠 Creating default family for user...');
-      
+
       // Create a default family
       const familyId = await this.createFamily({
         name: `${userName}'s Family`,
@@ -1212,7 +1212,7 @@ export const familyService = {
       });
 
       console.log('✅ Default family created successfully');
-      
+
       // Return the newly created family
       return await this.getUserFamily(userId);
     } catch (error) {
@@ -1224,9 +1224,9 @@ export const familyService = {
   async getUserFamily(userId: string): Promise<Family | null> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('👨‍👩‍👧‍👦 Getting user family...');
-      
+
       // Get all family memberships for this user
       const memberQuery = await firestoreInstance
         .collection('familyMembers')
@@ -1241,7 +1241,7 @@ export const familyService = {
       // Sort by joinedAt descending and get the most recent
       const members = memberQuery.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       } as any)).sort((a, b) => {
         const aDate = convertTimestamp(a.joinedAt);
         const bDate = convertTimestamp(b.joinedAt);
@@ -1266,7 +1266,7 @@ export const familyService = {
         console.log('ℹ️ Family data is null');
         return null;
       }
-      
+
       const family: Family = {
         id: familyDoc.id,
         name: data.name,
@@ -1293,13 +1293,13 @@ export const familyService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('👤 Adding family member...');
-      
+
       const docRef = firestoreInstance.collection('familyMembers').doc();
       const memberId = docRef.id;
-      
+
       const member: FamilyMember = {
         id: memberId,
         ...memberData,
@@ -1309,7 +1309,7 @@ export const familyService = {
       };
 
       await docRef.set(member);
-      
+
       // Update family member count
       await firestoreInstance.collection('families').doc(memberData.familyId).update({
         memberCount: firestore.FieldValue.increment(1),
@@ -1329,9 +1329,9 @@ export const familyService = {
   async getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('👥 Getting family members...');
-      
+
       const querySnapshot = await firestoreInstance
         .collection('familyMembers')
         .where('familyId', '==', familyId)
@@ -1369,11 +1369,11 @@ export const familyService = {
   async removeFamilyMember(memberId: string, familyId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('👤 Removing family member...');
-      
+
       await firestoreInstance.collection('familyMembers').doc(memberId).delete();
-      
+
       // Update family member count
       await firestoreInstance.collection('families').doc(familyId).update({
         memberCount: firestore.FieldValue.increment(-1),
@@ -1392,12 +1392,12 @@ export const familyService = {
   async createFamilyActivity(activityData: Omit<FamilyActivity, 'id' | 'createdAt'>): Promise<string> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Creating family activity...');
-      
+
       const docRef = firestoreInstance.collection('familyActivities').doc();
       const activityId = docRef.id;
-      
+
       const activity: FamilyActivity = {
         id: activityId,
         ...activityData,
@@ -1405,7 +1405,7 @@ export const familyService = {
       };
 
       await docRef.set(activity);
-      
+
       console.log('✅ Family activity created successfully:', activityId);
       return activityId;
     } catch (error) {
@@ -1419,9 +1419,9 @@ export const familyService = {
   async getFamilyActivities(familyId: string, limit: number = 50): Promise<FamilyActivity[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Getting family activities...');
-      
+
       const querySnapshot = await firestoreInstance
         .collection('familyActivities')
         .where('familyId', '==', familyId)
@@ -1459,7 +1459,7 @@ export const familyService = {
   onFamilyMembersChange(familyId: string, callback: (members: FamilyMember[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       const unsubscribe = firestoreInstance
         .collection('familyMembers')
         .where('familyId', '==', familyId)
@@ -1508,7 +1508,7 @@ export const familyService = {
   onFamilyActivitiesChange(familyId: string, callback: (activities: FamilyActivity[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       const unsubscribe = firestoreInstance
         .collection('familyActivities')
         .where('familyId', '==', familyId)
@@ -1557,17 +1557,17 @@ export const familyService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('📧 Sending family invitation...');
-      
+
       const docRef = firestoreInstance.collection('familyInvitations').doc();
       const invitationId = docRef.id;
-      
+
       // Set expiration to 7 days from now
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
-      
+
       const invitation: FamilyInvitation = {
         id: invitationId,
         ...invitationData,
@@ -1577,7 +1577,7 @@ export const familyService = {
       };
 
       await docRef.set(invitation);
-      
+
       console.log('✅ Family invitation sent successfully:', invitationId);
       return invitationId;
     } catch (error) {
@@ -1591,9 +1591,9 @@ export const familyService = {
   async getPendingInvitations(inviteeEmail: string): Promise<FamilyInvitation[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📧 Getting pending invitations...');
-      
+
       const querySnapshot = await firestoreInstance
         .collection('familyInvitations')
         .where('inviteeEmail', '==', inviteeEmail)
@@ -1634,30 +1634,30 @@ export const familyService = {
   async acceptFamilyInvitation(invitationId: string, userId: string, userName: string, userEmail: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('✅ Accepting family invitation...');
-      
+
       // Get the invitation
       const invitationDoc = await firestoreInstance.collection('familyInvitations').doc(invitationId).get();
       if (!invitationDoc.exists) {
         throw new Error('Invitation not found');
       }
-      
+
       const invitationData = invitationDoc.data() as any;
       if (invitationData.status !== 'pending') {
         throw new Error('Invitation is no longer pending');
       }
-      
+
       if (invitationData.expiresAt.toDate() < new Date()) {
         throw new Error('Invitation has expired');
       }
-      
+
       // Update invitation status
       await firestoreInstance.collection('familyInvitations').doc(invitationId).update({
         status: 'accepted',
         acceptedAt: new Date(),
       });
-      
+
       // Add user to family
       await this.addFamilyMember({
         familyId: invitationData.familyId,
@@ -1667,7 +1667,7 @@ export const familyService = {
         role: 'member',
         createdBy: invitationData.inviterId,
       });
-      
+
       // Create family activity
       await this.createFamilyActivity({
         familyId: invitationData.familyId,
@@ -1677,7 +1677,7 @@ export const familyService = {
         memberId: userId,
         memberName: userName,
       });
-      
+
       console.log('✅ Family invitation accepted successfully');
     } catch (error) {
       if (handleFirebaseError(error, 'acceptFamilyInvitation')) {
@@ -1690,14 +1690,14 @@ export const familyService = {
   async declineFamilyInvitation(invitationId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('❌ Declining family invitation...');
-      
+
       await firestoreInstance.collection('familyInvitations').doc(invitationId).update({
         status: 'declined',
         declinedAt: new Date(),
       });
-      
+
       console.log('✅ Family invitation declined successfully');
     } catch (error) {
       if (handleFirebaseError(error, 'declineFamilyInvitation')) {
@@ -1710,20 +1710,20 @@ export const familyService = {
   async leaveFamily(familyId: string, memberId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('👋 Leaving family...');
-      
+
       // Get member info before removing
       const memberDoc = await firestoreInstance.collection('familyMembers').doc(memberId).get();
       if (!memberDoc.exists) {
         throw new Error('Member not found');
       }
-      
+
       const memberData = memberDoc.data() as any;
-      
+
       // Remove member
       await this.removeFamilyMember(memberId, familyId);
-      
+
       // Create family activity
       await this.createFamilyActivity({
         familyId,
@@ -1733,7 +1733,7 @@ export const familyService = {
         memberId: memberData.userId,
         memberName: memberData.name,
       });
-      
+
       console.log('✅ Left family successfully');
     } catch (error) {
       if (handleFirebaseError(error, 'leaveFamily')) {
@@ -1747,16 +1747,16 @@ export const familyService = {
   async createCountdown(countdownData: Countdown): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('⏰ Creating countdown...');
-      
+
       const docRef = firestoreInstance.collection('countdowns').doc(countdownData.id);
       await docRef.set({
         ...countdownData,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      
+
       console.log('✅ Countdown created successfully:', countdownData.id);
     } catch (error) {
       if (handleFirebaseError(error, 'createCountdown')) {
@@ -1769,23 +1769,23 @@ export const familyService = {
   async getCountdowns(userId: string): Promise<Countdown[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('⏰ Getting countdowns for user:', userId);
-      
+
       // Check if user is authenticated
       const currentUser = auth().currentUser;
       if (!currentUser) {
         console.warn('⚠️ No authenticated user found when getting countdowns');
         throw new Error('User not authenticated');
       }
-      
+
       if (currentUser.uid !== userId) {
-        console.warn('⚠️ User ID mismatch when getting countdowns:', { 
-          currentUserId: currentUser.uid, 
-          requestedUserId: userId 
+        console.warn('⚠️ User ID mismatch when getting countdowns:', {
+          currentUserId: currentUser.uid,
+          requestedUserId: userId,
         });
       }
-      
+
       const querySnapshot = await firestoreInstance
         .collection('countdowns')
         .where('userId', '==', userId)
@@ -1812,7 +1812,7 @@ export const familyService = {
       return countdowns;
     } catch (error: any) {
       console.error('❌ Error in getCountdowns:', error);
-      
+
       // Log specific error details for debugging
       if (error.code) {
         console.error('❌ Firebase error code:', error.code);
@@ -1820,7 +1820,7 @@ export const familyService = {
       if (error.message) {
         console.error('❌ Error message:', error.message);
       }
-      
+
       // Handle specific Firebase errors
       if (error.code === 'permission-denied') {
         console.error('❌ Permission denied when accessing countdowns');
@@ -1832,7 +1832,7 @@ export const familyService = {
         console.error('❌ Countdowns collection not found');
         throw new Error('Countdowns collection not found.');
       }
-      
+
       if (handleFirebaseError(error, 'getCountdowns')) {
         throw error;
       }
@@ -1843,14 +1843,14 @@ export const familyService = {
   async updateCountdown(countdownData: Countdown): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('⏰ Updating countdown...');
-      
+
       await firestoreInstance.collection('countdowns').doc(countdownData.id).update({
         ...countdownData,
         updatedAt: new Date(),
       });
-      
+
       console.log('✅ Countdown updated successfully:', countdownData.id);
     } catch (error) {
       if (handleFirebaseError(error, 'updateCountdown')) {
@@ -1881,7 +1881,7 @@ export const familyService = {
       const query = countdownsRef
         .where('userId', '==', userId)
         .orderBy('createdAt', 'desc');
-      
+
       return query.onSnapshot((snapshot) => {
         const countdowns: Countdown[] = [];
         snapshot.forEach((doc) => {
@@ -1919,10 +1919,10 @@ export const listService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = listData.createdBy || auth().currentUser?.uid;
-      if (!userId) throw new Error('No user ID available');
+      if (!userId) {throw new Error('No user ID available');}
 
       console.log('📝 Creating list:', listData.name);
-      
+
       // Create the list object with all required fields
       const list: Omit<UserList, 'id'> = {
         name: listData.name || '',
@@ -1939,7 +1939,7 @@ export const listService = {
 
       // Filter out undefined values to avoid Firestore errors
       const cleanListData = removeUndefinedFields(list);
-      
+
       const docRef = await firestoreInstance.collection('lists').add(cleanListData);
       console.log('✅ List created with ID:', docRef.id);
       return docRef.id;
@@ -1955,9 +1955,9 @@ export const listService = {
   async getUserLists(userId: string): Promise<UserList[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📋 Getting lists for user:', userId);
-      
+
       // First, get user's family to check for shared lists
       let userFamilyId: string | null = null;
       try {
@@ -1969,7 +1969,7 @@ export const listService = {
       } catch (error) {
         console.log('⚠️ Could not get user family for list fetching:', error);
       }
-      
+
       // Get lists created by the user
       const userListsSnapshot = await firestoreInstance
         .collection('lists')
@@ -1978,7 +1978,7 @@ export const listService = {
         .get();
 
       const lists: UserList[] = [];
-      
+
       // Process user's own lists
       userListsSnapshot.forEach((doc) => {
         const data = doc.data();
@@ -2049,11 +2049,11 @@ export const listService = {
   async getListById(listId: string): Promise<UserList | null> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📋 Getting list by ID:', listId);
-      
+
       const doc = await firestoreInstance.collection('lists').doc(listId).get();
-      
+
       if (!doc.exists) {
         console.log('❌ List not found');
         return null;
@@ -2093,12 +2093,12 @@ export const listService = {
   async updateList(listId: string, updates: Partial<UserList>): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Updating list:', listId);
-      
+
       // Filter out undefined values to avoid Firestore errors
       const cleanUpdates = removeUndefinedFields(updates);
-      
+
       const updateData = {
         ...cleanUpdates,
         updatedAt: new Date(),
@@ -2118,9 +2118,9 @@ export const listService = {
   async deleteList(listId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('🗑️ Deleting list:', listId);
-      
+
       await firestoreInstance.collection('lists').doc(listId).delete();
       console.log('✅ List deleted successfully');
     } catch (error) {
@@ -2135,9 +2135,9 @@ export const listService = {
   async addListItem(listId: string, itemData: Omit<ListItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Adding item to list:', listId);
-      
+
       // Create the item object with all required fields
       const item: ListItem = {
         title: itemData.title || '',
@@ -2173,12 +2173,12 @@ export const listService = {
   async updateListItem(listId: string, itemId: string, updates: Partial<ListItem>): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('📝 Updating list item:', itemId);
-      
+
       const listRef = firestoreInstance.collection('lists').doc(listId);
       const listDoc = await listRef.get();
-      
+
       if (!listDoc.exists) {
         throw new Error('List not found');
       }
@@ -2187,10 +2187,10 @@ export const listService = {
       if (!listData) {
         throw new Error('List data is undefined');
       }
-      
+
       const items = listData.items || [];
       const itemIndex = items.findIndex((item: ListItem) => item.id === itemId);
-      
+
       if (itemIndex === -1) {
         throw new Error('Item not found');
       }
@@ -2222,12 +2222,12 @@ export const listService = {
   async deleteListItem(listId: string, itemId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       console.log('🗑️ Deleting list item:', itemId);
-      
+
       const listRef = firestoreInstance.collection('lists').doc(listId);
       const listDoc = await listRef.get();
-      
+
       if (!listDoc.exists) {
         throw new Error('List not found');
       }
@@ -2236,7 +2236,7 @@ export const listService = {
       if (!listData) {
         throw new Error('List data is undefined');
       }
-      
+
       const items = listData.items || [];
       const filteredItems = items.filter((item: ListItem) => item.id !== itemId);
 
@@ -2258,7 +2258,7 @@ export const listService = {
   onUserListsChange(userId: string, callback: (lists: UserList[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       const unsubscribe = firestoreInstance
         .collection('lists')
         .where('createdBy', '==', userId)
@@ -2307,7 +2307,7 @@ export const listService = {
   onListChange(listId: string, callback: (list: UserList) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       const unsubscribe = firestoreInstance
         .collection('lists')
         .doc(listId)
@@ -2355,28 +2355,28 @@ export const listService = {
 const firebaseService = {
   // Initialize Firebase
   initializeFirebase,
-  
+
   // User services
   ...userService,
-  
+
   // Reminder services
   ...reminderService,
-  
+
   // Task type services
   ...taskTypeService,
-  
+
   // Family services
   ...familyService,
-  
+
   // Countdown services
   createCountdown: familyService.createCountdown,
   getCountdowns: familyService.getCountdowns,
   updateCountdown: familyService.updateCountdown,
   deleteCountdown: familyService.deleteCountdown,
   onUserCountdownsChange: familyService.onUserCountdownsChange,
-  
+
   // List services
   ...listService,
 };
 
-export default firebaseService; 
+export default firebaseService;

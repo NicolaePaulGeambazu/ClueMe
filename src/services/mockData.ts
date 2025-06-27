@@ -80,11 +80,11 @@ class MockDataService {
     try {
       const stored = await AsyncStorage.getItem(this.storageKeys.reminders);
       const allReminders: Reminder[] = stored ? JSON.parse(stored) : [];
-      
+
       if (userId) {
         return allReminders.filter(r => r.userId === userId);
       }
-      
+
       return allReminders;
     } catch (error) {
       console.error('Error getting reminders:', error);
@@ -101,10 +101,10 @@ class MockDataService {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      
+
       reminders.push(newReminder);
       await AsyncStorage.setItem(this.storageKeys.reminders, JSON.stringify(reminders));
-      
+
       return newReminder.id;
     } catch (error) {
       console.error('Error creating reminder:', error);
@@ -116,14 +116,14 @@ class MockDataService {
     try {
       const reminders = await this.getReminders();
       const index = reminders.findIndex(r => r.id === id);
-      
+
       if (index !== -1) {
         reminders[index] = {
           ...reminders[index],
           ...updates,
           updatedAt: new Date().toISOString(),
         };
-        
+
         await AsyncStorage.setItem(this.storageKeys.reminders, JSON.stringify(reminders));
       }
     } catch (error) {
@@ -168,7 +168,7 @@ class MockDataService {
   async searchReminders(searchTerm: string, userId?: string): Promise<Reminder[]> {
     const reminders = await this.getReminders(userId);
     const term = searchTerm.toLowerCase();
-    
+
     return reminders.filter(reminder =>
       reminder.title.toLowerCase().includes(term) ||
       reminder.description?.toLowerCase().includes(term) ||
@@ -201,10 +201,10 @@ class MockDataService {
         memberCount: 1,
         createdAt: new Date().toISOString(),
       };
-      
+
       families.push(newFamily);
       await AsyncStorage.setItem(this.storageKeys.families, JSON.stringify(families));
-      
+
       return newFamily.id;
     } catch (error) {
       console.error('Error creating family:', error);
@@ -232,13 +232,13 @@ class MockDataService {
         id: `${familyId}_member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         joinedAt: new Date().toISOString(),
       };
-      
+
       const allMembers = await AsyncStorage.getItem(this.storageKeys.familyMembers);
       const allMembersArray: FamilyMember[] = allMembers ? JSON.parse(allMembers) : [];
       allMembersArray.push(newMember);
-      
+
       await AsyncStorage.setItem(this.storageKeys.familyMembers, JSON.stringify(allMembersArray));
-      
+
       return newMember.id;
     } catch (error) {
       console.error('Error adding family member:', error);
@@ -251,7 +251,7 @@ class MockDataService {
       const stored = await AsyncStorage.getItem(this.storageKeys.familyMembers);
       const allMembers: FamilyMember[] = stored ? JSON.parse(stored) : [];
       const index = allMembers.findIndex(m => m.id === memberId);
-      
+
       if (index !== -1) {
         allMembers[index] = { ...allMembers[index], ...updates };
         await AsyncStorage.setItem(this.storageKeys.familyMembers, JSON.stringify(allMembers));

@@ -131,7 +131,7 @@ class MockAuthService {
   async signOut(): Promise<void> {
     try {
       await AsyncStorage.removeItem(this.storageKeys.currentUser);
-      
+
       // Create new anonymous user
       await this.createAnonymousUser();
     } catch (error) {
@@ -162,7 +162,7 @@ class MockAuthService {
     try {
       await AsyncStorage.removeItem(this.storageKeys.currentUser);
       await AsyncStorage.removeItem(this.storageKeys.anonymousId);
-      
+
       // Create new anonymous user
       await this.createAnonymousUser();
     } catch (error) {
@@ -175,14 +175,14 @@ class MockAuthService {
   async initializeAuth(): Promise<User> {
     try {
       const currentUser = await this.getCurrentUser();
-      
+
       if (currentUser) {
         return currentUser;
       }
 
       // Check for existing anonymous session
       const anonymousId = await AsyncStorage.getItem(this.storageKeys.anonymousId);
-      
+
       if (anonymousId) {
         const user: User = {
           uid: anonymousId,
@@ -190,7 +190,7 @@ class MockAuthService {
           displayName: null,
           isAnonymous: true,
         };
-        
+
         await AsyncStorage.setItem(this.storageKeys.currentUser, JSON.stringify(user));
         return user;
       }

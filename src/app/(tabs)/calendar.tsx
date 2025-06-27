@@ -21,7 +21,7 @@ export default function CalendarScreen({ navigation }: any) {
   const { showLoginPrompt, setShowLoginPrompt, guardAction } = useAuthGuard();
   const { reminders, isLoading, loadReminders } = useReminders();
   const [selectedDate, setSelectedDate] = useState(getTodayISO());
-  
+
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function CalendarScreen({ navigation }: any) {
   // Create marked dates object for the calendar
   const getMarkedDates = () => {
     const marked: any = {};
-    
+
     // Mark today
     const today = getTodayISO();
     marked[today] = {
@@ -62,11 +62,11 @@ export default function CalendarScreen({ navigation }: any) {
   const handleDayPress = (day: DateData) => {
     const dateString = day.dateString;
     const dateReminders = reminders.filter(reminder => reminder.dueDate === dateString);
-    
+
     if (dateReminders && dateReminders.length > 0) {
-      navigation.navigate('RemindersDetail', { 
+      navigation.navigate('RemindersDetail', {
         title: formatDate(dateString),
-        reminders: dateReminders 
+        reminders: dateReminders,
       });
     }
   };
@@ -74,7 +74,7 @@ export default function CalendarScreen({ navigation }: any) {
   const handleAddReminder = () => {
     const addReminderHandler = () => {
       navigation.navigate('Add', {
-        prefillDate: getTodayISO()
+        prefillDate: getTodayISO(),
       });
     };
     guardAction(addReminderHandler);

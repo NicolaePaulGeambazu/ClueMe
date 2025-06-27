@@ -46,7 +46,7 @@ function AppContent() {
         console.log('🔔 Initializing push notifications...');
         await notificationService.initialize();
         console.log('✅ Push notifications initialized successfully');
-        
+
         // Start background reminder checking
         console.log('🔄 Starting background reminder checking...');
         notificationService.startBackgroundReminderChecking();
@@ -67,7 +67,7 @@ function AppContent() {
   return (
     <NavigationContainer>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
-      <Stack.Navigator 
+      <Stack.Navigator
         initialRouteName="Index"
         screenOptions={{
           headerStyle: {
@@ -82,86 +82,86 @@ function AppContent() {
           },
         }}
       >
-        <Stack.Screen 
-          name="Index" 
+        <Stack.Screen
+          name="Index"
           component={IndexScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="Auth" 
+        <Stack.Screen
+          name="Auth"
           component={AuthLayout}
           options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="MainTabs" 
+        <Stack.Screen
+          name="MainTabs"
           component={TabLayout}
           options={{ headerShown: false }}
         />
-        <Stack.Screen 
-          name="Search" 
-          component={SearchScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Search"
+          component={SearchScreen}
+          options={{
             title: 'Search',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="Calendar" 
-          component={CalendarScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Calendar"
+          component={CalendarScreen}
+          options={{
             title: 'Calendar',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="Categories" 
-          component={CategoriesScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Categories"
+          component={CategoriesScreen}
+          options={{
             title: 'Categories',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="Family" 
-          component={FamilyScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Family"
+          component={FamilyScreen}
+          options={{
             title: 'Family',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="Lists" 
-          component={ListsScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Lists"
+          component={ListsScreen}
+          options={{
             title: 'Lists',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="ListDetail" 
-          component={ListDetailScreen} 
-          options={{ 
+        <Stack.Screen
+          name="ListDetail"
+          component={ListDetailScreen}
+          options={{
             headerShown: false,
           }}
         />
-        <Stack.Screen 
-          name="RemindersDetail" 
-          component={RemindersDetailScreen} 
-          options={{ 
+        <Stack.Screen
+          name="RemindersDetail"
+          component={RemindersDetailScreen}
+          options={{
             title: 'Reminders',
             headerBackTitle: 'Back',
             headerShadowVisible: false,
           }}
         />
-        <Stack.Screen 
-          name="Countdown" 
-          component={CountdownScreen} 
-          options={{ 
+        <Stack.Screen
+          name="Countdown"
+          component={CountdownScreen}
+          options={{
             title: 'Countdown',
             headerBackTitle: 'Back',
             headerShadowVisible: false,

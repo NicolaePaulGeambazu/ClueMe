@@ -25,4 +25,4 @@ declare module 'react-native-background-job' {
   export function register(options: BackgroundJobOptions): void;
   export function schedule(options: ScheduleOptions): Promise<void>;
   export function cancel(options: CancelOptions): Promise<void>;
-} 
+}

@@ -23,7 +23,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   const { reminders, isLoading, loadReminders, deleteReminder } = useReminders();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState(route.params?.initialTab || 'total');
-  
+
   const tabs = [
     { key: 'total', label: t('home.stats.total') },
     { key: 'pending', label: t('home.stats.pending') },
@@ -116,20 +116,20 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
             style={[
               styles.tab,
               { backgroundColor: colors.surface },
-              activeTab === tab.key && { 
+              activeTab === tab.key && {
                 backgroundColor: colors.primary,
                 shadowColor: colors.primary,
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.3,
                 shadowRadius: 4,
                 elevation: 4,
-              }
+              },
             ]}
             onPress={() => setActiveTab(tab.key)}
           >
             <Text style={[
               styles.tabLabel,
-              { color: activeTab === tab.key ? '#FFFFFF' : colors.textSecondary }
+              { color: activeTab === tab.key ? '#FFFFFF' : colors.textSecondary },
             ]} numberOfLines={1}>
               {tab.label}
             </Text>
@@ -138,7 +138,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
       </View>
 
       {/* Content */}
-      <RemindersList 
+      <RemindersList
         reminders={getFilteredReminders()}
         isLoading={isLoading}
         emptyMessage={getEmptyMessage()}
@@ -170,7 +170,7 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
   const onHandlerStateChange = (event: any) => {
     if (event.nativeEvent.oldState === State.ACTIVE) {
       const { translationX } = event.nativeEvent;
-      
+
       if (translationX < -60) {
         // Swipe left - open delete
         Animated.parallel([
@@ -252,16 +252,16 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
   return (
     <View style={styles.swipeableContainer}>
       {/* Delete Button Background with Opacity Animation */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.deleteButton,
-          { 
+          {
             backgroundColor: colors.error,
             opacity: deleteOpacity,
-          }
+          },
         ]}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.deleteButtonContent}
           onPress={handleDelete}
           activeOpacity={0.8}
@@ -281,8 +281,8 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
         <Animated.View
           style={[
             styles.reminderCard,
-            { 
-              backgroundColor: colors.surface, 
+            {
+              backgroundColor: colors.surface,
               borderColor: colors.border,
               transform: [{ translateX }],
               shadowColor: colors.text,
@@ -290,7 +290,7 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
               shadowOpacity: isOpen ? 0.1 : 0.05,
               shadowRadius: isOpen ? 8 : 4,
               elevation: isOpen ? 4 : 2,
-            }
+            },
           ]}
         >
           <View style={styles.reminderHeader}>
@@ -301,13 +301,13 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = ({ reminder, colors,
             {reminder.isFavorite && <Star size={16} color={colors.warning} fill={colors.warning} style={{ marginLeft: 4 }} />}
             {reminder.completed && <CheckCircle size={16} color={colors.success} style={{ marginLeft: 4 }} />}
           </View>
-          
+
           {reminder.description ? (
             <Text style={[styles.reminderDescription, { color: colors.textSecondary }]} numberOfLines={2}>
               {reminder.description}
             </Text>
           ) : null}
-          
+
           <View style={styles.reminderMetaRow}>
             {reminder.dueDate && (
               <View style={styles.reminderMetaItem}>
@@ -536,4 +536,4 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.caption1,
     fontFamily: Fonts.text.regular,
   },
-}); 
+});

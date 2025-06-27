@@ -460,5 +460,66 @@
     "deleteReminder": "Supprimer le Rappel",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce rappel ?",
     "deleteError": "Échec de la suppression du rappel. Veuillez réessayer."
+  },
+  "auth": {
+    "login": {
+      "title": "Bon Retour",
+      "subtitle": "Connectez-vous pour continuer sur ClearCue",
+      "emailPlaceholder": "Adresse e-mail",
+      "passwordPlaceholder": "Mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "signIn": "Se Connecter",
+      "signingIn": "Connexion en cours...",
+      "noAccount": "Vous n'avez pas de compte ? ",
+      "signUp": "S'inscrire"
+    },
+    "signup": {
+      "title": "Créer un Compte",
+      "subtitle": "Rejoignez ClearCue pour commencer",
+      "fullNamePlaceholder": "Nom complet",
+      "emailPlaceholder": "Adresse e-mail",
+      "passwordPlaceholder": "Mot de passe",
+      "confirmPasswordPlaceholder": "Confirmer le mot de passe",
+      "signUp": "S'inscrire",
+      "signingUp": "Création du compte...",
+      "hasAccount": "Vous avez déjà un compte ? ",
+      "signIn": "Se Connecter"
+    },
+    "forgotPassword": {
+      "title": "Réinitialiser le Mot de Passe",
+      "subtitle": "Entrez votre e-mail pour recevoir les instructions de réinitialisation",
+      "emailPlaceholder": "Adresse e-mail",
+      "sendReset": "Envoyer le Lien de Réinitialisation",
+      "sending": "Envoi en cours...",
+      "backToLogin": "Retour à la Connexion"
+    }
+  },
+  "forms": {
+    "placeholders": {
+      "enterItemTitle": "Entrez le titre de l'élément",
+      "enterDescription": "Entrez la description",
+      "enterListName": "Entrez le nom de la liste"
+    }
+  },
+  "navigation": {
+    "screens": {
+      "home": "Accueil",
+      "add": "Ajouter",
+      "settings": "Paramètres",
+      "search": "Rechercher",
+      "calendar": "Calendrier",
+      "categories": "Catégories",
+      "family": "Famille",
+      "lists": "Listes",
+      "countdown": "Compte à Rebours",
+      "reminders": "Rappels",
+      "planner": "Planificateur",
+      "trash": "Corbeille"
+    },
+    "access": {
+      "plannerAccess": "Accès au Planificateur",
+      "trashAccess": "Accès à la Corbeille",
+      "searchReminders": "Rechercher des Rappels"
+    }
   }
 } 

@@ -4,8 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { isValidEmail, isValidPassword } from '../../utils/authUtils';
 
 interface LoginPromptProps {
@@ -26,7 +26,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { signIn, signUp, upgradeFromAnonymous, isAnonymous } = useAuth();
-  
+
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [formData, setFormData] = useState({
     name: '',
@@ -35,7 +35,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const styles = createStyles(colors);
 
   const handleSubmit = async () => {
@@ -43,7 +43,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
       Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
-    
+
     if (!isValidPassword(formData.password)) {
       Alert.alert('Invalid Password', 'Password must be at least 6 characters long');
       return;
@@ -65,7 +65,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
           await signUp(formData.email, formData.password, formData.name);
         }
       }
-      
+
       onSuccess?.();
       onClose();
     } catch (error: any) {
@@ -184,8 +184,8 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               disabled={isLoading}
             >
               <Text style={styles.submitButtonText}>
-                {isLoading 
-                  ? (mode === 'signin' ? 'Signing In...' : 'Creating Account...') 
+                {isLoading
+                  ? (mode === 'signin' ? 'Signing In...' : 'Creating Account...')
                   : (mode === 'signin' ? 'Sign In' : 'Create Account')
                 }
               </Text>
@@ -194,7 +194,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {isAnonymous 
+              {isAnonymous
                 ? 'Your anonymous data will be preserved when you create an account.'
                 : 'By continuing, you agree to our Terms of Service and Privacy Policy.'
               }

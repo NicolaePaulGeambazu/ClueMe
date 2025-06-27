@@ -6,7 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useReminders } from '../../hooks/useReminders';
 import { useTaskTypes } from '../../hooks/useTaskTypes';
-import { Colors } from '../../constants/Colors'
+import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { FALLBACK_TASK_TYPES } from '../../constants/config';
 
@@ -19,7 +19,7 @@ export default function CategoriesScreen({ navigation }: any) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
-  
+
   const styles = createStyles(colors);
 
   // Seed default task types if none exist
@@ -56,12 +56,12 @@ export default function CategoriesScreen({ navigation }: any) {
     const total = typeReminders.length;
     const completed = typeReminders.filter(r => r.completed).length;
     const overdue = typeReminders.filter(r => {
-      if (!r.dueDate || r.completed) return false;
+      if (!r.dueDate || r.completed) {return false;}
       const dueDate = new Date(r.dueDate);
       const today = new Date();
       return dueDate < today;
     }).length;
-    
+
     return { total, completed, overdue };
   };
 
@@ -78,9 +78,9 @@ export default function CategoriesScreen({ navigation }: any) {
 
   const handleCategoryPress = (category: any) => {
     const categoryId = 'name' in category ? category.name : category.id;
-    navigation.navigate('index', { 
+    navigation.navigate('index', {
       filterType: categoryId,
-      filterLabel: category.label 
+      filterLabel: category.label,
     });
   };
 
@@ -106,8 +106,8 @@ export default function CategoriesScreen({ navigation }: any) {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -133,7 +133,7 @@ export default function CategoriesScreen({ navigation }: any) {
             const uniqueKey = `${categoryId}-${index}`;
             const stats = getTypeStats(categoryId);
             const IconComponent = getTypeIcon('icon' in category ? category.icon : 'CheckSquare');
-            
+
             return (
               <TouchableOpacity
                 key={uniqueKey}
@@ -148,11 +148,11 @@ export default function CategoriesScreen({ navigation }: any) {
                     <Text style={styles.menuDots}>•••</Text>
                   </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.categoryContent}>
                   <Text style={styles.categoryTitle}>{category.label}</Text>
                   <Text style={styles.categoryDescription}>{category.description}</Text>
-                  
+
                   <View style={styles.categoryStats}>
                     <View style={styles.statItem}>
                       <Text style={styles.statNumber}>{stats.total}</Text>
@@ -170,7 +170,7 @@ export default function CategoriesScreen({ navigation }: any) {
                     )}
                   </View>
                 </View>
-                
+
                 <View style={styles.categoryFooter}>
                   <ChevronRight size={16} color={colors.textSecondary} />
                 </View>
@@ -183,7 +183,7 @@ export default function CategoriesScreen({ navigation }: any) {
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No categories found</Text>
             <Text style={styles.emptyDescription}>
-              {searchQuery 
+              {searchQuery
                 ? `No categories match "${searchQuery}"`
                 : 'Categories will appear here once you create reminders'
               }

@@ -94,20 +94,20 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
                   const isSelected = notificationTimings.some(
                     t => t.type === timing.type && t.value === timing.value
                   );
-                  
+
                   return (
                     <TouchableOpacity
                       key={`${timing.type}-${timing.value}`}
                       style={[
                         styles.timingOption,
-                        isSelected && styles.timingOptionSelected
+                        isSelected && styles.timingOptionSelected,
                       ]}
                       onPress={() => addTiming(timing)}
                       disabled={isSelected}
                     >
                       <Text style={[
                         styles.timingOptionText,
-                        isSelected && styles.timingOptionTextSelected
+                        isSelected && styles.timingOptionTextSelected,
                       ]}>
                         {timing.label}
                       </Text>
@@ -250,4 +250,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textTertiary,
     fontStyle: 'italic',
   },
-}); 
+});

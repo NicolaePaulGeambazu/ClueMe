@@ -7,7 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
-import { Colors } from '../../constants/Colors'
+import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { formatDate } from '../../utils/dateUtils';
 import { reminderService, Reminder } from '../../services/firebaseService';
@@ -22,13 +22,13 @@ export default function TrashScreen() {
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  
+
   const [deletedReminders, setDeletedReminders] = useState<DeletedReminder[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
-  
+
   const styles = createStyles(colors);
 
   useEffect(() => {
@@ -36,8 +36,8 @@ export default function TrashScreen() {
   }, []);
 
   const loadDeletedReminders = async () => {
-    if (!user?.uid) return;
-    
+    if (!user?.uid) {return;}
+
     try {
       setIsLoading(true);
       const deletedReminders = await reminderService.getDeletedReminders(user.uid);
@@ -96,7 +96,7 @@ export default function TrashScreen() {
   };
 
   const handleBulkRestore = async () => {
-    if (selectedItems.length === 0) return;
+    if (selectedItems.length === 0) {return;}
 
     Alert.alert(
       'Restore Reminders',
@@ -123,7 +123,7 @@ export default function TrashScreen() {
   };
 
   const handleBulkDelete = async () => {
-    if (selectedItems.length === 0) return;
+    if (selectedItems.length === 0) {return;}
 
     Alert.alert(
       'Permanent Delete',
@@ -151,8 +151,8 @@ export default function TrashScreen() {
   };
 
   const toggleSelection = (reminderId: string) => {
-    setSelectedItems(prev => 
-      prev.includes(reminderId) 
+    setSelectedItems(prev =>
+      prev.includes(reminderId)
         ? prev.filter(id => id !== reminderId)
         : [...prev, reminderId]
     );
@@ -161,11 +161,11 @@ export default function TrashScreen() {
   const formatDeletedDate = (deletedAt: Date) => {
     const now = new Date();
     const diffInDays = Math.floor((now.getTime() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+
+    if (diffInDays === 0) {return 'Today';}
+    if (diffInDays === 1) {return 'Yesterday';}
+    if (diffInDays < 7) {return `${diffInDays} days ago`;}
+    if (diffInDays < 30) {return `${Math.floor(diffInDays / 7)} weeks ago`;}
     return formatDate(deletedAt);
   };
 
@@ -209,7 +209,7 @@ export default function TrashScreen() {
           <Text style={styles.title}>Trash</Text>
           <Text style={styles.subtitle}>{deletedReminders.length} deleted reminder(s)</Text>
         </View>
-        
+
         {deletedReminders.length > 0 && (
           <TouchableOpacity
             style={styles.selectionButton}
@@ -234,7 +234,7 @@ export default function TrashScreen() {
             <RotateCcw size={16} color="#FFFFFF" strokeWidth={2} />
             <Text style={styles.bulkButtonText}>Restore ({selectedItems.length})</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.bulkButton, styles.deleteButton]}
             onPress={handleBulkDelete}
@@ -253,8 +253,8 @@ export default function TrashScreen() {
         </View>
       )}
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -280,7 +280,7 @@ export default function TrashScreen() {
                   <TouchableOpacity
                     style={[
                       styles.checkbox,
-                      selectedItems.includes(reminder.id) && styles.checkboxSelected
+                      selectedItems.includes(reminder.id) && styles.checkboxSelected,
                     ]}
                     onPress={() => toggleSelection(reminder.id)}
                   >
@@ -289,7 +289,7 @@ export default function TrashScreen() {
                     )}
                   </TouchableOpacity>
                 )}
-                
+
                 <View style={styles.reminderContent}>
                   <View style={styles.reminderHeader}>
                     <View style={styles.reminderTitleRow}>
@@ -301,7 +301,7 @@ export default function TrashScreen() {
                         <Star size={14} color={colors.warning} fill={colors.warning} />
                       )}
                     </View>
-                    
+
                     <View style={styles.reminderMeta}>
                       <View style={styles.deletedInfo}>
                         <Clock size={12} color={colors.textSecondary} strokeWidth={2} />
@@ -309,7 +309,7 @@ export default function TrashScreen() {
                           Deleted {formatDeletedDate(reminder.deletedAt)}
                         </Text>
                       </View>
-                      
+
                       <View style={[styles.priorityBadge, { backgroundColor: getTypeColor(reminder.type) + '15' }]}>
                         <Text style={[styles.priorityText, { color: getTypeColor(reminder.type) }]}>
                           {reminder.priority}
@@ -340,7 +340,7 @@ export default function TrashScreen() {
                         <RotateCcw size={14} color="#FFFFFF" strokeWidth={2} />
                         <Text style={styles.actionButtonText}>Restore</Text>
                       </TouchableOpacity>
-                      
+
                       <TouchableOpacity
                         style={[styles.actionButton, styles.deleteButton]}
                         onPress={() => handlePermanentDelete(reminder.id)}
@@ -361,8 +361,8 @@ export default function TrashScreen() {
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
         onSuccess={() => executeAfterAuth(() => console.log('Trash access granted'))}
-        title="Trash Access"
-        message="Sign in to access your deleted reminders and restore them across devices."
+        title={t('navigation.access.trashAccess')}
+        message={t('add.anonymousBanner')}
       />
     </SafeAreaView>
   );
@@ -596,4 +596,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: '#FFFFFF',
   },
-}); 
+});

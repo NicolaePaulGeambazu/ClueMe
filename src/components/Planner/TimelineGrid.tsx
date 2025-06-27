@@ -15,7 +15,7 @@ interface TimelineGridProps {
 const TIME_SLOTS = [
   '06:00', '07:00', '08:00', '09:00', '10:00', '11:00',
   '12:00', '13:00', '14:00', '15:00', '16:00', '17:00',
-  '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'
+  '18:00', '19:00', '20:00', '21:00', '22:00', '23:00',
 ];
 
 export const TimelineGrid: React.FC<TimelineGridProps> = ({
@@ -23,7 +23,7 @@ export const TimelineGrid: React.FC<TimelineGridProps> = ({
   reminders,
   onTimeSlotPress,
   onReminderPress,
-  colors
+  colors,
 }) => {
   const styles = createStyles(colors);
 
@@ -48,7 +48,7 @@ export const TimelineGrid: React.FC<TimelineGridProps> = ({
   };
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
     >
@@ -56,13 +56,13 @@ export const TimelineGrid: React.FC<TimelineGridProps> = ({
         {TIME_SLOTS.map((timeSlot, index) => {
           const timeSlotReminders = getRemindersForTimeSlot(timeSlot);
           const isCurrent = isCurrentTimeSlot(timeSlot);
-          
+
           return (
             <View key={timeSlot} style={styles.timeSlot}>
               <View style={styles.timeHeader}>
                 <Text style={[
                   styles.timeText,
-                  isCurrent && styles.currentTimeText
+                  isCurrent && styles.currentTimeText,
                 ]}>
                   {formatTime(timeSlot)}
                 </Text>
@@ -70,7 +70,7 @@ export const TimelineGrid: React.FC<TimelineGridProps> = ({
                   <View style={[styles.currentIndicator, { backgroundColor: colors.primary }]} />
                 )}
               </View>
-              
+
               <View style={styles.timeSlotContent}>
                 {timeSlotReminders.length > 0 ? (
                   timeSlotReminders.map((reminder) => (
@@ -158,4 +158,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textTertiary,
     marginLeft: 8,
   },
-}); 
+});

@@ -11,10 +11,10 @@ interface FirebaseStatusBannerProps {
   onRetry?: () => void;
 }
 
-export default function FirebaseStatusBanner({ 
-  useFallback, 
-  error, 
-  onRetry 
+export default function FirebaseStatusBanner({
+  useFallback,
+  error,
+  onRetry,
 }: FirebaseStatusBannerProps) {
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -34,13 +34,13 @@ export default function FirebaseStatusBanner({
             <AlertTriangle size={20} color={colors.error} strokeWidth={2} />
           )}
         </View>
-        
+
         <View style={styles.textContainer}>
           <Text style={styles.title}>
             {useFallback ? 'Offline Mode' : 'Connection Error'}
           </Text>
           <Text style={styles.description}>
-            {useFallback 
+            {useFallback
               ? 'Using local data. Some features may be limited.'
               : error || 'Unable to connect to cloud services.'
             }
@@ -95,4 +95,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-}); 
+});

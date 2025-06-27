@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useFamily } from '../../hooks/useFamily';
-import { Colors } from '../../constants/Colors'
+import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import FamilyInvitationModal from '../../components/FamilyInvitationModal';
 import { formatForActivity } from '../../utils/dateUtils';
@@ -35,21 +35,21 @@ export default function FamilyScreen() {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const { user, isAnonymous } = useAuth();
-  const { 
-    family, 
-    members, 
-    activities, 
+  const {
+    family,
+    members,
+    activities,
     pendingInvitations,
-    isLoading, 
-    error, 
-    loadFamily, 
+    isLoading,
+    error,
+    loadFamily,
     removeMember,
     sendInvitation,
     acceptInvitation,
     declineInvitation,
     leaveFamily,
     isOwner,
-    hasPendingInvitations
+    hasPendingInvitations,
   } = useFamily();
   const colors = Colors[theme];
   const styles = createStyles(colors);
@@ -76,12 +76,12 @@ export default function FamilyScreen() {
       t('family.memberActions'),
       [
         { text: t('family.edit'), onPress: () => console.log('Edit member:', member.id) },
-        { 
-          text: t('family.remove'), 
-          style: 'destructive', 
-          onPress: () => handleRemoveMember(member) 
+        {
+          text: t('family.remove'),
+          style: 'destructive',
+          onPress: () => handleRemoveMember(member),
         },
-        { text: t('common.cancel'), style: 'cancel' }
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -111,9 +111,9 @@ export default function FamilyScreen() {
       t('family.leaveFamilyConfirm'),
       [
         { text: t('common.cancel'), style: 'cancel' },
-        { 
-          text: t('family.leaveFamily'), 
-          style: 'destructive', 
+        {
+          text: t('family.leaveFamily'),
+          style: 'destructive',
           onPress: async () => {
             try {
               await leaveFamily();
@@ -122,8 +122,8 @@ export default function FamilyScreen() {
               console.error('Error leaving family:', error);
               Alert.alert(t('common.error'), t('family.leaveFamilyError'));
             }
-          } 
-        }
+          },
+        },
       ]
     );
   };
@@ -195,8 +195,8 @@ export default function FamilyScreen() {
                 )}
               </View>
             </View>
-            
-            <ScrollView 
+
+            <ScrollView
               style={styles.membersList}
               showsVerticalScrollIndicator={false}
               refreshControl={
@@ -222,7 +222,7 @@ export default function FamilyScreen() {
                   <View style={[styles.onlineIndicator, { backgroundColor: member.isOnline ? colors.success : colors.textTertiary }]} />
                 </TouchableOpacity>
               ))}
-              
+
               {/* Leave Family Button for non-owners */}
               {!isOwner && (
                 <TouchableOpacity style={styles.leaveFamilyButton} onPress={handleLeaveFamily}>
@@ -236,7 +236,7 @@ export default function FamilyScreen() {
       case 'activity':
         return (
           <View style={styles.tabContent}>
-            <ScrollView 
+            <ScrollView
               style={styles.activityList}
               showsVerticalScrollIndicator={false}
               refreshControl={
@@ -287,7 +287,7 @@ export default function FamilyScreen() {
           <Users size={20} color={activeTab === 'members' ? colors.primary : colors.textSecondary} strokeWidth={2} />
           <Text style={[styles.tabLabel, activeTab === 'members' && styles.activeTabLabel]}>{t('family.members')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'activity' && styles.activeTabButton]}
           onPress={() => setActiveTab('activity')}
@@ -295,7 +295,7 @@ export default function FamilyScreen() {
           <Activity size={20} color={activeTab === 'activity' ? colors.primary : colors.textSecondary} strokeWidth={2} />
           <Text style={[styles.tabLabel, activeTab === 'activity' && styles.activeTabLabel]}>{t('family.activity')}</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'notifications' && styles.activeTabButton]}
           onPress={() => setActiveTab('notifications')}

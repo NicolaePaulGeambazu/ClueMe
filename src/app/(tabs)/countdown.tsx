@@ -32,7 +32,7 @@ export default function CountdownScreen({ navigation, route }: any) {
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  
+
   const [countdowns, setCountdowns] = useState<Countdown[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +44,7 @@ export default function CountdownScreen({ navigation, route }: any) {
     targetDate: '',
     targetTime: '',
   });
-  
+
   const styles = createStyles(colors);
 
   // Check if accessed from navigation (has navigation prop)
@@ -78,11 +78,11 @@ export default function CountdownScreen({ navigation, route }: any) {
       setCountdowns(userCountdowns);
     } catch (error: any) {
       console.error('❌ Error loading countdowns:', error);
-      
+
       // Provide more specific error messages based on the error type
       let errorMessage = 'Failed to load countdowns';
       let errorTitle = 'Countdown Loading Error';
-      
+
       if (error.code === 'permission-denied') {
         errorMessage = 'You don\'t have permission to access countdowns. Please try signing out and back in.';
         errorTitle = 'Permission Denied';
@@ -98,18 +98,18 @@ export default function CountdownScreen({ navigation, route }: any) {
       } else {
         errorMessage = `Failed to load countdowns: ${error.message || 'Unknown error'}. Please try refreshing.`;
       }
-      
+
       Alert.alert(errorTitle, errorMessage, [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Retry', 
+        {
+          text: 'Retry',
           onPress: () => {
             console.log('⏰ Retrying countdown load...');
             setTimeout(() => loadCountdowns(), 1000); // Retry after 1 second
-          }
-        }
+          },
+        },
       ]);
-      
+
       // Set empty array to show empty state
       setCountdowns([]);
     } finally {
@@ -163,7 +163,7 @@ export default function CountdownScreen({ navigation, route }: any) {
   const calculateTimeRemaining = (targetDate: string, targetTime?: string) => {
     const now = new Date();
     const target = new Date(targetDate);
-    
+
     if (targetTime) {
       const [hours, minutes] = targetTime.split(':');
       target.setHours(parseInt(hours), parseInt(minutes), 0, 0);
@@ -283,10 +283,10 @@ export default function CountdownScreen({ navigation, route }: any) {
       });
     } catch (error: any) {
       console.error('❌ Error saving countdown:', error);
-      
+
       let errorMessage = 'Failed to save countdown';
       let errorTitle = 'Save Error';
-      
+
       if (error.code === 'permission-denied') {
         errorMessage = 'You don\'t have permission to save countdowns. Please try signing out and back in.';
         errorTitle = 'Permission Denied';
@@ -302,24 +302,24 @@ export default function CountdownScreen({ navigation, route }: any) {
       } else {
         errorMessage = `Failed to save countdown: ${error.message || 'Unknown error'}. Please try again.`;
       }
-      
+
       Alert.alert(errorTitle, errorMessage, [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Retry', 
+        {
+          text: 'Retry',
           onPress: () => {
             console.log('⏰ Retrying countdown save...');
             setTimeout(() => handleSaveCountdown(), 1000); // Retry after 1 second
-          }
-        }
+          },
+        },
       ]);
     }
   };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
+    if (hour < 12) {return 'Good Morning';}
+    if (hour < 17) {return 'Good Afternoon';}
     return 'Good Evening';
   };
 
@@ -371,7 +371,7 @@ export default function CountdownScreen({ navigation, route }: any) {
             <Text style={styles.greeting}>{getGreeting()}</Text>
             <Text style={styles.title}>{t('countdown.title')}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={handleAddCountdown}
           >
@@ -383,7 +383,7 @@ export default function CountdownScreen({ navigation, route }: any) {
       {/* Show add button for navigation mode */}
       {isFromNavigation && (
         <View style={styles.navigationAddButton}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.addButton}
             onPress={handleAddCountdown}
           >
@@ -400,8 +400,8 @@ export default function CountdownScreen({ navigation, route }: any) {
         </View>
       )}
 
-      <ScrollView 
-        style={styles.content} 
+      <ScrollView
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -418,7 +418,7 @@ export default function CountdownScreen({ navigation, route }: any) {
             <Text style={styles.emptyDescription}>
               {t('countdown.noCountdownsDescription')}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.emptyButton}
               onPress={handleAddCountdown}
             >
@@ -430,7 +430,7 @@ export default function CountdownScreen({ navigation, route }: any) {
             {countdowns.map((countdown) => {
               const timeRemaining = calculateTimeRemaining(countdown.targetDate, countdown.targetTime);
               const isExpired = timeRemaining.isExpired;
-              
+
               return (
                 <View key={countdown.id} style={styles.countdownCard}>
                   <View style={styles.countdownHeader}>
@@ -448,13 +448,13 @@ export default function CountdownScreen({ navigation, route }: any) {
                       </View>
                     </View>
                     <View style={styles.countdownActions}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.actionButton}
                         onPress={() => handleEditCountdown(countdown)}
                       >
                         <Edit size={16} color={colors.textSecondary} strokeWidth={2} />
                       </TouchableOpacity>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         style={styles.actionButton}
                         onPress={() => handleDeleteCountdown(countdown)}
                       >
@@ -518,7 +518,7 @@ export default function CountdownScreen({ navigation, route }: any) {
             <Text style={styles.modalTitle}>
               {editingCountdown ? t('countdown.editCountdown') : t('countdown.newCountdown')}
             </Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setShowAddModal(false)}
             >
@@ -575,13 +575,13 @@ export default function CountdownScreen({ navigation, route }: any) {
           </ScrollView>
 
           <View style={styles.modalFooter}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => setShowAddModal(false)}
             >
               <Text style={styles.cancelButtonText}>{t('countdown.cancel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.saveButton}
               onPress={handleSaveCountdown}
             >
@@ -928,4 +928,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     right: 0,
     padding: 16,
   },
-}); 
+});

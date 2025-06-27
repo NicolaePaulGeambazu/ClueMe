@@ -36,35 +36,35 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const loadFamily = async () => {
-    if (!user || user.isAnonymous) return;
+    if (!user || user.isAnonymous) {return;}
 
     try {
       setIsLoading(true);
-      
+
       // Get user's family
       const userFamily = await familyService.getUserFamily(user.uid);
-      
+
       if (userFamily) {
         setFamily(userFamily);
         const members = await familyService.getFamilyMembers(userFamily.id);
         setFamilyMembers(members);
-        
+
         // Find current user's member record
         const userMember = members.find(m => m.userId === user.uid);
         setCurrentMember(userMember || null);
       } else {
         // Create a default family for the user
         const defaultFamily = await familyService.createDefaultFamilyIfNeeded(
-          user.uid, 
-          user.displayName || 'User', 
+          user.uid,
+          user.displayName || 'User',
           user.email || ''
         );
-        
+
         if (defaultFamily) {
           setFamily(defaultFamily);
           const members = await familyService.getFamilyMembers(defaultFamily.id);
           setFamilyMembers(members);
-          
+
           // Find current user's member record
           const userMember = members.find(m => m.userId === user.uid);
           setCurrentMember(userMember || null);
