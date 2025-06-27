@@ -1,5 +1,29 @@
 import { Reminder } from '../services/firebaseService';
 
+// Helper function to safely convert dueDate to Date object
+const safeDueDate = (dueDate: Date | string | undefined): Date | null => {
+  if (!dueDate) {return null;}
+  if (dueDate instanceof Date) {return dueDate;}
+  try {
+    return new Date(dueDate);
+  } catch (error) {
+    console.warn('Invalid dueDate format:', dueDate);
+    return null;
+  }
+};
+
+// Helper function to get date string for comparison
+const getDateString = (dueDate: Date | string | undefined): string | null => {
+  const date = safeDueDate(dueDate);
+  if (!date) {return null;}
+  try {
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    console.warn('Invalid dueDate for date string:', dueDate);
+    return null;
+  }
+};
+
 export const filterReminders = {
   byType: (reminders: Reminder[], type: string) =>
     reminders.filter(r => r.type === type),
@@ -14,19 +38,18 @@ export const filterReminders = {
     reminders.filter(r => r.isFavorite),
 
   byOverdue: (reminders: Reminder[]) =>
-    reminders.filter(r => !r.completed && r.dueDate && r.dueDate < new Date()),
+    reminders.filter(r => {
+      if (r.completed) {return false;}
+      const dueDate = safeDueDate(r.dueDate);
+      return dueDate && dueDate < new Date();
+    }),
 
   byToday: (reminders: Reminder[]) => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     return reminders.filter(r => {
-      if (!r.dueDate) {return false;}
-      try {
-        return r.dueDate.toISOString().split('T')[0] === todayStr;
-      } catch (error) {
-        console.warn('Invalid dueDate for reminder:', r.id, r.dueDate);
-        return false;
-      }
+      const dueDateStr = getDateString(r.dueDate);
+      return dueDateStr === todayStr;
     });
   },
 
@@ -44,18 +67,16 @@ export const filterReminders = {
 export const sortReminders = {
   byDueDate: (reminders: Reminder[], direction: 'asc' | 'desc' = 'asc') =>
     [...reminders].sort((a, b) => {
-      if (!a.dueDate && !b.dueDate) {return 0;}
-      if (!a.dueDate) {return 1;}
-      if (!b.dueDate) {return -1;}
+      const aDate = safeDueDate(a.dueDate);
+      const bDate = safeDueDate(b.dueDate);
 
-      try {
-        return direction === 'asc'
-          ? a.dueDate.getTime() - b.dueDate.getTime()
-          : b.dueDate.getTime() - a.dueDate.getTime();
-      } catch (error) {
-        console.warn('Invalid dueDate for sorting:', { a: a.id, b: b.id, aDate: a.dueDate, bDate: b.dueDate });
-        return 0;
-      }
+      if (!aDate && !bDate) {return 0;}
+      if (!aDate) {return 1;}
+      if (!bDate) {return -1;}
+
+      return direction === 'asc'
+        ? aDate.getTime() - bDate.getTime()
+        : bDate.getTime() - aDate.getTime();
     }),
 
   byPriority: (reminders: Reminder[]) => {
@@ -87,15 +108,14 @@ export const getReminderStats = (reminders: Reminder[]) => {
     total: reminders.length,
     completed: reminders.filter(r => r.completed).length,
     pending: reminders.filter(r => !r.completed).length,
-    overdue: reminders.filter(r => !r.completed && r.dueDate && r.dueDate < today).length,
+    overdue: reminders.filter(r => {
+      if (r.completed) {return false;}
+      const dueDate = safeDueDate(r.dueDate);
+      return dueDate && dueDate < today;
+    }).length,
     today: reminders.filter(r => {
-      if (!r.dueDate) {return false;}
-      try {
-        return r.dueDate.toISOString().split('T')[0] === todayStr;
-      } catch (error) {
-        console.warn('Invalid dueDate for stats:', r.id, r.dueDate);
-        return false;
-      }
+      const dueDateStr = getDateString(r.dueDate);
+      return dueDateStr === todayStr;
     }).length,
     favorites: reminders.filter(r => r.isFavorite).length,
     byType: reminders.reduce((acc, r) => {
