@@ -1,5 +1,6 @@
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { notificationService } from './notificationService';
 import { Platform } from 'react-native';
 
 // Types
@@ -39,7 +40,7 @@ export interface Reminder {
     value: number;
     label: string;
   }>;
-  assignedTo?: string;
+  assignedTo?: string[]; // Changed from string to string[] to support multiple assignments
   tags?: string[];
   completed?: boolean;
   deletedAt?: Date;
@@ -470,6 +471,18 @@ export const reminderService = {
       };
 
       await reminderRef.set(removeUndefinedFields(newReminder) as any);
+
+      // Schedule notifications if the reminder has notifications enabled
+      if (reminderData.hasNotification && reminderData.notificationTimings && reminderData.notificationTimings.length > 0) {
+        try {
+          await notificationService.scheduleReminderNotifications(newReminder);
+          console.log('✅ Notifications scheduled for reminder:', reminderId);
+        } catch (notificationError) {
+          console.error('Failed to schedule notifications for reminder:', notificationError);
+          // Don't throw here - the reminder was created successfully, just notification scheduling failed
+        }
+      }
+
       return reminderId;
     } catch (error) {
       console.error('Error creating reminder:', error);

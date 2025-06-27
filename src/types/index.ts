@@ -11,7 +11,7 @@ export interface Item {
   location?: string;
   tags: string[];
   userId: string;
-  assignedTo?: string;
+  assignedTo?: string[];
   createdAt: any;
   updatedAt: any;
 }

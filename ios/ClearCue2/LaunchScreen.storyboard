@@ -16,25 +16,90 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ClearCue2" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" minimumFontSize="18" translatesAutoresizingMaskIntoConstraints="NO" id="GJd-Yh-RWb">
-                                <rect key="frame" x="0.0" y="202" width="375" height="43"/>
-                                <fontDescription key="fontDescription" type="boldSystem" pointSize="36"/>
-                                <nil key="highlightedColor"/>
-                            </label>
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Powered by React Native" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="9" translatesAutoresizingMaskIntoConstraints="NO" id="MN2-I3-ftu">
+                            <!-- Background gradient view -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="bg-gradient">
+                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                                <color key="backgroundColor" red="0.94901960784313721" green="0.97254901960784312" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </view>
+                            
+                            <!-- Main container -->
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="main-container">
+                                <rect key="frame" x="87.5" y="233.5" width="200" height="200"/>
+                                <subviews>
+                                    <!-- App icon/logo placeholder -->
+                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="app-icon">
+                                        <rect key="frame" x="50" y="0.0" width="100" height="100"/>
+                                        <color key="backgroundColor" red="0.2" green="0.6" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="100" id="icon-width"/>
+                                            <constraint firstAttribute="height" constant="100" id="icon-height"/>
+                                        </constraints>
+                                    </view>
+                                    
+                                    <!-- App name -->
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ClearCue" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="18" translatesAutoresizingMaskIntoConstraints="NO" id="app-name">
+                                        <rect key="frame" x="0.0" y="120" width="200" height="40"/>
+                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="32"/>
+                                        <color key="textColor" red="0.2" green="0.2" blue="0.2" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    
+                                    <!-- Tagline -->
+                                    <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Smart Reminders, Clear Mind" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="12" translatesAutoresizingMaskIntoConstraints="NO" id="tagline">
+                                        <rect key="frame" x="0.0" y="170" width="200" height="30"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                                        <color key="textColor" red="0.4" green="0.4" blue="0.4" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstItem="app-icon" firstAttribute="centerX" secondItem="main-container" secondAttribute="centerX" id="icon-center-x"/>
+                                    <constraint firstItem="app-name" firstAttribute="top" secondItem="app-icon" secondAttribute="bottom" constant="20" id="name-top"/>
+                                    <constraint firstItem="app-name" firstAttribute="centerX" secondItem="main-container" secondAttribute="centerX" id="name-center-x"/>
+                                    <constraint firstItem="tagline" firstAttribute="top" secondItem="app-name" secondAttribute="bottom" constant="10" id="tagline-top"/>
+                                    <constraint firstItem="tagline" firstAttribute="centerX" secondItem="main-container" secondAttribute="centerX" id="tagline-center-x"/>
+                                    <constraint firstItem="tagline" firstAttribute="leading" secondItem="main-container" secondAttribute="leading" id="tagline-leading"/>
+                                    <constraint firstItem="main-container" firstAttribute="trailing" secondItem="tagline" secondAttribute="trailing" id="tagline-trailing"/>
+                                </constraints>
+                            </view>
+                            
+                            <!-- Loading indicator -->
+                            <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" animating="YES" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="loading-indicator">
+                                <rect key="frame" x="177.5" y="500" width="20" height="20"/>
+                                <color key="color" red="0.2" green="0.6" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                            </activityIndicatorView>
+                            
+                            <!-- Version info -->
+                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="v1.0.0" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="9" translatesAutoresizingMaskIntoConstraints="NO" id="version">
                                 <rect key="frame" x="0.0" y="626" width="375" height="21"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                <color key="textColor" red="0.6" green="0.6" blue="0.6" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
-                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="bottom" secondItem="MN2-I3-ftu" secondAttribute="bottom" constant="20" id="OZV-Vh-mqD"/>
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="centerX" secondItem="GJd-Yh-RWb" secondAttribute="centerX" id="Q3B-4B-g5h"/>
-                            <constraint firstItem="MN2-I3-ftu" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="akx-eg-2ui"/>
-                            <constraint firstItem="MN2-I3-ftu" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" id="i1E-0Y-4RG"/>
-                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="bottom" multiplier="1/3" constant="1" id="moa-c2-u7t"/>
-                            <constraint firstItem="GJd-Yh-RWb" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" symbolic="YES" id="x7j-FC-K8j"/>
+                            <!-- Background gradient constraints -->
+                            <constraint firstItem="bg-gradient" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="bg-leading"/>
+                            <constraint firstItem="bg-gradient" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" id="bg-trailing"/>
+                            <constraint firstItem="bg-gradient" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="bg-top"/>
+                            <constraint firstItem="bg-gradient" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="bg-bottom"/>
+                            
+                            <!-- Main container constraints -->
+                            <constraint firstItem="main-container" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="container-center-x"/>
+                            <constraint firstItem="main-container" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-50" id="container-center-y"/>
+                            <constraint firstItem="main-container" firstAttribute="width" constant="200" id="container-width"/>
+                            <constraint firstItem="main-container" firstAttribute="height" constant="200" id="container-height"/>
+                            
+                            <!-- Loading indicator constraints -->
+                            <constraint firstItem="loading-indicator" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="loading-center-x"/>
+                            <constraint firstItem="loading-indicator" firstAttribute="top" secondItem="main-container" secondAttribute="bottom" constant="70" id="loading-top"/>
+                            
+                            <!-- Version constraints -->
+                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="bottom" secondItem="version" secondAttribute="bottom" constant="20" id="version-bottom"/>
+                            <constraint firstItem="version" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="version-center-x"/>
+                            <constraint firstItem="version" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" id="version-leading"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                     </view>

@@ -124,10 +124,17 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       )}
 
       <View style={styles.blockFooter}>
-        {reminder.assignedTo && (
+        {reminder.assignedTo && reminder.assignedTo.length > 0 && (
           <View style={styles.assignedTo}>
             <User size={12} color={colors.textSecondary} strokeWidth={2} />
-            <Text style={styles.assignedText}>{reminder.assignedTo}</Text>
+            <Text style={styles.assignedText}>
+              {Array.isArray(reminder.assignedTo) 
+                ? reminder.assignedTo.length === 1 
+                  ? reminder.assignedTo[0] 
+                  : `${reminder.assignedTo[0]} +${reminder.assignedTo.length - 1}`
+                : reminder.assignedTo
+              }
+            </Text>
           </View>
         )}
 

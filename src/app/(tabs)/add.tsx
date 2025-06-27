@@ -46,7 +46,7 @@ export default function AddScreen({ navigation, route }: any) {
       { type: 'before', value: 15, label: '15 minutes before' },
     ] as NotificationTiming[],
     isRecurring: false,
-    assignedTo: '' as string,
+    assignedTo: [] as string[],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [newTag, setNewTag] = useState('');
@@ -134,7 +134,7 @@ export default function AddScreen({ navigation, route }: any) {
         { type: 'before', value: 15, label: '15 minutes before' },
       ] as NotificationTiming[],
       isRecurring: false,
-      assignedTo: '' as string,
+      assignedTo: [] as string[],
     });
     setNewTag('');
     setPickerValue(new Date());
@@ -172,7 +172,7 @@ export default function AddScreen({ navigation, route }: any) {
         hasNotification: formData.hasNotification,
         notificationTimings: formData.notificationTimings,
         isRecurring: formData.isRecurring,
-        assignedTo: formData.assignedTo || undefined,
+        assignedTo: formData.assignedTo.length > 0 ? formData.assignedTo : undefined,
         completed: false,
         userId: user.uid,
       });
@@ -489,14 +489,14 @@ export default function AddScreen({ navigation, route }: any) {
                   <TouchableOpacity
                     style={[
                       styles.familyMemberOption,
-                      !formData.assignedTo && styles.familyMemberOptionSelected,
+                      !formData.assignedTo.length && styles.familyMemberOptionSelected,
                     ]}
-                    onPress={() => setFormData(prev => ({ ...prev, assignedTo: '' }))}
+                    onPress={() => setFormData(prev => ({ ...prev, assignedTo: [] }))}
                   >
-                    <User size={16} color={!formData.assignedTo ? colors.primary : colors.textSecondary} />
+                    <User size={16} color={!formData.assignedTo.length ? colors.primary : colors.textSecondary} />
                     <Text style={[
                       styles.familyMemberLabel,
-                      !formData.assignedTo && styles.familyMemberLabelSelected,
+                      !formData.assignedTo.length && styles.familyMemberLabelSelected,
                     ]}>
                       {t('add.unassigned')}
                     </Text>
@@ -507,26 +507,54 @@ export default function AddScreen({ navigation, route }: any) {
                       key={member.id}
                       style={[
                         styles.familyMemberOption,
-                        formData.assignedTo === member.id && styles.familyMemberOptionSelected,
+                        formData.assignedTo.includes(member.id) && styles.familyMemberOptionSelected,
                       ]}
-                      onPress={() => setFormData(prev => ({ ...prev, assignedTo: member.id }))}
+                      onPress={() => {
+                        if (formData.assignedTo.includes(member.id)) {
+                          setFormData(prev => ({
+                            ...prev,
+                            assignedTo: prev.assignedTo.filter((id) => id !== member.id),
+                          }));
+                        } else {
+                          setFormData(prev => ({
+                            ...prev,
+                            assignedTo: [...prev.assignedTo, member.id],
+                          }));
+                        }
+                      }}
                     >
-                      <User size={16} color={formData.assignedTo === member.id ? colors.primary : colors.textSecondary} />
+                      <User size={16} color={formData.assignedTo.includes(member.id) ? colors.primary : colors.textSecondary} />
                       <Text style={[
                         styles.familyMemberLabel,
-                        formData.assignedTo === member.id && styles.familyMemberLabelSelected,
+                        formData.assignedTo.includes(member.id) && styles.familyMemberLabelSelected,
                       ]}>
                         {member.name}
                       </Text>
+                      {formData.assignedTo.includes(member.id) && (
+                        <View style={styles.checkmarkContainer}>
+                          <Text style={styles.checkmark}>✓</Text>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
+
+                {formData.assignedTo.length > 0 && (
+                  <View style={styles.assignmentSummary}>
+                    <Text style={styles.assignmentSummaryText}>
+                      {formData.assignedTo.length === 1
+                        ? t('add.assignedTo1', { name: familyMembers.find(m => m.id === formData.assignedTo[0])?.name || '' })
+                        : t('add.assignedToMultiple', { count: formData.assignedTo.length })
+                      }
+                    </Text>
+                  </View>
+                )}
               </View>
             ) : (
               <View style={styles.inputContainer}>
                 <User size={20} color={colors.textSecondary} />
-                <Text style={[styles.input, !formData.assignedTo && { color: colors.textTertiary }]}>
-                  {formData.assignedTo || t('add.assignToPlaceholder')}
+                <Text style={[styles.input, !formData.assignedTo.length && { color: colors.textTertiary }]}>
+                  {formData.assignedTo.length ? t('add.assigned') : t('add.assignToPlaceholder')}
                 </Text>
                 <ChevronRight size={16} color={colors.textSecondary} />
               </View>
@@ -1018,5 +1046,27 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 24,
+  },
+  checkmarkContainer: {
+    padding: 4,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
+    marginLeft: 8,
+  },
+  checkmark: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  assignmentSummary: {
+    padding: 12,
+    borderRadius: 6,
+    backgroundColor: colors.primary + '15',
+    marginTop: 12,
+  },
+  assignmentSummaryText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: colors.primary,
   },
 });

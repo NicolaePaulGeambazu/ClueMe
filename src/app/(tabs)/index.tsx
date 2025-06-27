@@ -57,18 +57,39 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   // Helper to get assigned user's name
-  const getAssignedUserName = (userId: string) => {
-    if (!familyMembers || familyMembers.length === 0) {return t('common.unknown');}
-    const member = familyMembers.find(m => m.userId === userId);
-    if (!member) {
-      // Only log this once per user ID to avoid spam
-      if (!loggedMissingUsers.current.has(userId)) {
-        console.log('Assigned user not found in familyMembers:', userId, familyMembers.map(m => m.userId));
-        loggedMissingUsers.current.add(userId);
-      }
+  const getAssignedUserName = (assignedTo: string | string[] | undefined) => {
+    if (!assignedTo || !familyMembers || familyMembers.length === 0) {
       return t('common.unknown');
     }
-    return member.name;
+
+    // Handle both string (legacy) and array (new) formats
+    const userIds = Array.isArray(assignedTo) ? assignedTo : [assignedTo];
+
+    if (userIds.length === 0) {
+      return t('common.unknown');
+    }
+
+    const memberNames = userIds.map(userId => {
+      const member = familyMembers.find(m => m.userId === userId);
+      if (!member) {
+        // Only log this once per user ID to avoid spam
+        if (!loggedMissingUsers.current.has(userId)) {
+          console.log('Assigned user not found in familyMembers:', userId, familyMembers.map(m => m.userId));
+          loggedMissingUsers.current.add(userId);
+        }
+        return t('common.unknown');
+      }
+      return member.name;
+    });
+
+    // Return formatted string based on number of assignments
+    if (memberNames.length === 1) {
+      return memberNames[0];
+    } else if (memberNames.length === 2) {
+      return `${memberNames[0]} & ${memberNames[1]}`;
+    } else {
+      return `${memberNames[0]} +${memberNames.length - 1}`;
+    }
   };
 
   const handleRefresh = async () => {

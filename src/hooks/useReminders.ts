@@ -20,7 +20,7 @@ const convertToUIReminder = (firebaseReminder: FirebaseReminder) => ({
   isRecurring: firebaseReminder.isRecurring || false,
   hasNotification: firebaseReminder.hasNotification || false,
   notificationTimings: firebaseReminder.notificationTimings,
-  assignedTo: firebaseReminder.assignedTo || '',
+  assignedTo: firebaseReminder.assignedTo || [],
   tags: firebaseReminder.tags || [],
   createdAt: firebaseReminder.createdAt.toISOString(),
   updatedAt: firebaseReminder.updatedAt.toISOString(),
@@ -61,14 +61,14 @@ export const useReminders = () => {
       await loadReminders();
 
       // Send notifications if this is a family task with assigned members
-      if (family && reminderData.assignedTo && reminderData.assignedTo.trim() !== '') {
+      if (family && reminderData.assignedTo && reminderData.assignedTo.length > 0) {
         const taskNotificationData = {
           taskId: id,
           taskTitle: reminderData.title,
           taskDescription: reminderData.description,
           assignedBy: user.uid,
           assignedByDisplayName: user.displayName || user.email || 'Family Member',
-          assignedTo: [reminderData.assignedTo], // Convert to array
+          assignedTo: reminderData.assignedTo, // Already an array
           dueDate: reminderData.dueDate?.toISOString(),
           priority: reminderData.priority,
         };

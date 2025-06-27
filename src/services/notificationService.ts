@@ -364,7 +364,7 @@ class NotificationService {
   /**
    * Schedule notifications for a reminder based on its timing preferences
    */
-  private async scheduleReminderNotifications(reminder: any): Promise<void> {
+  public async scheduleReminderNotifications(reminder: any): Promise<void> {
     try {
       // Get notification timing preferences (default to 15 minutes before)
       const notificationTimings = reminder.notificationTimings || [
