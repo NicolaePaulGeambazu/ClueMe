@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import { Calendar, Clock, X, Check, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
 import { formatDate, formatTime } from '../../utils/dateUtils';
-
-const { height: screenHeight } = Dimensions.get('window');
 
 interface DateTimePickerProps {
   visible: boolean;
@@ -34,8 +32,6 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
     mode === 'time' ? 'time' : 'date'
   );
 
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth();
   const [displayYear, setDisplayYear] = useState(selectedDate.getFullYear());
   const [displayMonth, setDisplayMonth] = useState(selectedDate.getMonth());
 
@@ -92,7 +88,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
     const finalDate = new Date(selectedDate);
     if (mode !== 'date') {
       const [hours, minutes] = selectedTime.split(':');
-      finalDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      finalDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
     }
     onConfirm(finalDate, mode !== 'date' ? selectedTime : undefined);
     onClose();
@@ -105,16 +101,36 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
   const formatTimeLocal = (time: string) => {
     const [hours, minutes] = time.split(':');
     const date = new Date();
-    date.setHours(parseInt(hours), parseInt(minutes));
+    date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
     return formatTime(date);
   };
 
+  // Get month names from translations
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
+    t('calendar.months.january'),
+    t('calendar.months.february'),
+    t('calendar.months.march'),
+    t('calendar.months.april'),
+    t('calendar.months.may'),
+    t('calendar.months.june'),
+    t('calendar.months.july'),
+    t('calendar.months.august'),
+    t('calendar.months.september'),
+    t('calendar.months.october'),
+    t('calendar.months.november'),
+    t('calendar.months.december'),
   ];
 
-  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Get week days from translations
+  const weekDays = [
+    t('calendar.weekDays.sun'),
+    t('calendar.weekDays.mon'),
+    t('calendar.weekDays.tue'),
+    t('calendar.weekDays.wed'),
+    t('calendar.weekDays.thu'),
+    t('calendar.weekDays.fri'),
+    t('calendar.weekDays.sat'),
+  ];
 
   const timeSlots = [];
   for (let hour = 0; hour < 24; hour++) {
@@ -144,7 +160,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
               {currentView === 'date' ? t('add.selectDate') : t('add.selectTime')}
             </Text>
             <TouchableOpacity onPress={handleConfirm} style={styles.confirmButton}>
-              <Check size={24} color={colors.primary} />
+              <Check size={24} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
 
@@ -155,7 +171,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
                 style={[styles.tab, currentView === 'date' && styles.tabActive]}
                 onPress={() => setCurrentView('date')}
               >
-                <Calendar size={20} color={currentView === 'date' ? colors.primary : colors.textSecondary} />
+                <Calendar size={20} color={currentView === 'date' ? '#FFFFFF' : colors.textSecondary} />
                 <Text style={[styles.tabText, currentView === 'date' && styles.tabTextActive]}>
                   {t('add.selectDate')}
                 </Text>
@@ -164,7 +180,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
                 style={[styles.tab, currentView === 'time' && styles.tabActive]}
                 onPress={() => setCurrentView('time')}
               >
-                <Clock size={20} color={currentView === 'time' ? colors.primary : colors.textSecondary} />
+                <Clock size={20} color={currentView === 'time' ? '#FFFFFF' : colors.textSecondary} />
                 <Text style={[styles.tabText, currentView === 'time' && styles.tabTextActive]}>
                   {t('add.selectTime')}
                 </Text>
@@ -282,7 +298,7 @@ export const CustomDateTimePickerModal: React.FC<DateTimePickerProps> = ({
                       <Text
                         style={[
                           styles.timeText,
-                          ...(selectedTime === time ? [{ color: colors.primary, fontFamily: Fonts.text.semibold }] : []),
+                          ...(selectedTime === time ? [styles.timeSlotSelectedText] : []),
                         ]}
                       >
                         {formatTime(time)}
@@ -309,8 +325,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   modalContainer: {
     backgroundColor: colors.background,
     borderRadius: 20,
-    width: '100%',
-    maxHeight: '80%',
+    width: '90%',
+    maxHeight: '85%',
     overflow: 'hidden',
   },
   header: {
@@ -324,9 +340,9 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderBottomColor: colors.border,
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -337,12 +353,17 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.text,
   },
   confirmButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.primary + '20',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -362,7 +383,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     gap: 8,
   },
   tabActive: {
-    backgroundColor: colors.primary + '15',
+    backgroundColor: colors.primary,
   },
   tabText: {
     fontFamily: Fonts.text.medium,
@@ -370,7 +391,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textSecondary,
   },
   tabTextActive: {
-    color: colors.primary,
+    color: '#FFFFFF',
     fontFamily: Fonts.text.semibold,
   },
   dateContainer: {
@@ -384,9 +405,9 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 24,
   },
   navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.borderLight,
     alignItems: 'center',
     justifyContent: 'center',
@@ -398,20 +419,22 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   selectedDateContainer: {
     backgroundColor: colors.primary + '15',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 24,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary + '30',
   },
   selectedDateLabel: {
     fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.primary,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   selectedDateText: {
     fontFamily: Fonts.display.bold,
-    fontSize: 18,
+    fontSize: 20,
     color: colors.primary,
   },
   calendarContainer: {
@@ -437,28 +460,31 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    margin: 1,
+    margin: 2,
+    borderRadius: 12,
   },
   todayCell: {
     backgroundColor: colors.warning + '20',
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.warning,
   },
   selectedCell: {
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.primary,
   },
   dayText: {
-    fontFamily: Fonts.text.medium,
+    fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
   },
   todayText: {
     color: colors.warning,
-    fontFamily: Fonts.text.semibold,
+    fontFamily: Fonts.text.bold,
   },
   selectedText: {
     color: '#FFFFFF',
-    fontFamily: Fonts.text.semibold,
+    fontFamily: Fonts.text.bold,
   },
   timeContainer: {
     flex: 1,
@@ -466,20 +492,22 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   selectedTimeContainer: {
     backgroundColor: colors.primary + '15',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 24,
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.primary + '30',
   },
   selectedTimeLabel: {
     fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.primary,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   selectedTimeText: {
     fontFamily: Fonts.display.bold,
-    fontSize: 18,
+    fontSize: 20,
     color: colors.primary,
   },
   timeGrid: {
@@ -488,13 +516,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   timeGridContent: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 12,
     paddingBottom: 20,
   },
   timeSlot: {
     width: '30%',
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     alignItems: 'center',
     borderWidth: 2,
@@ -503,10 +531,15 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   selectedTimeSlot: {
     backgroundColor: colors.primary + '15',
     borderColor: colors.primary,
+    borderWidth: 3,
   },
   timeText: {
     fontFamily: Fonts.text.medium,
     fontSize: 16,
     color: colors.text,
+  },
+  timeSlotSelectedText: {
+    color: colors.primary,
+    fontFamily: Fonts.text.semibold,
   },
 });

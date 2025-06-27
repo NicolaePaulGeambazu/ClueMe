@@ -89,7 +89,7 @@
     "deleteError": "Échec de la suppression du rappel",
     "importSuccess": "Événements importés depuis Rappels/Calendrier iOS (placeholder)",
     "calendarAccess": "Accès au Calendrier",
-    "calendarAccessMessage": "Connectez-vous pour voir votre calendrier complet avec tous les rappels et événements sauvegardés.",
+    "calendarAccessMessage": "Connectez-vous pour voir votre calendrier complet avec tous vos rappels et événements sauvegardés.",
     "weekDays": {
       "sun": "Dim",
       "mon": "Lun",
@@ -98,6 +98,20 @@
       "thu": "Jeu",
       "fri": "Ven",
       "sat": "Sam"
+    },
+    "months": {
+      "january": "Janvier",
+      "february": "Février",
+      "march": "Mars",
+      "april": "Avril",
+      "may": "Mai",
+      "june": "Juin",
+      "july": "Juillet",
+      "august": "Août",
+      "september": "Septembre",
+      "october": "Octobre",
+      "november": "Novembre",
+      "december": "Décembre"
     }
   },
   "home": {
