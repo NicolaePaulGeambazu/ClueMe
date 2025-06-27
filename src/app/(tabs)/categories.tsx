@@ -127,14 +127,16 @@ export default function CategoriesScreen({ navigation }: any) {
         )}
 
         <View style={styles.categoriesGrid}>
-          {filteredCategories.map((category) => {
+          {filteredCategories.map((category, index) => {
             const categoryId = 'name' in category ? category.name : category.id;
+            // Ensure unique key by combining categoryId with index
+            const uniqueKey = `${categoryId}-${index}`;
             const stats = getTypeStats(categoryId);
             const IconComponent = getTypeIcon('icon' in category ? category.icon : 'CheckSquare');
             
             return (
               <TouchableOpacity
-                key={categoryId}
+                key={uniqueKey}
                 style={styles.categoryCard}
                 onPress={() => handleCategoryPress(category)}
               >

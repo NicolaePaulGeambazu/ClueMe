@@ -8,11 +8,7 @@ export const formatDate = (dateString: string): string => {
   if (dateString === today.toISOString().split('T')[0]) return 'Today';
   if (dateString === tomorrow.toISOString().split('T')[0]) return 'Tomorrow';
   
-  return date.toLocaleDateString('en-US', { 
-    weekday: 'short', 
-    month: 'short', 
-    day: 'numeric' 
-  });
+  return date.toLocaleDateString('en-GB');
 };
 
 export const formatTime = (timeString?: string): string => {
@@ -60,5 +56,5 @@ export const formatRelativeTime = (dateString: string): string => {
   if (diffInHours < 24) return `${diffInHours}h ago`;
   if (diffInDays < 7) return `${diffInDays}d ago`;
   
-  return formatDate(dateString);
+  return date.toLocaleDateString('en-GB');
 };

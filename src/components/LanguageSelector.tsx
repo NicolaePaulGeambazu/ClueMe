@@ -10,6 +10,10 @@ import {
   Dimensions,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../contexts/ThemeContext';
+import { Colors } from '../constants/Colors';
+import { Fonts, FontSizes } from '../constants/Fonts';
+import { ChevronRight, X } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -20,38 +24,11 @@ interface Language {
   flag: string;
 }
 
+// Only include the languages we actually support
 const languages: Language[] = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
   { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
   { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
-  { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
-  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
-  { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
-  { code: 'no', name: 'Norwegian', nativeName: 'Norsk', flag: '🇳🇴' },
-  { code: 'da', name: 'Danish', nativeName: 'Dansk', flag: '🇩🇰' },
-  { code: 'fi', name: 'Finnish', nativeName: 'Suomi', flag: '🇫🇮' },
-  { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
-  { code: 'cs', name: 'Czech', nativeName: 'Čeština', flag: '🇨🇿' },
-  { code: 'hu', name: 'Hungarian', nativeName: 'Magyar', flag: '🇭🇺' },
-  { code: 'ro', name: 'Romanian', nativeName: 'Română', flag: '🇷🇴' },
-  { code: 'bg', name: 'Bulgarian', nativeName: 'Български', flag: '🇧🇬' },
-  { code: 'hr', name: 'Croatian', nativeName: 'Hrvatski', flag: '🇭🇷' },
-  { code: 'sk', name: 'Slovak', nativeName: 'Slovenčina', flag: '🇸🇰' },
-  { code: 'sl', name: 'Slovenian', nativeName: 'Slovenščina', flag: '🇸🇮' },
-  { code: 'et', name: 'Estonian', nativeName: 'Eesti', flag: '🇪🇪' },
-  { code: 'lv', name: 'Latvian', nativeName: 'Latviešu', flag: '🇱🇻' },
-  { code: 'lt', name: 'Lithuanian', nativeName: 'Lietuvių', flag: '🇱🇹' },
-  { code: 'el', name: 'Greek', nativeName: 'Ελληνικά', flag: '🇬🇷' },
-  { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-  { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
-  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
-  { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
 ];
 
 interface LanguageSelectorProps {
@@ -64,6 +41,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   onLanguageChange,
 }) => {
   const { t } = useTranslation();
+  const { theme } = useTheme();
+  const colors = Colors[theme];
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
 
@@ -75,7 +54,6 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     
     try {
       onLanguageChange(languageCode);
-      Alert.alert(t('common.success'), t('language.languageChanged'));
     } catch (error) {
       Alert.alert(t('common.error'), t('language.languageChangeError'));
     }
@@ -86,45 +64,61 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     isSelected,
   }) => (
     <TouchableOpacity
-      style={[styles.languageItem, isSelected && styles.selectedLanguageItem]}
+      style={[
+        styles.languageItem,
+        { borderBottomColor: colors.border },
+        isSelected && { backgroundColor: colors.primary + '10' }
+      ]}
       onPress={() => handleLanguageSelect(language.code)}
     >
       <View style={styles.languageInfo}>
         <Text style={styles.flag}>{language.flag}</Text>
         <View style={styles.languageText}>
-          <Text style={[styles.languageName, isSelected && styles.selectedLanguageName]}>
+          <Text style={[
+            styles.languageName,
+            { color: colors.text },
+            isSelected && { color: colors.primary, fontFamily: Fonts.text.semibold }
+          ]}>
             {language.nativeName}
           </Text>
-          <Text style={[styles.languageEnglish, isSelected && styles.selectedLanguageEnglish]}>
+          <Text style={[
+            styles.languageEnglish,
+            { color: colors.textSecondary },
+            isSelected && { color: colors.primary }
+          ]}>
             {language.name}
           </Text>
         </View>
       </View>
       {isSelected && (
-        <Text style={styles.checkIcon}>✓</Text>
+        <View style={[styles.checkIcon, { backgroundColor: colors.primary }]}>
+          <Text style={styles.checkText}>✓</Text>
+        </View>
       )}
     </TouchableOpacity>
   );
 
+  const styles = createStyles(colors);
+
   return (
     <>
       <TouchableOpacity
-        style={styles.selectorButton}
+        style={[styles.selectorButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
         onPress={() => setModalVisible(true)}
       >
         <View style={styles.selectorContent}>
           <View style={styles.currentLanguageInfo}>
             <Text style={styles.currentFlag}>{currentLang.flag}</Text>
             <View style={styles.currentLanguageText}>
-              <Text style={styles.currentLanguageName}>
-                {t(`language.${currentLang.code}`)}
+              <Text style={[styles.currentLanguageName, { color: colors.text }]}>
+                {currentLang.nativeName}
               </Text>
-              <Text style={styles.currentLanguageSubtext}>
+              <Text style={[styles.currentLanguageSubtext, { color: colors.textSecondary }]}>
                 {t('language.current')}
               </Text>
             </View>
           </View>
-          <Text style={styles.chevronIcon}>›</Text>
+          <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2} />
         </View>
       </TouchableOpacity>
 
@@ -135,14 +129,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('language.selectLanguage')}</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.background }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {t('language.selectLanguage')}
+              </Text>
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.closeIcon}>✕</Text>
+                <X size={24} color={colors.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
             
@@ -162,12 +158,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   selectorButton: {
-    backgroundColor: '#F2F2F7',
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
+    borderWidth: 1,
   },
   selectorContent: {
     flexDirection: 'row',
@@ -187,13 +183,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   currentLanguageName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
   },
   currentLanguageSubtext: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
     marginTop: 2,
   },
   modalOverlay: {
@@ -202,7 +197,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -214,12 +208,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1C1C1E',
+    fontFamily: Fonts.display.semibold,
+    fontSize: FontSizes.title3,
   },
   closeButton: {
     padding: 4,
@@ -232,15 +224,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
-  },
-  selectedLanguageItem: {
-    backgroundColor: '#F0F8FF',
     borderRadius: 8,
     marginHorizontal: -4,
-    paddingHorizontal: 8,
   },
   languageInfo: {
     flexDirection: 'row',
@@ -255,35 +242,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   languageName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#1C1C1E',
+    fontFamily: Fonts.text.medium,
+    fontSize: FontSizes.body,
   },
   languageEnglish: {
-    fontSize: 14,
-    color: '#8E8E93',
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
     marginTop: 2,
   },
-  selectedLanguageName: {
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  selectedLanguageEnglish: {
-    color: '#007AFF',
-  },
   checkIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  chevronIcon: {
-    fontSize: 24,
+  checkText: {
+    fontSize: 14,
     fontWeight: 'bold',
-    color: '#8E8E93',
-  },
-  closeIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#8E8E93',
+    color: '#FFFFFF',
   },
 }); 

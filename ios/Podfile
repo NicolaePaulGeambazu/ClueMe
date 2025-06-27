@@ -17,6 +17,9 @@ require Pod::Executable.execute_command('node', ['-p',
 # Ensure this matches your Xcode project settings.
 platform :ios, '15.0'
 
+# Specify the Xcode project
+project 'ClearCue2.xcodeproj'
+
 # Crucial for Swift pods when using static libraries.
 # This tells CocoaPods to generate module maps for all pods that don't already have them.
 # This is a common solution for "Swift pod ... depends upon ... which does not define modules" errors.
@@ -50,10 +53,9 @@ target 'ClearCue2' do
   # `:app_path` is the absolute path to your React Native project root (usually one level up from `ios/`).
   use_react_native!(
     :path => config[:reactNativePath],
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
-    # Uncomment and set these flags as needed for your project:
-    # :hermes_enabled => true,     # Hermes is often enabled by default in new RN projects
-    # :fabric_enabled => false,    # Set to true if you are using the New Architecture
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :hermes_enabled => true,     # Enable Hermes JavaScript engine
+    :fabric_enabled => false,    # Set to true if you are using the New Architecture
     # :flipper_configuration => FlipperConfiguration.enabled, # Enable Flipper for debugging
     # :mac_catalyst_enabled => false, # Set to true if building for Mac Catalyst
   )
@@ -107,6 +109,9 @@ target 'ClearCue2' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+        # Enable dSYM generation for all targets
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
       end
     end
     # END: Force iOS Deployment Target for all Pod targets

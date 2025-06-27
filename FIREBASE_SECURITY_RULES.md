@@ -1,24 +1,6 @@
 # Firebase Security Rules for ClearCue - Development Version
 
-## Simple Development Rules (Allows All Authenticated Access)
-
-```javascript
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Allow all authenticated users to read/write all documents
-    // This is for development only - NOT for production!
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-## Enhanced Development Rules (With Family Creation Support)
-
-If you want more specific rules while still being development-friendly:
+## Enhanced Development Rules (Recommended - Proper Security + Development Friendly)
 
 ```javascript
 rules_version = '2';
@@ -32,6 +14,12 @@ service cloud.firestore {
     
     // Users can read and write their own reminders
     match /reminders/{reminderId} {
+      allow read, write: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid);
+    }
+    
+    // Users can read and write their own countdowns
+    match /countdowns/{countdownId} {
       allow read, write: if request.auth != null && 
         (resource == null || resource.data.userId == request.auth.uid);
     }
@@ -61,6 +49,11 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
+    // Lists - allow authenticated users to create and manage lists
+    match /lists/{listId} {
+      allow read, write: if request.auth != null;
+    }
+    
     // Deny all other operations
     match /{document=**} {
       allow read, write: if false;
@@ -74,17 +67,35 @@ service cloud.firestore {
 1. **Go to Firebase Console**: https://console.firebase.google.com
 2. **Select your project**
 3. **Go to Firestore Database** → **Rules** tab
-4. **Replace the existing rules** with one of the above code blocks
+4. **Replace the existing rules** with the enhanced development rules above
 5. **Click "Publish"**
 
-## Why This Works
+## Why These Rules Work
 
-- ✅ **No Complex Logic**: Simple rule that allows all authenticated users
-- ✅ **Immediate Access**: No permission errors for any collection
-- ✅ **Easy Testing**: You can test all features without rule issues
-- ✅ **Development Friendly**: Perfect for development and testing
-- ✅ **Family Creation**: Allows users to create families automatically
-- ✅ **Owner Management**: Supports family ownership and member management
+- ✅ **Proper Security**: Each collection has specific rules
+- ✅ **Development Friendly**: Allows all authenticated users to access family and list features
+- ✅ **User Isolation**: Users can only access their own reminders and countdowns
+- ✅ **Family Sharing**: Allows family creation and management
+- ✅ **List Management**: Allows list creation and sharing within families
+- ✅ **Task Type Sharing**: Users can read all task types but only modify their own
+
+## Simple Development Rules (Fallback - Allows All Authenticated Access)
+
+If you're still having issues, use this simpler version:
+
+```javascript
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow all authenticated users to read/write all documents
+    // This is for development only - NOT for production!
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
 
 ## Production Rules (Use Later)
 
@@ -102,6 +113,12 @@ service cloud.firestore {
     
     // Users can read and write their own reminders
     match /reminders/{reminderId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Users can read and write their own countdowns
+    match /countdowns/{countdownId} {
       allow read, write: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
@@ -140,6 +157,21 @@ service cloud.firestore {
         get(/databases/$(database)/documents/familyMembers/{memberId}).data.userId == request.auth.uid;
       allow write: if request.auth != null && 
         resource.data.memberId == request.auth.uid;
+    }
+    
+    // Lists - users can read and write their own lists, and read shared family lists
+    match /lists/{listId} {
+      allow read: if request.auth != null &&
+        (
+          resource.data.createdBy == request.auth.uid ||
+          (
+            resource.data.isPrivate != true &&
+            resource.data.familyId != null &&
+            exists(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + resource.data.familyId)) &&
+            get(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + resource.data.familyId)).data.userId == request.auth.uid
+          )
+        );
+      allow write: if request.auth != null && resource.data.createdBy == request.auth.uid;
     }
     
     // Deny all other operations
@@ -207,8 +239,8 @@ If you want to manually add task types to Firebase, here's the structure:
      "name": "bill",
      "label": "Bill",
      "color": "#EF4444",
-     "icon": "CreditCard", 
-     "description": "Bills and payments due",
+     "icon": "CreditCard",
+     "description": "Bills and payments",
      "isDefault": true,
      "isActive": true,
      "sortOrder": 2,
@@ -218,14 +250,14 @@ If you want to manually add task types to Firebase, here's the structure:
    }
    ```
 
-3. **Medicine**
+3. **Medication**
    ```json
    {
      "name": "med",
-     "label": "Medicine",
+     "label": "Medication",
      "color": "#10B981",
      "icon": "Pill",
-     "description": "Medications and health reminders", 
+     "description": "Medication reminders",
      "isDefault": true,
      "isActive": true,
      "sortOrder": 3,
@@ -242,7 +274,7 @@ If you want to manually add task types to Firebase, here's the structure:
      "label": "Event",
      "color": "#8B5CF6",
      "icon": "Calendar",
-     "description": "Meetings and appointments",
+     "description": "Events and appointments",
      "isDefault": true,
      "isActive": true,
      "sortOrder": 4,
@@ -259,7 +291,7 @@ If you want to manually add task types to Firebase, here's the structure:
      "label": "Note",
      "color": "#F59E0B",
      "icon": "FileText",
-     "description": "Important notes and ideas",
+     "description": "Notes and memos",
      "isDefault": true,
      "isActive": true,
      "sortOrder": 5,
@@ -269,34 +301,20 @@ If you want to manually add task types to Firebase, here's the structure:
    }
    ```
 
-## How to Manually Add Task Types
+## Quick Fix for Permission Issues
 
-1. **Get your User ID**: 
-   - Sign in to your app
-   - Check the console logs for your Firebase user ID
-   - Or go to Firebase Console → Authentication → Users
+If you're getting permission errors, use this **simple development rule**:
 
-2. **Go to Firestore Console**:
-   - Firebase Console → Firestore Database → Data tab
-   - Create a new collection called `taskTypes`
-   - Add each task type as a document with the structure above
-   - Replace `YOUR_USER_ID` with your actual Firebase user ID
+```javascript
+rules_version = '2';
 
-## Testing the Family Creation
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
 
-1. **Sign in to your app**
-2. **Navigate to the Family tab**
-3. **The app should automatically create a family if none exists**
-4. **You should see yourself as the owner**
-5. **Check the console logs for family creation messages**
-
-## Troubleshooting
-
-If you encounter permission errors:
-
-1. **Check Firebase Rules**: Make sure you've applied the development rules
-2. **Verify Authentication**: Ensure the user is properly authenticated
-3. **Check Console Logs**: Look for Firebase error messages
-4. **Test with Simple Rules**: Use the most permissive rules for development
-
-The automatic family creation should work seamlessly with the current development rules! 
+This allows any authenticated user to read and write to any collection. **Use this for development only!** 

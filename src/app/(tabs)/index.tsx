@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TrendingUp, Clock, Star, Plus, Search, Bell, User, Calendar, Filter, Users, Settings, ChevronRight, CheckCircle, AlertCircle } from 'lucide-react-native';
+import { TrendingUp, Clock, Star, Plus, Search, Bell, User, Calendar, Filter, Users, Settings, ChevronRight, CheckCircle, AlertCircle, Timer, List } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -79,6 +79,12 @@ export default function HomeScreen({ navigation }: any) {
         case 'categories':
           navigation.navigate('Categories');
           break;
+        case 'countdown':
+          navigation.navigate('Countdown');
+          break;
+        case 'lists':
+          navigation.navigate('Lists');
+          break;
         default:
           console.log('Quick action:', action);
       }
@@ -130,55 +136,67 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <TrendingUp size={24} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.statsValue}>{stats.total}</Text>
-          <Text style={styles.statsLabel}>{t('home.stats.total')}</Text>
-        </View>
-        
-        <View style={styles.statCard}>
-          <Clock size={24} color={colors.warning} strokeWidth={2} />
-          <Text style={styles.statsValue}>{stats.pending}</Text>
-          <Text style={styles.statsLabel}>{t('home.stats.pending')}</Text>
-        </View>
-        
-        <View style={styles.statCard}>
-          <Star size={24} color={colors.success} strokeWidth={2} />
-          <Text style={styles.statsValue}>{stats.favorites}</Text>
-          <Text style={styles.statsLabel}>{t('home.stats.favorites')}</Text>
-        </View>
-      </View>
-
-      <ScrollView 
-        style={styles.content} 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.quickActions}>
+      <View style={styles.mainContent}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statsContainer}
+        >
           <TouchableOpacity 
-            style={styles.quickActionsHeader}
-            onPress={() => setShowQuickActions(!showQuickActions)}
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Reminders', { initialTab: 'total' })}
           >
-            <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
-            <ChevronRight 
-              size={20} 
-              color={colors.textSecondary} 
-              strokeWidth={2}
-              style={[
-                styles.chevron,
-                { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
-              ]}
-            />
+            <TrendingUp size={24} color={colors.primary} strokeWidth={2} />
+            <Text style={styles.statsValue}>{stats.total}</Text>
+            <Text style={styles.statsLabel}>{t('home.stats.total')}</Text>
           </TouchableOpacity>
           
-          {showQuickActions && (
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Reminders', { initialTab: 'pending' })}
+          >
+            <Clock size={24} color={colors.warning} strokeWidth={2} />
+            <Text style={styles.statsValue}>{stats.pending}</Text>
+            <Text style={styles.statsLabel}>{t('home.stats.pending')}</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Reminders', { initialTab: 'favorites' })}
+          >
+            <Star size={24} color={colors.success} strokeWidth={2} />
+            <Text style={styles.statsValue}>{stats.favorites}</Text>
+            <Text style={styles.statsLabel}>{t('home.stats.favorites')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.statCard}
+            onPress={() => navigation.navigate('Reminders', { initialTab: 'overdue' })}
+          >
+            <AlertCircle size={24} color={colors.error} strokeWidth={2} />
+            <Text style={styles.statsValue}>{stats.overdue}</Text>
+            <Text style={styles.statsLabel}>{t('home.stats.overdue')}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {showQuickActions ? (
+          <View style={styles.quickActions}>
+            <TouchableOpacity 
+              style={styles.quickActionsHeader}
+              onPress={() => setShowQuickActions(!showQuickActions)}
+            >
+              <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
+              <ChevronRight 
+                size={20} 
+                color={colors.textSecondary} 
+                strokeWidth={2}
+                style={[
+                  styles.chevron,
+                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
+                ]}
+              />
+            </TouchableOpacity>
+            
             <View style={styles.actionsGrid}>
               <TouchableOpacity 
                 style={styles.actionCard}
@@ -192,26 +210,6 @@ export default function HomeScreen({ navigation }: any) {
               
               <TouchableOpacity 
                 style={styles.actionCard}
-                onPress={() => handleQuickAction('search')}
-              >
-                <View style={[styles.actionIconContainer, { backgroundColor: colors.success + '15' }]}>
-                  <Search size={24} color={colors.success} strokeWidth={2.5} />
-                </View>
-                <Text style={styles.actionLabel}>{t('home.search')}</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.actionCard}
-                onPress={() => handleQuickAction('filter')}
-              >
-                <View style={[styles.actionIconContainer, { backgroundColor: colors.warning + '15' }]}>
-                  <Filter size={24} color={colors.warning} strokeWidth={2.5} />
-                </View>
-                <Text style={styles.actionLabel}>{t('home.filter')}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.actionCard}
                 onPress={() => handleQuickAction('family')}
               >
                 <View style={[styles.actionIconContainer, { backgroundColor: colors.tertiary + '15' }]}>
@@ -222,17 +220,57 @@ export default function HomeScreen({ navigation }: any) {
 
               <TouchableOpacity 
                 style={styles.actionCard}
-                onPress={() => handleQuickAction('categories')}
+                onPress={() => handleQuickAction('countdown')}
               >
-                <View style={[styles.actionIconContainer, { backgroundColor: colors.error + '15' }]}>
-                  <Star size={24} color={colors.error} strokeWidth={2.5} />
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.primary + '15' }]}>
+                  <Timer size={24} color={colors.primary} strokeWidth={2.5} />
                 </View>
-                <Text style={styles.actionLabel}>{t('home.categories')}</Text>
+                <Text style={styles.actionLabel}>{t('home.countdown')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.actionCard}
+                onPress={() => handleQuickAction('lists')}
+              >
+                <View style={[styles.actionIconContainer, { backgroundColor: colors.secondary + '15' }]}>
+                  <List size={24} color={colors.secondary} strokeWidth={2.5} />
+                </View>
+                <Text style={styles.actionLabel}>{t('home.lists')}</Text>
               </TouchableOpacity>
             </View>
-          )}
-        </View>
+          </View>
+        ) : (
+          <View style={styles.quickActions}>
+            <TouchableOpacity 
+              style={styles.collapsedQuickActionsHeader}
+              onPress={() => setShowQuickActions(!showQuickActions)}
+            >
+              <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
+              <ChevronRight 
+                size={20} 
+                color={colors.textSecondary} 
+                strokeWidth={2}
+                style={[
+                  styles.chevron,
+                  { transform: [{ rotate: showQuickActions ? '90deg' : '0deg' }] }
+                ]}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
+      <ScrollView 
+        style={[styles.content, { flex: showQuickActions ? 1 : undefined }]} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <View style={styles.recentActivitySection}>
           <Text style={styles.sectionTitle}>{t('home.recentActivity')}</Text>
           {recentReminders.length === 0 ? (
@@ -375,15 +413,17 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingVertical: 4,
     gap: 12,
   },
   statCard: {
-    flex: 1,
+    width: 120,
+    height: 100,
     backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -406,10 +446,10 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   quickActions: {
-    marginBottom: 32,
     backgroundColor: colors.background,
     borderRadius: 20,
     padding: 20,
+    marginBottom: 8,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -460,7 +500,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     marginBottom: 8,
   },
   recentActivitySection: {
-    marginTop: 32,
+    marginTop: 8,
     marginBottom: 16,
   },
   activityCard: {
@@ -568,6 +608,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 16,
+    paddingHorizontal: 0,
+    paddingVertical: 12,
   },
   chevron: {
     width: 20,
@@ -606,5 +648,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: Fonts.text.regular,
     fontSize: FontSizes.footnote,
     color: colors.textSecondary,
+  },
+  mainContent: {
+    // Container for stats and quick actions
+  },
+  collapsedQuickActionsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 0,
+    paddingVertical: 12,
+    marginBottom: 16,
   },
 });

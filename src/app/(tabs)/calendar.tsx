@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
-import { ChevronLeft, ChevronRight, Plus, Import, Calendar as CalendarIcon, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Plus, Import, Calendar as CalendarIcon, Trash2, ArrowLeft } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,7 +25,7 @@ function getTodayString() {
   return today.toISOString().split('T')[0];
 }
 
-export default function CalendarScreen() {
+export default function CalendarScreen({ navigation, route }: any) {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
@@ -37,6 +37,9 @@ export default function CalendarScreen() {
   const [importing, setImporting] = useState(false);
 
   const styles = createStyles(colors);
+
+  // Check if accessed from navigation (has navigation prop)
+  const isFromNavigation = !!navigation;
 
   useEffect(() => {
     loadReminders();
@@ -164,24 +167,49 @@ export default function CalendarScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('prev')}>
-          <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
-        </TouchableOpacity>
-        <Text style={styles.monthTitle}>
-          {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </Text>
-        <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('next')}>
-          <ChevronRight size={22} color={colors.text} strokeWidth={2} />
-        </TouchableOpacity>
-        {Platform.OS === 'ios' && (
-          <TouchableOpacity style={styles.importButton} onPress={handleImport} disabled={importing}>
-            <Import size={20} color={colors.primary} />
-            <Text style={styles.importText}>{importing ? t('calendar.importing') : t('calendar.import')}</Text>
+    <View style={styles.container}>
+      {/* Show custom header only when not from navigation */}
+      {!isFromNavigation && (
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('prev')}>
+            <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
           </TouchableOpacity>
-        )}
-      </View>
+          <Text style={styles.monthTitle}>
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('next')}>
+            <ChevronRight size={22} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity style={styles.importButton} onPress={handleImport} disabled={importing}>
+              <Import size={20} color={colors.primary} />
+              <Text style={styles.importText}>{importing ? t('calendar.importing') : t('calendar.import')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {/* Show navigation header when accessed from quick actions */}
+      {isFromNavigation && (
+        <View style={styles.navigationHeader}>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('prev')}>
+            <ChevronLeft size={22} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+          <Text style={styles.monthTitle}>
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </Text>
+          <TouchableOpacity style={styles.navButton} onPress={() => navigateMonth('next')}>
+            <ChevronRight size={22} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity style={styles.importButton} onPress={handleImport} disabled={importing}>
+              <Import size={20} color={colors.primary} />
+              <Text style={styles.importText}>{importing ? t('calendar.importing') : t('calendar.import')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <View style={styles.calendarGridContainer}>
         <View style={styles.weekHeader}>
           {[
@@ -243,7 +271,7 @@ export default function CalendarScreen() {
         title={t('calendar.calendarAccess')}
         message={t('calendar.calendarAccessMessage')}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -347,14 +375,12 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   remindersListContainer: {
     flex: 1,
     marginHorizontal: 16,
-    marginTop: 8,
   },
   remindersListTitle: {
     fontFamily: Fonts.display.semibold,
     fontSize: FontSizes.title3,
     color: colors.text,
     marginBottom: 16,
-    paddingHorizontal: 16,
   },
   emptyReminders: {
     fontFamily: Fonts.text.regular,
@@ -417,23 +443,51 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   reminderTags: {
     fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.subheadline,
+    fontSize: FontSizes.footnote,
     color: colors.textTertiary,
-    marginLeft: 8,
   },
   deleteButton: {
+    backgroundColor: colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     width: 80,
     height: '100%',
-    backgroundColor: colors.error,
     borderTopRightRadius: 12,
     borderBottomRightRadius: 12,
   },
   deleteButtonText: {
+    color: 'white',
     fontFamily: Fonts.button,
     fontSize: FontSizes.footnote,
-    color: 'white',
     marginTop: 4,
+  },
+  navigationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: colors.background,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: colors.borderLight,
+    marginRight: 8,
+  },
+  navigationTitle: {
+    fontFamily: Fonts.display.semibold,
+    fontSize: FontSizes.title2,
+    color: colors.text,
+    flex: 1,
+    textAlign: 'center',
+  },
+  navigationSpacer: {
+    width: 40,
+  },
+  navigationMonthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: colors.background,
   },
 });

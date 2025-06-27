@@ -207,7 +207,7 @@ export default function TrashScreen() {
     if (diffInDays === 1) return 'Yesterday';
     if (diffInDays < 7) return `${diffInDays} days ago`;
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return deletedDate.toLocaleDateString();
+    return deletedDate.toLocaleDateString('en-GB');
   };
 
   const getTypeColor = (type: string) => {

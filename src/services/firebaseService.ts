@@ -111,6 +111,43 @@ export interface Family {
   };
 }
 
+export interface Countdown {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  targetDate: string;
+  targetTime?: string;
+  color?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ListItem {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  format: 'checkmark' | 'line' | 'number' | 'plain';
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserList {
+  id: string;
+  name: string;
+  description?: string;
+  items: ListItem[];
+  format: 'checkmark' | 'line' | 'number' | 'plain';
+  isFavorite: boolean;
+  isPrivate: boolean;
+  familyId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+}
+
 // Helper function to check if error is a permission denied error
 const isPermissionDeniedError = (error: any): boolean => {
   return error?.code === 'permission-denied' || 
@@ -841,6 +878,12 @@ export const taskTypeService = {
 
       console.log('🌱 Seeding default task types...');
 
+      // First, check if default task types already exist
+      const existingTypes = await this.getAllTaskTypes();
+      const existingNames = existingTypes.map(type => type.name);
+      
+      console.log(`📋 Found ${existingTypes.length} existing task types:`, existingNames);
+
       const defaultTaskTypes = [
         {
           name: 'task',
@@ -899,9 +942,19 @@ export const taskTypeService = {
         },
       ];
 
+      // Filter out task types that already exist
+      const newTaskTypes = defaultTaskTypes.filter(taskType => !existingNames.includes(taskType.name));
+      
+      if (newTaskTypes.length === 0) {
+        console.log('✅ All default task types already exist, skipping seeding');
+        return;
+      }
+
+      console.log(`🌱 Creating ${newTaskTypes.length} new default task types:`, newTaskTypes.map(t => t.name));
+
       const batch = firestoreInstance.batch();
       
-      for (const taskType of defaultTaskTypes) {
+      for (const taskType of newTaskTypes) {
         const docRef = firestoreInstance.collection('taskTypes').doc();
         batch.set(docRef, {
           ...taskType,
@@ -1574,4 +1627,566 @@ export const familyService = {
       throw new Error('Firebase permission denied. Cannot leave family.');
     }
   },
-}; 
+
+  // Countdown Services
+  async createCountdown(countdownData: Countdown): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('⏰ Creating countdown...');
+      
+      const docRef = firestoreInstance.collection('countdowns').doc(countdownData.id);
+      await docRef.set({
+        ...countdownData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      console.log('✅ Countdown created successfully:', countdownData.id);
+    } catch (error) {
+      if (handleFirebaseError(error, 'createCountdown')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot create countdown.');
+    }
+  },
+
+  async getCountdowns(userId: string): Promise<Countdown[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('⏰ Getting countdowns...');
+      
+      const querySnapshot = await firestoreInstance
+        .collection('countdowns')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
+
+      const countdowns: Countdown[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        countdowns.push({
+          id: doc.id,
+          userId: data.userId,
+          title: data.title,
+          description: data.description,
+          targetDate: data.targetDate,
+          targetTime: data.targetTime,
+          color: data.color,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+        });
+      });
+
+      console.log(`✅ Retrieved ${countdowns.length} countdowns`);
+      return countdowns;
+    } catch (error) {
+      if (handleFirebaseError(error, 'getCountdowns')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot get countdowns.');
+    }
+  },
+
+  async updateCountdown(countdownData: Countdown): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('⏰ Updating countdown...');
+      
+      await firestoreInstance.collection('countdowns').doc(countdownData.id).update({
+        ...countdownData,
+        updatedAt: new Date(),
+      });
+      
+      console.log('✅ Countdown updated successfully:', countdownData.id);
+    } catch (error) {
+      if (handleFirebaseError(error, 'updateCountdown')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot update countdown.');
+    }
+  },
+
+  async deleteCountdown(countdownId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      await firestoreInstance.collection('countdowns').doc(countdownId).delete();
+      console.log('✅ Countdown deleted successfully');
+    } catch (error) {
+      if (handleFirebaseError(error, 'deleteCountdown')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot delete countdown.');
+    }
+  },
+};
+
+// List Management
+export const listService = {
+  // Create a new list
+  async createList(listData: Omit<UserList, 'id' | 'createdAt' | 'updatedAt' | 'items'>): Promise<string> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const userId = listData.createdBy || auth().currentUser?.uid;
+      if (!userId) throw new Error('No user ID available');
+
+      console.log('📝 Creating list:', listData.name);
+      
+      // Create the list object with all required fields
+      const list: Omit<UserList, 'id'> = {
+        name: listData.name || '',
+        description: listData.description,
+        format: listData.format || 'checkmark',
+        isFavorite: listData.isFavorite || false,
+        isPrivate: listData.isPrivate || false,
+        familyId: listData.familyId || null, // Use null instead of undefined
+        createdBy: listData.createdBy || userId,
+        items: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Filter out undefined values to avoid Firestore errors
+      const cleanListData = removeUndefinedFields(list);
+      
+      const docRef = await firestoreInstance.collection('lists').add(cleanListData);
+      console.log('✅ List created with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      if (handleFirebaseError(error, 'createList')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot create list.');
+    }
+  },
+
+  // Get all lists for a user (including family-shared lists)
+  async getUserLists(userId: string): Promise<UserList[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('📋 Getting lists for user:', userId);
+      
+      // First, get user's family to check for shared lists
+      let userFamilyId: string | null = null;
+      try {
+        const userFamily = await familyService.getUserFamily(userId);
+        if (userFamily) {
+          userFamilyId = userFamily.id;
+          console.log('👨‍👩‍👧‍👦 User has family:', userFamily.name);
+        }
+      } catch (error) {
+        console.log('⚠️ Could not get user family for list fetching:', error);
+      }
+      
+      // Get lists created by the user
+      const userListsSnapshot = await firestoreInstance
+        .collection('lists')
+        .where('createdBy', '==', userId)
+        .orderBy('updatedAt', 'desc')
+        .get();
+
+      const lists: UserList[] = [];
+      
+      // Process user's own lists
+      userListsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data) {
+          lists.push({
+            id: doc.id,
+            name: data.name,
+            description: data.description,
+            items: data.items || [],
+            format: data.format || 'checkmark',
+            isFavorite: data.isFavorite || false,
+            isPrivate: data.isPrivate || false,
+            familyId: data.familyId,
+            createdAt: convertTimestamp(data.createdAt),
+            updatedAt: convertTimestamp(data.updatedAt),
+            createdBy: data.createdBy,
+          });
+        }
+      });
+
+      // If user has a family, also get shared lists from family members
+      if (userFamilyId) {
+        try {
+          const sharedListsSnapshot = await firestoreInstance
+            .collection('lists')
+            .where('familyId', '==', userFamilyId)
+            .where('isPrivate', '==', false)
+            .orderBy('updatedAt', 'desc')
+            .get();
+
+          sharedListsSnapshot.forEach((doc) => {
+            const data = doc.data();
+            if (data && data.createdBy !== userId) { // Filter out user's own lists in JavaScript
+              lists.push({
+                id: doc.id,
+                name: data.name,
+                description: data.description,
+                items: data.items || [],
+                format: data.format || 'checkmark',
+                isFavorite: data.isFavorite || false,
+                isPrivate: data.isPrivate || false,
+                familyId: data.familyId,
+                createdAt: convertTimestamp(data.createdAt),
+                updatedAt: convertTimestamp(data.updatedAt),
+                createdBy: data.createdBy,
+              });
+            }
+          });
+        } catch (error) {
+          console.warn('⚠️ Could not fetch family-shared lists:', error);
+        }
+      }
+
+      // Sort all lists by updatedAt (most recent first)
+      lists.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+      console.log(`✅ Found ${lists.length} lists (${userListsSnapshot.size} own + ${lists.length - userListsSnapshot.size} shared)`);
+      return lists;
+    } catch (error) {
+      if (handleFirebaseError(error, 'getUserLists')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot get lists.');
+    }
+  },
+
+  // Get a specific list by ID
+  async getListById(listId: string): Promise<UserList | null> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('📋 Getting list by ID:', listId);
+      
+      const doc = await firestoreInstance.collection('lists').doc(listId).get();
+      
+      if (!doc.exists) {
+        console.log('❌ List not found');
+        return null;
+      }
+
+      const data = doc.data();
+      if (!data) {
+        console.log('❌ List data is undefined');
+        return null;
+      }
+
+      const list: UserList = {
+        id: doc.id,
+        name: data.name,
+        description: data.description,
+        items: data.items || [],
+        format: data.format || 'checkmark',
+        isFavorite: data.isFavorite || false,
+        isPrivate: data.isPrivate || false,
+        familyId: data.familyId,
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
+        createdBy: data.createdBy,
+      };
+
+      console.log('✅ List found:', list.name);
+      return list;
+    } catch (error) {
+      if (handleFirebaseError(error, 'getListById')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot get list.');
+    }
+  },
+
+  // Update a list
+  async updateList(listId: string, updates: Partial<UserList>): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('📝 Updating list:', listId);
+      
+      // Filter out undefined values to avoid Firestore errors
+      const cleanUpdates = removeUndefinedFields(updates);
+      
+      const updateData = {
+        ...cleanUpdates,
+        updatedAt: new Date(),
+      };
+
+      await firestoreInstance.collection('lists').doc(listId).update(updateData);
+      console.log('✅ List updated successfully');
+    } catch (error) {
+      if (handleFirebaseError(error, 'updateList')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot update list.');
+    }
+  },
+
+  // Delete a list
+  async deleteList(listId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('🗑️ Deleting list:', listId);
+      
+      await firestoreInstance.collection('lists').doc(listId).delete();
+      console.log('✅ List deleted successfully');
+    } catch (error) {
+      if (handleFirebaseError(error, 'deleteList')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot delete list.');
+    }
+  },
+
+  // Add item to list
+  async addListItem(listId: string, itemData: Omit<ListItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('📝 Adding item to list:', listId);
+      
+      // Create the item object with all required fields
+      const item: ListItem = {
+        title: itemData.title || '',
+        description: itemData.description,
+        completed: itemData.completed || false,
+        format: itemData.format || 'checkmark',
+        sortOrder: itemData.sortOrder || 0,
+        id: Date.now().toString(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Filter out undefined values to avoid Firestore errors
+      const cleanItem = removeUndefinedFields(item);
+
+      const listRef = firestoreInstance.collection('lists').doc(listId);
+      await listRef.update({
+        items: firestore.FieldValue.arrayUnion(cleanItem),
+        updatedAt: new Date(),
+      });
+
+      console.log('✅ Item added successfully');
+      return item.id;
+    } catch (error) {
+      if (handleFirebaseError(error, 'addListItem')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot add item to list.');
+    }
+  },
+
+  // Update list item
+  async updateListItem(listId: string, itemId: string, updates: Partial<ListItem>): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('📝 Updating list item:', itemId);
+      
+      const listRef = firestoreInstance.collection('lists').doc(listId);
+      const listDoc = await listRef.get();
+      
+      if (!listDoc.exists) {
+        throw new Error('List not found');
+      }
+
+      const listData = listDoc.data();
+      if (!listData) {
+        throw new Error('List data is undefined');
+      }
+      
+      const items = listData.items || [];
+      const itemIndex = items.findIndex((item: ListItem) => item.id === itemId);
+      
+      if (itemIndex === -1) {
+        throw new Error('Item not found');
+      }
+
+      // Filter out undefined values from updates
+      const cleanUpdates = removeUndefinedFields(updates);
+
+      items[itemIndex] = {
+        ...items[itemIndex],
+        ...cleanUpdates,
+        updatedAt: new Date(),
+      };
+
+      await listRef.update({
+        items,
+        updatedAt: new Date(),
+      });
+
+      console.log('✅ Item updated successfully');
+    } catch (error) {
+      if (handleFirebaseError(error, 'updateListItem')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot update list item.');
+    }
+  },
+
+  // Delete list item
+  async deleteListItem(listId: string, itemId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      console.log('🗑️ Deleting list item:', itemId);
+      
+      const listRef = firestoreInstance.collection('lists').doc(listId);
+      const listDoc = await listRef.get();
+      
+      if (!listDoc.exists) {
+        throw new Error('List not found');
+      }
+
+      const listData = listDoc.data();
+      if (!listData) {
+        throw new Error('List data is undefined');
+      }
+      
+      const items = listData.items || [];
+      const filteredItems = items.filter((item: ListItem) => item.id !== itemId);
+
+      await listRef.update({
+        items: filteredItems,
+        updatedAt: new Date(),
+      });
+
+      console.log('✅ Item deleted successfully');
+    } catch (error) {
+      if (handleFirebaseError(error, 'deleteListItem')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot delete list item.');
+    }
+  },
+
+  // Listen to user lists changes
+  onUserListsChange(userId: string, callback: (lists: UserList[]) => void) {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      const unsubscribe = firestoreInstance
+        .collection('lists')
+        .where('createdBy', '==', userId)
+        .orderBy('updatedAt', 'desc')
+        .onSnapshot(
+          (snapshot) => {
+            const lists: UserList[] = [];
+            snapshot.forEach((doc) => {
+              const data = doc.data();
+              lists.push({
+                id: doc.id,
+                name: data.name,
+                description: data.description,
+                items: data.items || [],
+                format: data.format || 'checkmark',
+                isFavorite: data.isFavorite || false,
+                isPrivate: data.isPrivate || false,
+                familyId: data.familyId,
+                createdAt: convertTimestamp(data.createdAt),
+                updatedAt: convertTimestamp(data.updatedAt),
+                createdBy: data.createdBy,
+              });
+            });
+            callback(lists);
+          },
+          (error) => {
+            if (handleFirebaseError(error, 'onUserListsChange')) {
+              console.error('Error listening to lists changes:', error);
+            }
+            // Return empty array on error
+            callback([]);
+          }
+        );
+
+      return unsubscribe;
+    } catch (error) {
+      if (handleFirebaseError(error, 'onUserListsChange')) {
+        console.error('Error setting up lists listener:', error);
+      }
+      // Return a no-op function
+      return () => {};
+    }
+  },
+
+  // Listen to a specific list changes
+  onListChange(listId: string, callback: (list: UserList) => void) {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      const unsubscribe = firestoreInstance
+        .collection('lists')
+        .doc(listId)
+        .onSnapshot(
+          (doc) => {
+            if (doc.exists) {
+              const data = doc.data();
+              if (data) {
+                const list: UserList = {
+                  id: doc.id,
+                  name: data.name,
+                  description: data.description,
+                  items: data.items || [],
+                  format: data.format || 'checkmark',
+                  isFavorite: data.isFavorite || false,
+                  isPrivate: data.isPrivate || false,
+                  familyId: data.familyId,
+                  createdAt: convertTimestamp(data.createdAt),
+                  updatedAt: convertTimestamp(data.updatedAt),
+                  createdBy: data.createdBy,
+                };
+                callback(list);
+              }
+            }
+          },
+          (error) => {
+            if (handleFirebaseError(error, 'onListChange')) {
+              console.error('Error listening to list changes:', error);
+            }
+          }
+        );
+
+      return unsubscribe;
+    } catch (error) {
+      if (handleFirebaseError(error, 'onListChange')) {
+        console.error('Error setting up list listener:', error);
+      }
+      // Return a no-op function
+      return () => {};
+    }
+  },
+};
+
+// Main firebaseService object that combines all services
+const firebaseService = {
+  // Initialize Firebase
+  initializeFirebase,
+  
+  // User services
+  ...userService,
+  
+  // Reminder services
+  ...reminderService,
+  
+  // Task type services
+  ...taskTypeService,
+  
+  // Family services
+  ...familyService,
+  
+  // Countdown services
+  createCountdown: familyService.createCountdown,
+  getCountdowns: familyService.getCountdowns,
+  updateCountdown: familyService.updateCountdown,
+  deleteCountdown: familyService.deleteCountdown,
+  
+  // List services
+  ...listService,
+};
+
+export default firebaseService; 

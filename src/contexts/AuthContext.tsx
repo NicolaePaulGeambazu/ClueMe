@@ -16,6 +16,7 @@ interface AuthContextType {
   upgradeFromAnonymous: (email: string, password: string, displayName?: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   requireAuth: () => boolean;
+  updateUserProfile: (updates: { displayName?: string; photoURL?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -92,11 +93,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log('🔥 Signing in with Firebase...');
       const userCredential = await auth().signInWithEmailAndPassword(email, password);
       const firebaseUser = userCredential.user;
-      
-      console.log('✅ Firebase sign in successful:', firebaseUser.uid);
       
       // Try to create user profile in Firebase
       try {
@@ -107,23 +105,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAnonymous: firebaseUser.isAnonymous,
         });
       } catch (error) {
-        console.warn('Could not create Firebase user profile:', error);
+        console.warn('Could not create/update Firebase user profile:', error);
       }
       
       // Seed default task types for new users
       try {
-        console.log('🌱 Checking for default task types after sign in...');
         const existingTypes = await taskTypeService.getAllTaskTypes();
         if (existingTypes.length === 0) {
-          console.log('🌱 No task types found, seeding defaults...');
           await taskTypeService.seedDefaultTaskTypes();
-          console.log('✅ Default task types seeded successfully');
         }
       } catch (error) {
-        console.warn('⚠️ Could not seed task types:', error);
+        console.warn('Could not seed task types:', error);
       }
-    } catch (error) {
-      console.error('❌ Firebase sign in error:', error);
+      
+      // Force update the user state since onAuthStateChanged might not trigger immediately
+      const convertedUser = convertFirebaseUserToUser(firebaseUser);
+      setUser(convertedUser);
+      
+    } catch (error: any) {
+      console.error('Firebase sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -133,7 +133,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, displayName?: string) => {
     setIsLoading(true);
     try {
-      console.log('🔥 Creating Firebase user...');
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
       const firebaseUser = userCredential.user;
       
@@ -141,8 +140,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (displayName) {
         await firebaseUser.updateProfile({ displayName });
       }
-      
-      console.log('✅ Firebase user created:', firebaseUser.uid);
       
       // Try to create user profile in Firebase
       try {
@@ -158,14 +155,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Seed default task types for new users
       try {
-        console.log('🌱 Seeding default task types for new user...');
         await taskTypeService.seedDefaultTaskTypes();
-        console.log('✅ Default task types seeded successfully');
       } catch (error) {
-        console.warn('⚠️ Could not seed task types:', error);
+        console.warn('Could not seed task types:', error);
       }
+      
+      // Force update the user state since onAuthStateChanged might not trigger immediately
+      const convertedUser = convertFirebaseUserToUser(firebaseUser);
+      setUser(convertedUser);
+      
     } catch (error) {
-      console.error('❌ Firebase sign up error:', error);
+      console.error('Firebase sign up error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -212,7 +212,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const upgradeFromAnonymous = async (email: string, password: string, displayName?: string) => {
     setIsLoading(true);
     try {
-      console.log('🔥 Upgrading anonymous user...');
       const currentUser = auth().currentUser;
       if (!currentUser) {
         throw new Error('No current user to upgrade');
@@ -230,8 +229,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await firebaseUser.updateProfile({ displayName });
       }
       
-      console.log('✅ Firebase user upgraded:', firebaseUser.uid);
-      
       // Try to create user profile in Firebase
       try {
         await userService.createUserProfile({
@@ -246,14 +243,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Seed default task types for upgraded users
       try {
-        console.log('🌱 Seeding default task types for upgraded user...');
         await taskTypeService.seedDefaultTaskTypes();
-        console.log('✅ Default task types seeded successfully');
       } catch (error) {
-        console.warn('⚠️ Could not seed task types:', error);
+        console.warn('Could not seed task types:', error);
       }
+      
+      // Force update the user state since onAuthStateChanged might not trigger immediately
+      const convertedUser = convertFirebaseUserToUser(firebaseUser);
+      setUser(convertedUser);
+      
     } catch (error) {
-      console.error('❌ Firebase upgrade error:', error);
+      console.error('Firebase upgrade error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -275,6 +275,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return !user?.isAnonymous;
   };
 
+  const updateUserProfile = async (updates: { displayName?: string; photoURL?: string }) => {
+    setIsLoading(true);
+    try {
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        await currentUser.updateProfile(updates);
+        const firebaseUser = currentUser;
+        const convertedUser = convertFirebaseUserToUser(firebaseUser);
+        setUser(convertedUser);
+      } else {
+        console.log('ℹ️ No user currently signed in');
+      }
+    } catch (error) {
+      console.error('❌ Firebase update user profile error:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -287,6 +307,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       upgradeFromAnonymous,
       resetPassword,
       requireAuth,
+      updateUserProfile,
     }}>
       {children}
     </AuthContext.Provider>

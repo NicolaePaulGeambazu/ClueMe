@@ -25,9 +25,14 @@ export default function LoginScreen({ navigation }: any) {
     setIsLoading(true);
     try {
       await signIn(email.trim(), password);
+      
+      // Wait a moment for authentication state to update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       navigation.replace('MainTabs');
     } catch (error: any) {
       console.error('Login error:', error);
+      
       let errorMessage = 'Failed to sign in. Please try again.';
       
       // Handle specific Firebase auth errors
@@ -41,6 +46,10 @@ export default function LoginScreen({ navigation }: any) {
         errorMessage = 'Too many failed attempts. Please try again later.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Network error. Please check your connection.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'This account has been disabled.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password sign-in is not enabled.';
       }
       
       Alert.alert('Login Failed', errorMessage);

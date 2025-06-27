@@ -10,6 +10,7 @@ import './src/i18n'; // Initialize i18n
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { FamilyProvider } from './src/contexts/FamilyContext';
@@ -27,6 +28,9 @@ import SearchScreen from './src/app/(tabs)/search';
 import CalendarScreen from './src/app/(tabs)/calendar';
 import CategoriesScreen from './src/app/(tabs)/categories';
 import FamilyScreen from './src/app/(tabs)/family';
+import ListsScreen from './src/app/(tabs)/lists';
+import ListDetailScreen from './src/app/(tabs)/list-detail';
+import CountdownScreen from './src/app/(tabs)/countdown';
 
 const Stack = createNativeStackNavigator();
 
@@ -123,6 +127,33 @@ function AppContent() {
             headerShadowVisible: false,
           }}
         />
+        <Stack.Screen 
+          name="Lists" 
+          component={ListsScreen} 
+          options={{ 
+            title: 'Lists',
+            headerBackTitle: 'Back',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen 
+          name="ListDetail" 
+          component={ListDetailScreen} 
+          options={{ 
+            title: 'List Detail',
+            headerBackTitle: 'Back',
+            headerShadowVisible: false,
+          }}
+        />
+        <Stack.Screen 
+          name="Countdown" 
+          component={CountdownScreen} 
+          options={{ 
+            title: 'Countdown',
+            headerBackTitle: 'Back',
+            headerShadowVisible: false,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
@@ -130,12 +161,14 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <FamilyProvider>
-          <AppContent />
-        </FamilyProvider>
-      </ThemeProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <ThemeProvider>
+          <FamilyProvider>
+            <AppContent />
+          </FamilyProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

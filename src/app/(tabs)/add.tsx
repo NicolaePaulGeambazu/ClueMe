@@ -9,7 +9,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useAuthGuard } from '../../hooks/useAuthGuard';
 import { useReminders } from '../../hooks/useReminders';
 import { useTaskTypes } from '../../hooks/useTaskTypes';
+import { useFamily } from '../../contexts/FamilyContext';
 import { LoginPrompt } from '../../components/auth/LoginPrompt';
+import { RepeatOptions } from '../../components/ReminderForm/RepeatOptions';
 import { Colors } from '../../constants/Colors'
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { Plus } from 'lucide-react-native';
@@ -23,6 +25,7 @@ export default function AddScreen({ navigation, route }: any) {
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
   const { createReminder, useFirebase } = useReminders();
   const { taskTypes, isLoading: taskTypesLoading, seedDefaultTaskTypes } = useTaskTypes();
+  const { familyMembers } = useFamily();
   
   const [formData, setFormData] = useState({
     title: '',
@@ -44,7 +47,8 @@ export default function AddScreen({ navigation, route }: any) {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(new Date());
-  const [familyMembers, setFamilyMembers] = useState<Array<{id: string, name: string, email: string}>>([]);
+  const [repeatPattern, setRepeatPattern] = useState('daily');
+  const [customInterval, setCustomInterval] = useState(1);
   
   const styles = createStyles(colors);
 
@@ -57,15 +61,6 @@ export default function AddScreen({ navigation, route }: any) {
       setFormData(prev => ({ ...prev, dueDate: route.params.prefillDate }));
     }
   }, [route.params]);
-
-  // Mock family members - in real app, fetch from Firebase
-  useEffect(() => {
-    setFamilyMembers([
-      { id: '1', name: 'John Doe', email: 'john@example.com' },
-      { id: '2', name: 'Jane Smith', email: 'jane@example.com' },
-      { id: '3', name: 'Mike Johnson', email: 'mike@example.com' },
-    ]);
-  }, []);
 
   // Seed default task types if none exist
   useEffect(() => {
@@ -367,13 +362,58 @@ export default function AddScreen({ navigation, route }: any) {
 
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>{t('add.assignTo')}</Text>
-            <View style={styles.inputContainer}>
-              <User size={20} color={colors.textSecondary} />
-              <Text style={[styles.input, !formData.assignedTo && { color: colors.textTertiary }]}>
-                {formData.assignedTo || t('add.assignToPlaceholder')}
-              </Text>
-              <ChevronRight size={16} color={colors.textSecondary} />
-            </View>
+            {familyMembers && familyMembers.length > 0 ? (
+              <View style={styles.familyMembersContainer}>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.familyMembersScrollContainer}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.familyMemberOption,
+                      !formData.assignedTo && styles.familyMemberOptionSelected
+                    ]}
+                    onPress={() => setFormData(prev => ({ ...prev, assignedTo: '' }))}
+                  >
+                    <User size={16} color={!formData.assignedTo ? colors.primary : colors.textSecondary} />
+                    <Text style={[
+                      styles.familyMemberLabel,
+                      !formData.assignedTo && styles.familyMemberLabelSelected
+                    ]}>
+                      {t('add.unassigned')}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {familyMembers.map((member) => (
+                    <TouchableOpacity
+                      key={member.id}
+                      style={[
+                        styles.familyMemberOption,
+                        formData.assignedTo === member.id && styles.familyMemberOptionSelected
+                      ]}
+                      onPress={() => setFormData(prev => ({ ...prev, assignedTo: member.id }))}
+                    >
+                      <User size={16} color={formData.assignedTo === member.id ? colors.primary : colors.textSecondary} />
+                      <Text style={[
+                        styles.familyMemberLabel,
+                        formData.assignedTo === member.id && styles.familyMemberLabelSelected
+                      ]}>
+                        {member.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            ) : (
+              <View style={styles.inputContainer}>
+                <User size={20} color={colors.textSecondary} />
+                <Text style={[styles.input, !formData.assignedTo && { color: colors.textTertiary }]}>
+                  {formData.assignedTo || t('add.assignToPlaceholder')}
+                </Text>
+                <ChevronRight size={16} color={colors.textSecondary} />
+              </View>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -735,5 +775,43 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: Fonts.text.medium,
     fontSize: 16,
     color: colors.text,
+  },
+  familyMembersContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  familyMembersScrollContainer: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  familyMemberOption: {
+    padding: 12,
+    borderRadius: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  familyMemberOptionSelected: {
+    backgroundColor: colors.primary + '15',
+    borderColor: colors.primary,
+  },
+  familyMemberLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginLeft: 8,
+  },
+  familyMemberLabelSelected: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 14,
+    color: colors.primary,
   },
 });

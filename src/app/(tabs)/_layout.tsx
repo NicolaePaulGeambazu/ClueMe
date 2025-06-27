@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StyleSheet, View } from 'react-native';
-import { Home, Plus, Settings } from 'lucide-react-native';
+import { Home, Plus, Settings, List } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Colors } from '../../constants/Colors';
 
@@ -9,8 +10,22 @@ import { Colors } from '../../constants/Colors';
 import HomeScreen from './index';
 import AddScreen from './add';
 import SettingsScreen from './settings';
+import CountdownScreen from './countdown';
+import ListsScreen from './lists';
+import RemindersScreen from './reminders';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="Countdown" component={CountdownScreen} />
+      <Stack.Screen name="Reminders" component={RemindersScreen} />
+    </Stack.Navigator>
+  );
+}
 
 export default function TabLayout() {
   const { theme } = useTheme();
@@ -34,7 +49,7 @@ export default function TabLayout() {
     >
       <Tab.Screen
         name="Home"
-        component={HomeScreen}
+        component={HomeStack}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Home size={size} color={color} strokeWidth={2} />

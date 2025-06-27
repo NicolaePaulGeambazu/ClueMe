@@ -77,11 +77,7 @@ export default function PlannerScreen({ navigation }: any) {
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'short', 
-      day: 'numeric' 
-    });
+    return date.toLocaleDateString('en-GB');
   };
 
   const getWeekDates = () => {

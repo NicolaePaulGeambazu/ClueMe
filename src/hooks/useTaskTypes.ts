@@ -46,7 +46,20 @@ export const useTaskTypes = () => {
       } else {
         console.log(`✅ Loaded ${types.length} task types from Firebase`);
         setUseFallback(false);
-        setTaskTypes(types);
+        
+        // Deduplicate task types by name to prevent duplicate keys
+        const uniqueTypes = types.reduce((acc: TaskType[], current) => {
+          const exists = acc.find(type => type.name === current.name);
+          if (!exists) {
+            acc.push(current);
+          } else {
+            console.warn(`⚠️ Duplicate task type found: ${current.name}, skipping...`);
+          }
+          return acc;
+        }, []);
+        
+        console.log(`✅ Deduplicated to ${uniqueTypes.length} unique task types`);
+        setTaskTypes(uniqueTypes);
       }
     } catch (err) {
       console.error('❌ Error loading task types:', err);
@@ -228,7 +241,19 @@ export const useTaskTypes = () => {
     const unsubscribe = taskTypeService.onTaskTypesChange((types) => {
       console.log('📡 Task types updated via listener:', types.length);
       if (types.length > 0) {
-        setTaskTypes(types);
+        // Deduplicate task types by name to prevent duplicate keys
+        const uniqueTypes = types.reduce((acc: TaskType[], current) => {
+          const exists = acc.find(type => type.name === current.name);
+          if (!exists) {
+            acc.push(current);
+          } else {
+            console.warn(`⚠️ Duplicate task type found in listener: ${current.name}, skipping...`);
+          }
+          return acc;
+        }, []);
+        
+        console.log(`✅ Deduplicated listener data to ${uniqueTypes.length} unique task types`);
+        setTaskTypes(uniqueTypes);
         setUseFallback(false);
       } else {
         // If no types returned, switch to fallback

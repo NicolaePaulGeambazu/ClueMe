@@ -49,6 +49,10 @@ export default function SignupScreen({ navigation }: any) {
     setIsLoading(true);
     try {
       await signUp(email.trim(), password, name.trim());
+      
+      // Wait a moment for Firebase to complete the signup process and state to update
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       navigation.replace('MainTabs');
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -63,6 +67,8 @@ export default function SignupScreen({ navigation }: any) {
         errorMessage = 'Password is too weak. Please choose a stronger password.';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Network error. Please check your connection.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password sign-up is not enabled.';
       }
       
       Alert.alert('Signup Failed', errorMessage);
