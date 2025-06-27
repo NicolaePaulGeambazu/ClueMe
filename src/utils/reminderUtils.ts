@@ -12,16 +12,130 @@ const safeDueDate = (dueDate: Date | string | undefined): Date | null => {
   }
 };
 
-// Helper function to get date string for comparison
+// Helper function to get date string from dueDate
 const getDateString = (dueDate: Date | string | undefined): string | null => {
   const date = safeDueDate(dueDate);
   if (!date) {return null;}
   try {
     return date.toISOString().split('T')[0];
   } catch (error) {
-    console.warn('Invalid dueDate for date string:', dueDate);
+    console.warn('Error converting date to string:', error);
     return null;
   }
+};
+
+// Calculate the next occurrence date based on repeat pattern
+export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: string, customInterval?: number): Date => {
+  const nextDate = new Date(currentDueDate);
+  
+  switch (repeatPattern) {
+    case 'daily':
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+      
+    case 'weekdays':
+      // Skip to next weekday (Monday-Friday)
+      do {
+        nextDate.setDate(nextDate.getDate() + 1);
+      } while (nextDate.getDay() === 0 || nextDate.getDay() === 6); // Skip weekends
+      break;
+      
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+      
+    case 'monthly':
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+      
+    case 'yearly':
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+      
+    case 'first_monday':
+      // Move to first Monday of next month
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      nextDate.setDate(1);
+      while (nextDate.getDay() !== 1) { // 1 = Monday
+        nextDate.setDate(nextDate.getDate() + 1);
+      }
+      break;
+      
+    case 'last_friday':
+      // Move to last Friday of next month
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      nextDate.setDate(1);
+      // Go to last day of month
+      nextDate.setMonth(nextDate.getMonth() + 1, 0);
+      // Go back to last Friday
+      while (nextDate.getDay() !== 5) { // 5 = Friday
+        nextDate.setDate(nextDate.getDate() - 1);
+      }
+      break;
+      
+    case 'custom':
+      if (customInterval && customInterval > 0) {
+        nextDate.setDate(nextDate.getDate() + customInterval);
+      } else {
+        nextDate.setDate(nextDate.getDate() + 1); // Default to daily
+      }
+      break;
+      
+    default:
+      nextDate.setDate(nextDate.getDate() + 1); // Default to daily
+  }
+  
+  return nextDate;
+};
+
+// Check if a reminder should generate the next occurrence
+export const shouldGenerateNextOccurrence = (reminder: Reminder): boolean => {
+  if (!reminder.isRecurring || !reminder.repeatPattern) {
+    return false;
+  }
+  
+  const dueDate = safeDueDate(reminder.dueDate);
+  if (!dueDate) {
+    return false;
+  }
+  
+  const now = new Date();
+  return dueDate <= now; // Generate next occurrence if due date has passed
+};
+
+// Generate the next occurrence of a recurring reminder
+export const generateNextOccurrence = (reminder: Reminder): Partial<Reminder> | null => {
+  if (!shouldGenerateNextOccurrence(reminder)) {
+    return null;
+  }
+  
+  const currentDueDate = safeDueDate(reminder.dueDate);
+  if (!currentDueDate || !reminder.repeatPattern) {
+    return null;
+  }
+  
+  const nextDueDate = calculateNextOccurrence(currentDueDate, reminder.repeatPattern, reminder.customInterval);
+  
+  return {
+    title: reminder.title,
+    description: reminder.description,
+    type: reminder.type,
+    priority: reminder.priority,
+    dueDate: nextDueDate,
+    dueTime: reminder.dueTime,
+    location: reminder.location,
+    isFavorite: reminder.isFavorite,
+    isRecurring: reminder.isRecurring,
+    repeatPattern: reminder.repeatPattern,
+    customInterval: reminder.customInterval,
+    hasNotification: reminder.hasNotification,
+    notificationTimings: reminder.notificationTimings,
+    assignedTo: reminder.assignedTo,
+    tags: reminder.tags,
+    completed: false,
+    status: 'pending',
+    userId: reminder.userId,
+  };
 };
 
 export const filterReminders = {

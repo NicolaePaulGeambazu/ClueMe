@@ -2,6 +2,7 @@ import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firest
 import auth from '@react-native-firebase/auth';
 import { notificationService } from './notificationService';
 import { Platform } from 'react-native';
+import { generateNextOccurrence, shouldGenerateNextOccurrence } from '../utils/reminderUtils';
 
 // Types
 export interface UserProfile {
@@ -643,13 +644,57 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      
+      // Get the current reminder to check if it's recurring
+      const currentReminder = await reminderRef.get();
+      const currentData = currentReminder.data() as Reminder;
+      
       await reminderRef.update({
         ...updates,
         updatedAt: new Date(),
       });
+
+      // Handle recurring reminders - generate next occurrence if completed
+      if (currentData.isRecurring && updates.completed === true) {
+        await this.handleRecurringReminder(currentData);
+      }
     } catch (error) {
       console.error('Error updating reminder:', error);
       throw error;
+    }
+  },
+
+  // Handle recurring reminder logic
+  async handleRecurringReminder(reminder: Reminder): Promise<void> {
+    try {
+      const nextOccurrence = generateNextOccurrence(reminder);
+      if (nextOccurrence) {
+        console.log('🔄 Generating next occurrence for recurring reminder:', reminder.title);
+        await this.createReminder(nextOccurrence as Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>);
+        console.log('✅ Next occurrence created successfully');
+      }
+    } catch (error) {
+      console.error('Error handling recurring reminder:', error);
+    }
+  },
+
+  // Check and generate recurring reminders that are overdue
+  async checkAndGenerateRecurringReminders(userId: string): Promise<void> {
+    try {
+      const reminders = await this.getUserReminders(userId);
+      const now = new Date();
+      
+      for (const reminder of reminders) {
+        if (reminder.isRecurring && reminder.repeatPattern && !reminder.completed) {
+          const dueDate = reminder.dueDate;
+          if (dueDate && dueDate <= now) {
+            console.log('🔄 Generating overdue recurring reminder:', reminder.title);
+            await this.handleRecurringReminder(reminder);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking recurring reminders:', error);
     }
   },
 

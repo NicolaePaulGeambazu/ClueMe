@@ -21,7 +21,7 @@ export default function HomeScreen({ navigation }: any) {
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  const { reminders, isLoading, loadReminders, useFirebase } = useReminders();
+  const { reminders, isLoading, loadReminders, checkRecurringReminders, useFirebase } = useReminders();
   const { familyMembers } = useFamily();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
@@ -143,6 +143,13 @@ export default function HomeScreen({ navigation }: any) {
   const formatActivityDate = (dateString: string) => {
     return formatForActivity(dateString);
   };
+
+  // Check for recurring reminders when component mounts
+  useEffect(() => {
+    if (user && !isAnonymous) {
+      checkRecurringReminders();
+    }
+  }, [user, isAnonymous, checkRecurringReminders]);
 
   return (
     <SafeAreaView style={styles.container}>

@@ -26,15 +26,14 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="main-container">
                                 <rect key="frame" x="87.5" y="233.5" width="200" height="200"/>
                                 <subviews>
-                                    <!-- App icon/logo placeholder -->
-                                    <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="app-icon">
+                                    <!-- App icon/logo -->
+                                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="icon-1024" translatesAutoresizingMaskIntoConstraints="NO" id="app-icon">
                                         <rect key="frame" x="50" y="0.0" width="100" height="100"/>
-                                        <color key="backgroundColor" red="0.2" green="0.6" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="100" id="icon-width"/>
                                             <constraint firstAttribute="height" constant="100" id="icon-height"/>
                                         </constraints>
-                                    </view>
+                                    </imageView>
                                     
                                     <!-- App name -->
                                     <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="ClearCue" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="18" translatesAutoresizingMaskIntoConstraints="NO" id="app-name">
@@ -69,14 +68,6 @@
                                 <rect key="frame" x="177.5" y="500" width="20" height="20"/>
                                 <color key="color" red="0.2" green="0.6" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </activityIndicatorView>
-                            
-                            <!-- Version info -->
-                            <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="v1.0.0" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="9" translatesAutoresizingMaskIntoConstraints="NO" id="version">
-                                <rect key="frame" x="0.0" y="626" width="375" height="21"/>
-                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                <color key="textColor" red="0.6" green="0.6" blue="0.6" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                <nil key="highlightedColor"/>
-                            </label>
                         </subviews>
                         <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
@@ -95,11 +86,6 @@
                             <!-- Loading indicator constraints -->
                             <constraint firstItem="loading-indicator" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="loading-center-x"/>
                             <constraint firstItem="loading-indicator" firstAttribute="top" secondItem="main-container" secondAttribute="bottom" constant="70" id="loading-top"/>
-                            
-                            <!-- Version constraints -->
-                            <constraint firstItem="Bcu-3y-fUS" firstAttribute="bottom" secondItem="version" secondAttribute="bottom" constant="20" id="version-bottom"/>
-                            <constraint firstItem="version" firstAttribute="centerX" secondItem="Bcu-3y-fUS" secondAttribute="centerX" id="version-center-x"/>
-                            <constraint firstItem="version" firstAttribute="leading" secondItem="Bcu-3y-fUS" secondAttribute="leading" id="version-leading"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
                     </view>
@@ -109,4 +95,7 @@
             <point key="canvasLocation" x="52.173913043478265" y="375"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="icon-1024" width="1024" height="1024"/>
+    </resources>
 </document>

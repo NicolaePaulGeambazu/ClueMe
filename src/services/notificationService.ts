@@ -255,6 +255,9 @@ class NotificationService {
       // Get all user reminders from Firebase
       const userReminders = await reminderService.getUserReminders(currentUser.uid);
 
+      // Check and generate recurring reminders first
+      await reminderService.checkAndGenerateRecurringReminders(currentUser.uid);
+
       // Filter for overdue reminders that have notifications enabled
       const overdueReminders = userReminders.filter(reminder => {
         if (!reminder.hasNotification || reminder.status === 'completed') {
