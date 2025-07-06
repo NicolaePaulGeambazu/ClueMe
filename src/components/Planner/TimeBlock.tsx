@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, Star, CheckCircle, AlertCircle, User } from 'lucide-react-native';
+import { Clock, Star, CheckCircle, AlertCircle, User, Repeat } from 'lucide-react-native';
 import { Fonts } from '../../constants/Fonts';
 import { formatTimeOnly } from '../../utils/dateUtils';
 
@@ -51,10 +51,29 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
   };
 
   const isOverdue = () => {
-    if (!reminder.dueDate) {return false;}
-    const dueDate = new Date(reminder.dueDate);
-    const now = new Date();
-    return dueDate < now && !reminder.completed;
+    if (!reminder.dueDate || reminder.completed) {return false;}
+    
+    try {
+      // Create a Date object from the due date
+      const dueDateTime = new Date(reminder.dueDate);
+      
+      // If there's a due time, combine it with the due date
+      if (reminder.dueTime) {
+        const [hours, minutes] = reminder.dueTime.split(':').map(Number);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+          dueDateTime.setHours(hours, minutes, 0, 0);
+        }
+      }
+      
+      const now = new Date();
+      return dueDateTime < now;
+    } catch (error) {
+      console.warn('Error checking if reminder is overdue:', error);
+      // Fallback to date-only comparison
+      const dueDate = new Date(reminder.dueDate);
+      const now = new Date();
+      return dueDate < now;
+    }
   };
 
   const typeColor = getTypeColor(reminder.type);
@@ -106,6 +125,12 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
             <View style={styles.timeMeta}>
               <Clock size={12} color={colors.textSecondary} strokeWidth={2} />
               <Text style={styles.timeText}>{formatTimeOnly(reminder.dueTime)}</Text>
+            </View>
+          )}
+
+          {reminder.isRecurring && (
+            <View style={styles.recurringMeta}>
+              <Repeat size={12} color={colors.primary} strokeWidth={2} />
             </View>
           )}
 
@@ -214,6 +239,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginLeft: 4,
+  },
+  recurringMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   priorityBadge: {
     paddingHorizontal: 6,

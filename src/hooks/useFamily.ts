@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { familyService, Family, FamilyMember, FamilyActivity, FamilyInvitation } from '../services/firebaseService';
+import { reminderService, Family, FamilyMember, FamilyActivity, FamilyInvitation } from '../services/firebaseService';
 
 export const useFamily = () => {
   const { user } = useAuth();
@@ -25,12 +25,12 @@ export const useFamily = () => {
       setIsLoading(true);
       setError(null);
 
-      let userFamily = await familyService.getUserFamily(user.uid);
+      let userFamily = await reminderService.getUserFamily(user.uid);
 
       // If no family exists, create a default one
       if (!userFamily) {
-        console.log('🏠 No family found, creating default family...');
-        userFamily = await familyService.createDefaultFamilyIfNeeded(
+    
+        userFamily = await reminderService.createDefaultFamilyIfNeeded(
           user.uid,
           user.displayName || user.email?.split('@')[0] || 'User',
           user.email || ''
@@ -41,11 +41,11 @@ export const useFamily = () => {
 
       if (userFamily) {
         // Load family members
-        const familyMembers = await familyService.getFamilyMembers(userFamily.id);
+        const familyMembers = await reminderService.getFamilyMembers(userFamily.id);
         setMembers(familyMembers);
 
         // Load family activities
-        const familyActivities = await familyService.getFamilyActivities(userFamily.id);
+        const familyActivities = await reminderService.getFamilyActivities(userFamily.id);
         setActivities(familyActivities);
       } else {
         setMembers([]);
@@ -70,9 +70,9 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      const familyId = await familyService.createFamily(familyData);
+      const familyId = await reminderService.createFamily(familyData);
 
-      // Reload family data
+      // Reload family data to get the new family
       await loadFamily();
 
       return familyId;
@@ -91,18 +91,18 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      const memberId = await familyService.addFamilyMember(memberData);
+      const memberId = await reminderService.addFamilyMember(memberData);
 
-      // Reload family data
-      await loadFamily();
-
+      // The listeners will automatically update the members list
+      console.log('✅ Family member added, listeners will update data');
+      
       return memberId;
     } catch (err) {
       console.error('Error adding family member:', err);
       setError(err instanceof Error ? err.message : 'Failed to add family member');
       throw err;
     }
-  }, [family, loadFamily]);
+  }, [family]);
 
   // Remove a family member
   const removeMember = useCallback(async (memberId: string) => {
@@ -112,16 +112,16 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      await familyService.removeFamilyMember(memberId, family.id);
+      await reminderService.removeFamilyMember(memberId, family.id);
 
-      // Reload family data
-      await loadFamily();
+      // The listeners will automatically update the members list
+      console.log('✅ Family member removed, listeners will update data');
     } catch (err) {
       console.error('Error removing family member:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove family member');
       throw err;
     }
-  }, [family, loadFamily]);
+  }, [family]);
 
   // Create family activity
   const createActivity = useCallback(async (activityData: Omit<FamilyActivity, 'id' | 'createdAt'>) => {
@@ -131,12 +131,11 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      const activityId = await familyService.createFamilyActivity(activityData);
+      const activityId = await reminderService.createFamilyActivity(activityData);
 
-      // Reload activities
-      const familyActivities = await familyService.getFamilyActivities(family.id);
-      setActivities(familyActivities);
-
+      // The listeners will automatically update the activities list
+      console.log('✅ Family activity created, listeners will update data');
+      
       return activityId;
     } catch (err) {
       console.error('Error creating family activity:', err);
@@ -153,7 +152,7 @@ export const useFamily = () => {
     }
 
     try {
-      const invitations = await familyService.getPendingInvitations(user.email);
+      const invitations = await reminderService.getPendingInvitations(user.email);
       setPendingInvitations(invitations);
     } catch (err) {
       console.error('Error loading pending invitations:', err);
@@ -169,7 +168,7 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      const invitationId = await familyService.sendFamilyInvitation({
+      const invitationId = await reminderService.sendFamilyInvitation({
         familyId: family.id,
         familyName: family.name,
         inviterId: user.uid,
@@ -194,7 +193,7 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      await familyService.acceptFamilyInvitation(
+      await reminderService.acceptFamilyInvitation(
         invitationId,
         user.uid,
         user.displayName || user.email.split('@')[0],
@@ -215,7 +214,7 @@ export const useFamily = () => {
   const declineInvitation = useCallback(async (invitationId: string) => {
     try {
       setError(null);
-      await familyService.declineFamilyInvitation(invitationId);
+      await reminderService.declineFamilyInvitation(invitationId);
 
       // Reload invitations
       await loadPendingInvitations();
@@ -239,7 +238,7 @@ export const useFamily = () => {
 
     try {
       setError(null);
-      await familyService.leaveFamily(family.id, currentMember.id);
+      await reminderService.leaveFamily(family.id, currentMember.id);
 
       // Clear family data
       setFamily(null);
@@ -254,21 +253,61 @@ export const useFamily = () => {
 
   // Set up real-time listeners
   useEffect(() => {
-    if (!family?.id) {return;}
+    if (!family?.id) {
+      return;
+    }
 
-    const unsubscribeMembers = familyService.onFamilyMembersChange(family.id, (newMembers) => {
-      setMembers(newMembers);
-    });
 
-    const unsubscribeActivities = familyService.onFamilyActivitiesChange(family.id, (newActivities) => {
-      setActivities(newActivities);
-    });
+    
+    let unsubscribeMembers: (() => void) | null = null;
+    let unsubscribeActivities: (() => void) | null = null;
+
+    try {
+      unsubscribeMembers = reminderService.onFamilyMembersChange(family.id, (newMembers) => {
+        try {
+      
+          setMembers(newMembers);
+        } catch (error) {
+          console.error('Error processing family members from listener:', error);
+          // Fallback to manual load on error
+          loadFamily();
+        }
+      });
+
+      unsubscribeActivities = reminderService.onFamilyActivitiesChange(family.id, (newActivities) => {
+        try {
+      
+          setActivities(newActivities);
+        } catch (error) {
+          console.error('Error processing family activities from listener:', error);
+          // Fallback to manual load on error
+          loadFamily();
+        }
+      });
+    } catch (error) {
+      console.error('Error setting up family listeners:', error);
+      // Fallback to manual loading
+      loadFamily();
+    }
 
     return () => {
-      unsubscribeMembers();
-      unsubscribeActivities();
+      console.log('🔇 Cleaning up family listeners');
+      if (unsubscribeMembers) {
+        try {
+          unsubscribeMembers();
+        } catch (error) {
+          console.error('Error cleaning up members listener:', error);
+        }
+      }
+      if (unsubscribeActivities) {
+        try {
+          unsubscribeActivities();
+        } catch (error) {
+          console.error('Error cleaning up activities listener:', error);
+        }
+      }
     };
-  }, [family?.id]);
+  }, [family?.id, loadFamily]);
 
   // Load family on mount and when user changes
   useEffect(() => {

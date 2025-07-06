@@ -2427,6 +2427,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-date-picker (5.0.13):
+    - React-Core
   - react-native-pager-view (6.8.1):
     - DoubleConversion
     - glog
@@ -2734,7 +2736,7 @@ PODS:
     - FirebaseCoreExtension
     - React-Core
     - RNFBApp
-  - RNGestureHandler (2.26.0):
+  - RNGestureHandler (2.27.1):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2755,6 +2757,8 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNPermissions (5.4.1):
+    - React-Core
   - RNScreens (3.37.0):
     - DoubleConversion
     - glog
@@ -2831,6 +2835,7 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-date-picker (from `../node_modules/react-native-date-picker`)
   - react-native-pager-view (from `../node_modules/react-native-pager-view`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
@@ -2867,6 +2872,7 @@ DEPENDENCIES:
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2971,6 +2977,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-date-picker:
+    :path: "../node_modules/react-native-date-picker"
   react-native-pager-view:
     :path: "../node_modules/react-native-pager-view"
   react-native-safe-area-context:
@@ -3043,6 +3051,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/messaging"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNPermissions:
+    :path: "../node_modules/react-native-permissions"
   RNScreens:
     :path: "../node_modules/react-native-screens"
   RNSVG:
@@ -3109,6 +3119,7 @@ SPEC CHECKSUMS:
   React-logger: 614787b0dc10e8ddbdfb623c65eb9380befc3850
   React-Mapbuffer: 8e0ddbadb7aebe1dc25d6664f78b2eae9b5d9623
   React-microtasksnativemodule: 2414d4ea6d9fb080ca748a172b07d42d425b3b9c
+  react-native-date-picker: b64721d6278b52708457292c218196b383b553b1
   react-native-pager-view: f016af38b1d78d5d3f4251c25ad519167821546e
   react-native-safe-area-context: 141eca0fd4e4191288dfc8b96a7c7e1c2983447a
   React-nativeconfig: c7743aabd506fc9756e2bc3225b44f6a6f4490c9
@@ -3145,12 +3156,13 @@ SPEC CHECKSUMS:
   RNFBAuth: ecbb030e0fd3551b8bc36cc85e0ebb1bcfb7685e
   RNFBFirestore: b12e7d4e6a94e08565638442def454984a06c065
   RNFBMessaging: 3fa1114c0868dd21f20dfe186adf42297ea316b1
-  RNGestureHandler: 3355cb4b119eb92d7ebf546899a81f60a105d4a4
+  RNGestureHandler: e784e285cfbc6961532b08840925c61396b304ec
+  RNPermissions: a8fc7bd33554f070c7ea0d749ae809c0b76cad32
   RNScreens: a77d531f86f2f76dc8a02f7a938d560f2a94540f
   RNSVG: 28b61fc4856abe8eaea46794419f848986ee7e80
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 929fa3162dc47b68bdbd4b7b794b6353ef9b53c5
 
-PODFILE CHECKSUM: 14a85544b3752e4053394c3d1369121a0193a526
+PODFILE CHECKSUM: 228130f7ce366c6855f3fe6f9ea511cce3962382
 
 COCOAPODS: 1.16.2

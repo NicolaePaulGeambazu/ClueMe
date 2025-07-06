@@ -1,314 +1,216 @@
 import { useState, useEffect, useCallback } from 'react';
-import { taskTypeService, TaskType } from '../services/firebaseService';
-import { useAuth } from '../contexts/AuthContext';
-import { FALLBACK_TASK_TYPES } from '../constants/config';
+import { TaskType } from '../services/firebaseService';
+
+// Fallback task types since taskTypeService was removed
+const defaultTaskTypes: TaskType[] = [
+  {
+    id: 'task',
+    name: 'task',
+    label: 'Task',
+    color: '#3B82F6',
+    icon: 'CheckSquare',
+    description: 'General tasks and to-dos',
+    isDefault: true,
+    isActive: true,
+    sortOrder: 1,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+  },
+  {
+    id: 'bill',
+    name: 'bill',
+    label: 'Bill',
+    color: '#EF4444',
+    icon: 'CreditCard',
+    description: 'Bills and payments',
+    isDefault: true,
+    isActive: true,
+    sortOrder: 2,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+  },
+  {
+    id: 'med',
+    name: 'med',
+    label: 'Medication',
+    color: '#10B981',
+    icon: 'Pill',
+    description: 'Medication reminders',
+    isDefault: true,
+    isActive: true,
+    sortOrder: 3,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+  },
+  {
+    id: 'event',
+    name: 'event',
+    label: 'Event',
+    color: '#8B5CF6',
+    icon: 'Calendar',
+    description: 'Events and appointments',
+    isDefault: true,
+    isActive: true,
+    sortOrder: 4,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+  },
+  {
+    id: 'note',
+    name: 'note',
+    label: 'Note',
+    color: '#F59E0B',
+    icon: 'FileText',
+    description: 'Notes and memos',
+    isDefault: true,
+    isActive: true,
+    sortOrder: 5,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: 'system',
+  },
+];
 
 export const useTaskTypes = () => {
-  const { user } = useAuth();
   const [taskTypes, setTaskTypes] = useState<TaskType[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [useFallback, setUseFallback] = useState(false);
 
   // Load task types
   const loadTaskTypes = useCallback(async () => {
-    if (!user?.uid) {
-      console.log('No user, skipping task types load');
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
     try {
-      console.log('🔄 Loading task types...');
-      const types = await taskTypeService.getAllTaskTypes();
-
-      if (types.length === 0) {
-        console.log('📋 No task types found in Firebase, using fallback types');
-        setUseFallback(true);
-        // Convert fallback types to TaskType format
-        const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
-          id: type.id,
-          name: type.id,
-          label: type.label,
-          color: type.color,
-          icon: type.icon,
-          description: type.description,
-          isDefault: true,
-          isActive: true,
-          sortOrder: index + 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: user.uid,
-        }));
-        setTaskTypes(fallbackTypes);
-      } else {
-        console.log(`✅ Loaded ${types.length} task types from Firebase`);
-        setUseFallback(false);
-
-        // Deduplicate task types by name to prevent duplicate keys
-        const seen = new Set<string>();
-        const duplicates = new Set<string>();
-        const uniqueTypes: TaskType[] = [];
-
-        for (const current of types) {
-          if (seen.has(current.name)) {
-            duplicates.add(current.name);
-          } else {
-            seen.add(current.name);
-            uniqueTypes.push(current);
-          }
-        }
-
-        if (duplicates.size > 0) {
-          console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
-        }
-
-        console.log(`✅ Deduplicated to ${uniqueTypes.length} unique task types`);
-        setTaskTypes(uniqueTypes);
-      }
+      setIsLoading(true);
+      setError(null);
+      
+      // Use fallback task types since taskTypeService was removed
+      setTaskTypes(defaultTaskTypes);
+      
     } catch (err) {
-      console.error('❌ Error loading task types:', err);
-
-      // If it's a permission denied error, use fallback types
-      if (err instanceof Error && err.message.includes('permission denied')) {
-        console.log('📋 Using fallback task types due to Firebase permission issues');
-        setUseFallback(true);
-        setError('Firebase permission denied. Using fallback task types.');
-
-        // Convert fallback types to TaskType format
-        const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
-          id: type.id,
-          name: type.id,
-          label: type.label,
-          color: type.color,
-          icon: type.icon,
-          description: type.description,
-          isDefault: true,
-          isActive: true,
-          sortOrder: index + 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: user.uid,
-        }));
-        setTaskTypes(fallbackTypes);
-      } else {
-        setError(err instanceof Error ? err.message : 'Failed to load task types');
-      }
+      console.error('Error loading task types:', err);
+      setError('Failed to load task types');
+      // Use fallback types on error
+      setTaskTypes(defaultTaskTypes);
     } finally {
       setIsLoading(false);
     }
-  }, [user?.uid]);
+  }, []);
 
-  // Create new task type
+  // Create task type (simplified - just add to local state)
   const createTaskType = useCallback(async (taskTypeData: Omit<TaskType, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user?.uid) {
-      throw new Error('User not authenticated');
-    }
-
-    // If using fallback, don't try to create in Firebase
-    if (useFallback) {
-      throw new Error('Cannot create task types when using fallback mode. Firebase permissions are required.');
-    }
-
     try {
-      console.log('🔄 Creating task type...');
-      const id = await taskTypeService.createTaskType({
+      setError(null);
+      
+      const newTaskType: TaskType = {
+        id: Date.now().toString(),
         ...taskTypeData,
-        createdBy: user.uid,
-      });
-      console.log('✅ Task type created with ID:', id);
-
-      // Reload task types to get the updated list
-      await loadTaskTypes();
-
-      return id;
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      setTaskTypes(prev => [...prev, newTaskType]);
+      return newTaskType.id;
     } catch (err) {
-      console.error('❌ Error creating task type:', err);
+      console.error('Error creating task type:', err);
+      setError('Failed to create task type');
       throw err;
     }
-  }, [user?.uid, loadTaskTypes, useFallback]);
+  }, []);
 
-  // Update task type
+  // Update task type (simplified - just update local state)
   const updateTaskType = useCallback(async (id: string, updates: Partial<TaskType>) => {
-    // If using fallback, don't try to update in Firebase
-    if (useFallback) {
-      throw new Error('Cannot update task types when using fallback mode. Firebase permissions are required.');
-    }
-
     try {
-      console.log('🔄 Updating task type...');
-      await taskTypeService.updateTaskType(id, updates);
-      console.log('✅ Task type updated');
-
-      // Reload task types to get the updated list
-      await loadTaskTypes();
+      setError(null);
+      
+      setTaskTypes(prev => prev.map(type => 
+        type.id === id 
+          ? { ...type, ...updates, updatedAt: new Date() }
+          : type
+      ));
     } catch (err) {
-      console.error('❌ Error updating task type:', err);
+      console.error('Error updating task type:', err);
+      setError('Failed to update task type');
       throw err;
     }
-  }, [loadTaskTypes, useFallback]);
+  }, []);
 
-  // Delete task type
+  // Delete task type (simplified - just remove from local state)
   const deleteTaskType = useCallback(async (id: string) => {
-    // If using fallback, don't try to delete in Firebase
-    if (useFallback) {
-      throw new Error('Cannot delete task types when using fallback mode. Firebase permissions are required.');
-    }
-
     try {
-      console.log('🔄 Deleting task type...');
-      await taskTypeService.deleteTaskType(id);
-      console.log('✅ Task type deleted');
-
-      // Reload task types to get the updated list
-      await loadTaskTypes();
+      setError(null);
+      
+      setTaskTypes(prev => prev.filter(type => type.id !== id));
     } catch (err) {
-      console.error('❌ Error deleting task type:', err);
+      console.error('Error deleting task type:', err);
+      setError('Failed to delete task type');
       throw err;
     }
-  }, [loadTaskTypes, useFallback]);
+  }, []);
 
-  // Seed default task types
+  // Seed default task types (simplified - just set default types)
   const seedDefaultTaskTypes = useCallback(async () => {
-    if (!user?.uid) {
-      throw new Error('User not authenticated');
-    }
-
-    // If using fallback, don't try to seed in Firebase
-    if (useFallback) {
-      console.log('📋 Already using fallback task types, skipping Firebase seeding');
-      return;
-    }
-
     try {
-      console.log('🔄 Seeding default task types...');
-      await taskTypeService.seedDefaultTaskTypes();
-      console.log('✅ Default task types seeded');
-
-      // Reload task types to get the updated list
-      await loadTaskTypes();
+      setError(null);
+      
+      // Reset to default types
+      setTaskTypes(defaultTaskTypes);
     } catch (err) {
-      console.error('❌ Error seeding default task types:', err);
-
-      // If seeding fails due to permissions, switch to fallback mode
-      if (err instanceof Error && err.message.includes('permission denied')) {
-        console.log('📋 Switching to fallback task types due to Firebase permission issues');
-        setUseFallback(true);
-        setError('Firebase permission denied. Using fallback task types.');
-
-        // Convert fallback types to TaskType format
-        const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
-          id: type.id,
-          name: type.id,
-          label: type.label,
-          color: type.color,
-          icon: type.icon,
-          description: type.description,
-          isDefault: true,
-          isActive: true,
-          sortOrder: index + 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: user.uid,
-        }));
-        setTaskTypes(fallbackTypes);
-      } else {
-        throw err;
-      }
+      console.error('Error seeding default task types:', err);
+      setError('Failed to seed default task types');
     }
-  }, [user?.uid, loadTaskTypes, useFallback]);
-
-  // Get task type by name
-  const getTaskTypeByName = useCallback((name: string): TaskType | undefined => {
-    return taskTypes.find(type => type.name === name);
-  }, [taskTypes]);
+  }, []);
 
   // Get task type by ID
-  const getTaskTypeById = useCallback((id: string): TaskType | undefined => {
-    return taskTypes.find(type => type.id === id);
+  const getTaskTypeById = useCallback((id: string): TaskType | null => {
+    return taskTypes.find(type => type.id === id) || null;
+  }, [taskTypes]);
+
+  // Get task type by name
+  const getTaskTypeByName = useCallback((name: string): TaskType | null => {
+    return taskTypes.find(type => type.name === name) || null;
+  }, [taskTypes]);
+
+  // Get active task types
+  const getActiveTaskTypes = useCallback((): TaskType[] => {
+    return taskTypes.filter(type => type.isActive);
   }, [taskTypes]);
 
   // Get default task types
   const getDefaultTaskTypes = useCallback((): TaskType[] => {
-    return taskTypes.filter(type => type.isDefault);
+    return taskTypes.filter(type => type.isDefault && type.isActive);
   }, [taskTypes]);
 
-  // Load task types on mount and when user changes
+  // Listen to task type changes (simplified - no-op since we're using local state)
+  const onTaskTypesChange = useCallback((callback: (types: TaskType[]) => void) => {
+    // Since we're using local state, we don't need real-time updates
+    // Just call the callback with current types
+    callback(taskTypes);
+    
+    // Return a no-op unsubscribe function
+    return () => {};
+  }, [taskTypes]);
+
+  // Load task types on mount
   useEffect(() => {
     loadTaskTypes();
   }, [loadTaskTypes]);
-
-  // Set up real-time listener for task types (only if not using fallback)
-  useEffect(() => {
-    if (!user?.uid || useFallback) {return;}
-
-    console.log('👂 Setting up task types listener...');
-    const unsubscribe = taskTypeService.onTaskTypesChange((types) => {
-      console.log('📡 Task types updated via listener:', types.length);
-      if (types.length > 0) {
-        // Deduplicate task types by name to prevent duplicate keys
-        const seen = new Set<string>();
-        const duplicates = new Set<string>();
-        const uniqueTypes: TaskType[] = [];
-
-        for (const current of types) {
-          if (seen.has(current.name)) {
-            duplicates.add(current.name);
-          } else {
-            seen.add(current.name);
-            uniqueTypes.push(current);
-          }
-        }
-
-        if (duplicates.size > 0) {
-          console.warn(`⚠️ Found ${duplicates.size} duplicate task types: ${Array.from(duplicates).join(', ')}`);
-        }
-
-        console.log(`✅ Deduplicated listener data to ${uniqueTypes.length} unique task types`);
-        setTaskTypes(uniqueTypes);
-        setUseFallback(false);
-      } else {
-        // If no types returned, switch to fallback
-        console.log('📋 No task types returned from listener, switching to fallback');
-        setUseFallback(true);
-        const fallbackTypes: TaskType[] = FALLBACK_TASK_TYPES.map((type, index) => ({
-          id: type.id,
-          name: type.id,
-          label: type.label,
-          color: type.color,
-          icon: type.icon,
-          description: type.description,
-          isDefault: true,
-          isActive: true,
-          sortOrder: index + 1,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          createdBy: user.uid,
-        }));
-        setTaskTypes(fallbackTypes);
-      }
-    });
-
-    return () => {
-      console.log('🔇 Cleaning up task types listener...');
-      unsubscribe();
-    };
-  }, [user?.uid, useFallback]);
 
   return {
     taskTypes,
     isLoading,
     error,
-    useFallback,
     loadTaskTypes,
     createTaskType,
     updateTaskType,
     deleteTaskType,
     seedDefaultTaskTypes,
-    getTaskTypeByName,
     getTaskTypeById,
+    getTaskTypeByName,
+    getActiveTaskTypes,
     getDefaultTaskTypes,
+    onTaskTypesChange,
   };
 };

@@ -82,6 +82,9 @@ target 'ClearCue2' do
   # pod 'RNCSafeAreaContext', :path => '../node_modules/react-native-safe-area-context' # Remove this line
   # pod 'RNScreens', :path => '../node_modules/react-native-screens' # Remove this line
 
+  # AdMob - Google Mobile Ads SDK (temporarily disabled due to codegen issues)
+  # pod 'Google-Mobile-Ads-SDK'
+
   # Section 4: Test Target
   # This block defines dependencies for your test target.
   target 'ClearCue2Tests' do
@@ -134,5 +137,15 @@ target 'ClearCue2' do
 
     # Custom post-install hooks can be added here if needed for specific pods
     # or project requirements, e.g., to fix specific build settings for a pod.
+
+    # BEGIN: Disable codegen for problematic modules (temporarily disabled)
+    # installer.pods_project.targets.each do |target|
+    #   if target.name == 'RNGoogleMobileAds'
+    #     target.build_configurations.each do |config|
+    #       config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
+    #     end
+    #   end
+    # end
+    # END: Disable codegen for problematic modules
   end
 end

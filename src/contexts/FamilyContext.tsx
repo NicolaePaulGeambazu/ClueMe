@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { familyService, FamilyMember, Family } from '../services/firebaseService';
+import firebaseService, { FamilyMember, Family } from '../services/firebaseService';
 
 interface FamilyContextType {
   family: Family | null;
@@ -42,19 +42,19 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       // Get user's family
-      const userFamily = await familyService.getUserFamily(user.uid);
+      const userFamily = await firebaseService.getUserFamily(user.uid);
 
       if (userFamily) {
         setFamily(userFamily);
-        const members = await familyService.getFamilyMembers(userFamily.id);
+        const members = await firebaseService.getFamilyMembers(userFamily.id);
         setFamilyMembers(members);
 
         // Find current user's member record
-        const userMember = members.find(m => m.userId === user.uid);
+        const userMember = members.find((m: FamilyMember) => m.userId === user.uid);
         setCurrentMember(userMember || null);
       } else {
         // Create a default family for the user
-        const defaultFamily = await familyService.createDefaultFamilyIfNeeded(
+        const defaultFamily = await firebaseService.createDefaultFamilyIfNeeded(
           user.uid,
           user.displayName || 'User',
           user.email || ''
@@ -62,11 +62,11 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
         if (defaultFamily) {
           setFamily(defaultFamily);
-          const members = await familyService.getFamilyMembers(defaultFamily.id);
+          const members = await firebaseService.getFamilyMembers(defaultFamily.id);
           setFamilyMembers(members);
 
           // Find current user's member record
-          const userMember = members.find(m => m.userId === user.uid);
+          const userMember = members.find((m: FamilyMember) => m.userId === user.uid);
           setCurrentMember(userMember || null);
         }
       }
@@ -83,12 +83,13 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const familyId = await familyService.createFamily({
+      const familyId = await firebaseService.createFamily({
         name,
         description,
         ownerId: user.uid,
         ownerName: user.displayName || 'User',
         memberCount: 1,
+        maxMembers: 2, // Free tier default
         settings: {
           allowMemberInvites: true,
           allowReminderSharing: true,
@@ -97,7 +98,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       });
 
       // Add the owner as the first member
-      await familyService.addFamilyMember({
+      await firebaseService.addFamilyMember({
         familyId,
         userId: user.uid,
         name: user.displayName || 'You',
@@ -120,7 +121,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Add member to family
-      await familyService.addFamilyMember({
+      await firebaseService.addFamilyMember({
         familyId: family.id,
         userId: '', // Will be set when user accepts invitation
         name: name || email.split('@')[0],
@@ -158,7 +159,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await familyService.removeFamilyMember(memberId, family.id);
+      await firebaseService.removeFamilyMember(memberId, family.id);
       await loadFamily();
     } catch (error) {
       console.error('Error removing member:', error);

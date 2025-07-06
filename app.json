@@ -36,7 +36,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.clearcue.app",
+      "bundleIdentifier": "org.reactjs.native.example.clueme2",
       "buildNumber": "1",
       "infoPlist": {
         "CFBundleDisplayName": "ClearCue",
@@ -56,7 +56,7 @@
         "foregroundImage": "./src/assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.clearcue.app",
+      "package": "org.reactjs.native.example.clueme2",
       "versionCode": 1,
       "permissions": [
         "android.permission.INTERNET",

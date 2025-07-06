@@ -1,6 +1,6 @@
-# Firebase Security Rules for ClearCue - Development Version
+# Firebase Security Rules for ClearCue - Family Sharing Enabled
 
-## Enhanced Development Rules (Recommended - Proper Security + Development Friendly)
+## Updated Security Rules (Recommended for Family Features)
 
 ```javascript
 rules_version = '2';
@@ -12,10 +12,25 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Users can read and write their own reminders
+    // Reminders - allow users to read their own reminders and family-assigned reminders
     match /reminders/{reminderId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
+      allow read: if request.auth != null && (
+        // User's own reminders
+        resource.data.userId == request.auth.uid ||
+        // Reminders assigned to this user
+        (resource.data.assignedTo != null && request.auth.uid in resource.data.assignedTo) ||
+        // Family reminders that are shared
+        (resource.data.sharedWithFamily == true && resource.data.familyId != null)
+      );
+      
+      allow write: if request.auth != null && (
+        // User can write their own reminders
+        resource.data.userId == request.auth.uid ||
+        // User can write reminders assigned to them
+        (resource.data.assignedTo != null && request.auth.uid in resource.data.assignedTo) ||
+        // User can create new reminders
+        resource == null
+      );
     }
     
     // Users can read and write their own countdowns
@@ -66,7 +81,7 @@ service cloud.firestore {
 
 ## Simple Development Rules (Fallback - Allows All Authenticated Access)
 
-If you're still having issues, use this simpler version:
+If you're still having issues, use this simpler version for development:
 
 ```javascript
 rules_version = '2';
@@ -82,6 +97,40 @@ service cloud.firestore {
 }
 ```
 
+## How to Apply These Rules
+
+1. **Go to Firebase Console**: https://console.firebase.google.com
+2. **Select your project**
+3. **Go to Firestore Database** → **Rules** tab
+4. **Replace the existing rules** with the updated rules above
+5. **Click "Publish"**
+
+## Key Changes Made
+
+### Reminders Collection Rules:
+- **Read Access:** Users can read:
+  - Their own reminders (`resource.data.userId == request.auth.uid`)
+  - Reminders assigned to them (`request.auth.uid in resource.data.assignedTo`)
+  - Family reminders that are shared (`resource.data.sharedWithFamily == true`)
+- **Write Access:** Users can write:
+  - Their own reminders
+  - Reminders assigned to them
+  - Create new reminders
+
+### Why This Fixes the Permission Errors:
+1. **Array Contains Queries:** Now supports `assignedTo` array queries
+2. **Family Sharing:** Allows reading shared family reminders
+3. **Flexible Permissions:** Supports the complex family sharing scenarios
+
+## Testing the Rules
+
+After updating the rules, test with these scenarios:
+
+1. **User's Own Reminders:** Should work ✅
+2. **Assigned Reminders:** Should work ✅
+3. **Family Shared Reminders:** Should work ✅
+4. **Family Member Queries:** Should work ✅
+
 ## Production Rules (Use Later)
 
 Once everything is working, you can switch to these more secure rules:
@@ -96,69 +145,35 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Users can read and write their own reminders
+    // Reminders with proper family permissions
     match /reminders/{reminderId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.assignedTo != null && request.auth.uid in resource.data.assignedTo) ||
+        (resource.data.sharedWithFamily == true && 
+         exists(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + resource.data.familyId)))
+      );
+      
+      allow write: if request.auth != null && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.assignedTo != null && request.auth.uid in resource.data.assignedTo) ||
+        resource == null
+      );
     }
     
-    // Users can read and write their own countdowns
-    match /countdowns/{countdownId} {
-      allow read, write: if request.auth != null && 
-        resource.data.userId == request.auth.uid;
-    }
-    
-    // Task types - users can read all, but only create/update/delete their own
-    match /taskTypes/{taskTypeId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && 
-        resource.data.createdBy == request.auth.uid;
-    }
-    
-    // Family collections - family owners have full access, members have read access
+    // Family collections with proper membership checks
     match /families/{familyId} {
       allow read: if request.auth != null && 
-        exists(/databases/$(database)/documents/familyMembers/{memberId}) &&
-        get(/databases/$(database)/documents/familyMembers/{memberId}).data.userId == request.auth.uid &&
-        get(/databases/$(database)/documents/familyMembers/{memberId}).data.familyId == familyId;
+        exists(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + familyId));
       allow write: if request.auth != null && 
         resource.data.ownerId == request.auth.uid;
     }
     
-    // Family members - users can read/write if they are a member of that family
+    // Family members with proper checks
     match /familyMembers/{memberId} {
-      allow read: if request.auth != null && 
-        resource.data.familyId == familyId &&
-        exists(/databases/$(database)/documents/familyMembers/{memberId}) &&
-        get(/databases/$(database)/documents/familyMembers/{memberId}).data.userId == request.auth.uid;
-      allow write: if request.auth != null && 
+      allow read, write: if request.auth != null && 
         (resource.data.userId == request.auth.uid || 
          resource.data.createdBy == request.auth.uid);
-    }
-    
-    // Family activities - users can read/write if they are a member of that family
-    match /familyActivities/{activityId} {
-      allow read: if request.auth != null && 
-        resource.data.familyId == familyId &&
-        exists(/databases/$(database)/documents/familyMembers/{memberId}) &&
-        get(/databases/$(database)/documents/familyMembers/{memberId}).data.userId == request.auth.uid;
-      allow write: if request.auth != null && 
-        resource.data.memberId == request.auth.uid;
-    }
-    
-    // Lists - users can read and write their own lists, and read shared family lists
-    match /lists/{listId} {
-      allow read: if request.auth != null &&
-        (
-          resource.data.createdBy == request.auth.uid ||
-          (
-            resource.data.isPrivate != true &&
-            resource.data.familyId != null &&
-            exists(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + resource.data.familyId)) &&
-            get(/databases/$(database)/documents/familyMembers/$(request.auth.uid + '_' + resource.data.familyId)).data.userId == request.auth.uid
-          )
-        );
-      allow write: if request.auth != null && resource.data.createdBy == request.auth.uid;
     }
     
     // Deny all other operations
@@ -169,157 +184,6 @@ service cloud.firestore {
 }
 ```
 
-## How to Apply These Rules
+---
 
-1. **Go to Firebase Console**: https://console.firebase.google.com
-2. **Select your project**
-3. **Go to Firestore Database** → **Rules** tab
-4. **Replace the existing rules** with the enhanced development rules above
-5. **Click "Publish"**
-
-## Why These Rules Work
-
-- ✅ **Proper Security**: Each collection has specific rules
-- ✅ **Development Friendly**: Allows all authenticated users to access family and list features
-- ✅ **User Isolation**: Users can only access their own reminders and countdowns
-- ✅ **Family Sharing**: Allows family creation and management
-- ✅ **Family Membership**: Users can access their current family regardless of ownership
-- ✅ **List Management**: Allows list creation and sharing within families
-- ✅ **Task Type Sharing**: Users can read all task types but only modify their own
-
-## Automatic Family Creation
-
-The app now automatically creates a family for new users with the following features:
-
-- **Default Family Name**: "{UserName}'s Family"
-- **Owner**: The authenticated user
-- **Settings**: All family features enabled by default
-- **Initial Activity**: Records the family creation
-- **Member Count**: Starts at 1 (the owner)
-
-## Manual Task Types Addition
-
-If you want to manually add task types to Firebase, here's the structure:
-
-### Task Type Document Structure
-
-```json
-{
-  "name": "task",
-  "label": "Task", 
-  "color": "#3B82F6",
-  "icon": "CheckSquare",
-  "description": "General tasks and to-dos",
-  "isDefault": true,
-  "isActive": true,
-  "sortOrder": 1,
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z",
-  "createdBy": "YOUR_USER_ID"
-}
-```
-
-### Default Task Types to Add
-
-1. **Task**
-   ```json
-   {
-     "name": "task",
-     "label": "Task",
-     "color": "#3B82F6", 
-     "icon": "CheckSquare",
-     "description": "General tasks and to-dos",
-     "isDefault": true,
-     "isActive": true,
-     "sortOrder": 1,
-     "createdAt": "2024-01-01T00:00:00.000Z",
-     "updatedAt": "2024-01-01T00:00:00.000Z",
-     "createdBy": "YOUR_USER_ID"
-   }
-   ```
-
-2. **Bill**
-   ```json
-   {
-     "name": "bill",
-     "label": "Bill",
-     "color": "#EF4444",
-     "icon": "CreditCard",
-     "description": "Bills and payments",
-     "isDefault": true,
-     "isActive": true,
-     "sortOrder": 2,
-     "createdAt": "2024-01-01T00:00:00.000Z",
-     "updatedAt": "2024-01-01T00:00:00.000Z",
-     "createdBy": "YOUR_USER_ID"
-   }
-   ```
-
-3. **Medication**
-   ```json
-   {
-     "name": "med",
-     "label": "Medication",
-     "color": "#10B981",
-     "icon": "Pill",
-     "description": "Medication reminders",
-     "isDefault": true,
-     "isActive": true,
-     "sortOrder": 3,
-     "createdAt": "2024-01-01T00:00:00.000Z",
-     "updatedAt": "2024-01-01T00:00:00.000Z",
-     "createdBy": "YOUR_USER_ID"
-   }
-   ```
-
-4. **Event**
-   ```json
-   {
-     "name": "event",
-     "label": "Event",
-     "color": "#8B5CF6",
-     "icon": "Calendar",
-     "description": "Events and appointments",
-     "isDefault": true,
-     "isActive": true,
-     "sortOrder": 4,
-     "createdAt": "2024-01-01T00:00:00.000Z",
-     "updatedAt": "2024-01-01T00:00:00.000Z",
-     "createdBy": "YOUR_USER_ID"
-   }
-   ```
-
-5. **Note**
-   ```json
-   {
-     "name": "note",
-     "label": "Note",
-     "color": "#F59E0B",
-     "icon": "FileText",
-     "description": "Notes and memos",
-     "isDefault": true,
-     "isActive": true,
-     "sortOrder": 5,
-     "createdAt": "2024-01-01T00:00:00.000Z",
-     "updatedAt": "2024-01-01T00:00:00.000Z",
-     "createdBy": "YOUR_USER_ID"
-   }
-   ```
-
-## Quick Fix for Permission Issues
-
-If you're getting permission errors, use this **simple development rule**:
-
-```javascript
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
-
-This allows any authenticated user to read and write to any collection. **Use this for development only!** 
+**Note:** The updated rules should resolve the permission denied errors you're seeing in the logs. The key change is allowing users to read reminders that are assigned to them or shared with their family. 

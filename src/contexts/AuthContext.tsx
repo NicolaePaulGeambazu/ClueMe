@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import '@react-native-firebase/app';
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { userService } from '../services/firebaseService';
-import { taskTypeService } from '../services/firebaseService';
 import { User } from '../types';
+
 
 interface AuthContextType {
   user: User | null;
@@ -42,28 +42,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
           try {
             if (firebaseUser) {
-              console.log('🔥 Firebase user authenticated:', firebaseUser.uid, firebaseUser.isAnonymous ? '(anonymous)' : '');
               const convertedUser = convertFirebaseUserToUser(firebaseUser);
               setUser(convertedUser);
-
-              // If user is authenticated and not anonymous, try to seed default task types
-              if (!convertedUser.isAnonymous) {
-                try {
-                  console.log('🌱 Checking for default task types...');
-                  const existingTypes = await taskTypeService.getAllTaskTypes();
-                  if (existingTypes.length === 0) {
-                    console.log('🌱 No task types found, seeding defaults...');
-                    await taskTypeService.seedDefaultTaskTypes();
-                    console.log('✅ Default task types seeded successfully');
-                  } else {
-                    console.log(`✅ Found ${existingTypes.length} existing task types`);
-                  }
-                } catch (error) {
-                  console.warn('⚠️ Could not seed task types:', error);
-                }
-              }
             } else {
-              console.log('🔥 No Firebase user, signing in anonymously...');
               // Sign in anonymously if no user (Firebase handles persistence automatically)
               try {
                 await auth().signInAnonymously();
@@ -87,7 +68,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000); // 10 second timeout
+
     initializeAuth();
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -106,16 +94,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } catch (error) {
         console.warn('Could not create/update Firebase user profile:', error);
-      }
-
-      // Seed default task types for new users
-      try {
-        const existingTypes = await taskTypeService.getAllTaskTypes();
-        if (existingTypes.length === 0) {
-          await taskTypeService.seedDefaultTaskTypes();
-        }
-      } catch (error) {
-        console.warn('Could not seed task types:', error);
       }
 
       // Force update the user state since onAuthStateChanged might not trigger immediately
@@ -153,13 +131,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Could not create Firebase user profile:', error);
       }
 
-      // Seed default task types for new users
-      try {
-        await taskTypeService.seedDefaultTaskTypes();
-      } catch (error) {
-        console.warn('Could not seed task types:', error);
-      }
-
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
@@ -175,13 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setIsLoading(true);
     try {
-      console.log('🔥 Signing out from Firebase...');
       const currentUser = auth().currentUser;
       if (currentUser) {
         await auth().signOut();
-        console.log('✅ Firebase sign out successful');
-      } else {
-        console.log('ℹ️ No user currently signed in');
       }
       // The onAuthStateChanged listener will handle signing in anonymously
     } catch (error: any) {
@@ -198,9 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInAnonymously = async () => {
     setIsLoading(true);
     try {
-      console.log('🔥 Signing in anonymously with Firebase...');
       await auth().signInAnonymously();
-      console.log('✅ Firebase anonymous sign in successful');
     } catch (error) {
       console.error('❌ Firebase anonymous sign in error:', error);
       throw error;
@@ -241,13 +206,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn('Could not create Firebase user profile:', error);
       }
 
-      // Seed default task types for upgraded users
-      try {
-        await taskTypeService.seedDefaultTaskTypes();
-      } catch (error) {
-        console.warn('Could not seed task types:', error);
-      }
-
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
@@ -262,9 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
-      console.log('🔥 Sending password reset email...');
       await auth().sendPasswordResetEmail(email);
-      console.log('✅ Password reset email sent');
     } catch (error) {
       console.error('❌ Firebase reset password error:', error);
       throw error;
@@ -284,8 +240,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const firebaseUser = currentUser;
         const convertedUser = convertFirebaseUserToUser(firebaseUser);
         setUser(convertedUser);
-      } else {
-        console.log('ℹ️ No user currently signed in');
       }
     } catch (error) {
       console.error('❌ Firebase update user profile error:', error);

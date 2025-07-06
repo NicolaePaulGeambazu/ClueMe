@@ -1,5 +1,7 @@
+import firebase from '@react-native-firebase/app';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+// Analytics service removed to fix Firebase issues
 import { notificationService } from './notificationService';
 import { Platform } from 'react-native';
 import { generateNextOccurrence, shouldGenerateNextOccurrence } from '../utils/reminderUtils';
@@ -12,8 +14,23 @@ export interface UserProfile {
   createdAt: Date;
   updatedAt: Date;
   isAnonymous: boolean;
-  fcmToken?: string;
+  // Enhanced FCM token management for multi-device support
+  fcmTokens: string[]; // Multiple tokens per user (multi-device)
   lastTokenUpdate?: string;
+  // Enhanced notification settings
+  notificationSettings?: {
+    enabled: boolean;
+    reminderNotifications: boolean;
+    assignmentNotifications: boolean;
+    familyNotifications: boolean;
+    pushNotifications: boolean;
+  };
+  // Subscription fields
+  subscriptionTier?: 'free' | 'paid';
+  subscriptionExpiresAt?: Date;
+  // Regional and timezone fields
+  timezone?: string; // e.g., 'Europe/Berlin', 'America/New_York'
+  region?: string;   // e.g., 'EU', 'UK', 'US'
   preferences?: {
     theme?: 'light' | 'dark' | 'system';
     notifications?: boolean;
@@ -30,6 +47,11 @@ export interface Reminder {
   status: 'pending' | 'completed' | 'cancelled';
   dueDate?: Date;
   dueTime?: string;
+  // Event-specific fields for start and end times
+  startDate?: Date;
+  startTime?: string;
+  endDate?: Date;
+  endTime?: string;
   location?: string;
   isFavorite?: boolean;
   isRecurring?: boolean;
@@ -42,11 +64,23 @@ export interface Reminder {
     label: string;
   }>;
   assignedTo?: string[]; // Changed from string to string[] to support multiple assignments
+  assignedBy?: string; // Track who assigned this reminder
   tags?: string[];
   completed?: boolean;
   deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
+  // Family sharing fields
+  sharedWithFamily?: boolean; // Whether this reminder is shared with family
+  sharedForEditing?: boolean; // Whether family members can edit this reminder
+  familyId?: string; // Which family this reminder belongs to
+  repeatDays?: number[]; // Days of week for custom weekly patterns (0=Sunday, 1=Monday, ...)
+  customFrequencyType?: 'daily' | 'weekly' | 'monthly' | 'yearly'; // Frequency type for custom patterns
+  // Recurring reminder date range
+  recurringStartDate?: Date; // When recurring reminders should start
+  recurringEndDate?: Date; // When recurring reminders should stop (optional)
+  recurringEndAfter?: number; // Number of occurrences before ending (optional)
+  recurringGroupId?: string; // ID to group related recurring reminders together
 }
 
 export interface TaskType {
@@ -112,6 +146,7 @@ export interface Family {
   ownerId: string;
   ownerName: string;
   memberCount: number;
+  maxMembers: number; // Subscription-based limit
   createdAt: Date;
   updatedAt: Date;
   settings?: {
@@ -299,7 +334,7 @@ export const initializeFirebase = async (): Promise<boolean> => {
 };
 
 // Helper function to get Firestore instance
-const getFirestoreInstance = () => {
+export const getFirestoreInstance = () => {
   try {
     const firestoreInstance = firestore();
     if (!firestoreInstance) {
@@ -349,6 +384,14 @@ export const userService = {
       createdAt: userData.createdAt || new Date(),
       updatedAt: new Date(),
       isAnonymous: userData.isAnonymous || auth().currentUser?.isAnonymous || false,
+      fcmTokens: userData.fcmTokens || [],
+      notificationSettings: userData.notificationSettings || {
+        enabled: true,
+        reminderNotifications: true,
+        assignmentNotifications: true,
+        familyNotifications: true,
+        pushNotifications: true,
+      },
       preferences: userData.preferences || {
         theme: 'system',
         notifications: true,
@@ -457,33 +500,128 @@ function removeUndefinedFields<T extends object>(obj: T): Partial<T> {
 
 // Reminder Operations
 export const reminderService = {
+  // Track last check time to prevent too frequent checks
+  lastRecurringCheckTime: {} as { [key: string]: number },
+  
+  // Track recently processed recurring reminders to prevent duplicates
+  recentlyProcessedRecurring: {} as { [key: string]: number },
+
   // Create a new reminder
   async createReminder(reminderData: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
+      console.log('🔥 Starting reminder creation in Firebase...');
+      
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc();
       const reminderId = reminderRef.id;
 
+      console.log('📝 Generated reminder ID:', reminderId);
+
+      // Generate recurring group ID for recurring reminders
+      let recurringGroupId: string | undefined;
+      if (reminderData.isRecurring) {
+        recurringGroupId = reminderId; // Use the first reminder's ID as the group ID
+      }
+
       const newReminder: Reminder = {
         ...reminderData,
         id: reminderId,
+        recurringGroupId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
+      console.log('💾 Saving reminder to Firestore...');
       await reminderRef.set(removeUndefinedFields(newReminder) as any);
+      console.log('✅ Reminder saved to Firestore successfully');
 
-      // Schedule notifications if the reminder has notifications enabled
-      if (reminderData.hasNotification && reminderData.notificationTimings && reminderData.notificationTimings.length > 0) {
+      // Create family activity if this is a family-related reminder
+      if (reminderData.familyId && reminderData.sharedWithFamily) {
         try {
-          await notificationService.scheduleReminderNotifications(newReminder);
-          console.log('✅ Notifications scheduled for reminder:', reminderId);
-        } catch (notificationError) {
-          console.error('Failed to schedule notifications for reminder:', notificationError);
-          // Don't throw here - the reminder was created successfully, just notification scheduling failed
+          console.log('👨‍👩‍👧‍👦 Creating family activity...');
+          // Get user's family member info
+          const familyMembers = await this.getFamilyMembers(reminderData.familyId);
+          const userMember = familyMembers.find(m => m.userId === reminderData.userId);
+          
+          if (userMember) {
+            await this.createFamilyActivity({
+              familyId: reminderData.familyId,
+              type: 'reminder_created',
+              title: 'New Family Reminder',
+              description: `${userMember.name} created: "${reminderData.title}"`,
+              memberId: reminderData.userId,
+              memberName: userMember.name,
+              metadata: {
+                reminderId: reminderId,
+                reminderTitle: reminderData.title,
+                reminderType: reminderData.type,
+                assignedTo: reminderData.assignedTo,
+                priority: reminderData.priority
+              }
+            });
+            console.log('✅ Family activity created for new reminder');
+          } else {
+            console.log('⚠️ User member not found for family activity');
+          }
+        } catch (activityError) {
+          console.error('Failed to create family activity for reminder:', activityError);
+          // Don't throw here - the reminder was created successfully
         }
       }
 
+      // Always schedule a default notification at the due time, even if no custom timings are set
+      try {
+        console.log('🔔 Scheduling notifications...');
+        console.log('🔔 Reminder data for notification:', {
+          id: reminderId,
+          title: reminderData.title,
+          dueDate: reminderData.dueDate,
+          dueTime: reminderData.dueTime,
+          hasNotification: reminderData.hasNotification,
+          notificationTimings: reminderData.notificationTimings
+        });
+        
+        // Check if notification service is available
+        if (!notificationService) {
+          console.error('❌ Notification service is not available');
+          return reminderId;
+        }
+        
+        await notificationService.scheduleReminderNotifications(newReminder);
+        console.log('✅ Notifications scheduled for reminder:', reminderId);
+
+        // Send assignment notifications if reminder is assigned to other users
+        if (reminderData.assignedTo && reminderData.assignedTo.length > 0) {
+          try {
+            console.log('🔔 Sending assignment notifications...');
+            await notificationService.sendAssignmentNotification(
+              reminderId,
+              reminderData.title,
+              reminderData.userId, // assigned by
+              reminderData.assignedBy || 'Unknown', // assigned by display name
+              reminderData.assignedTo
+            );
+            console.log('✅ Assignment notifications sent successfully');
+          } catch (assignmentError) {
+            console.error('❌ Failed to send assignment notifications:', assignmentError);
+            // Don't throw here - the reminder was created successfully
+          }
+        }
+      } catch (notificationError) {
+        console.error('❌ Failed to schedule notifications for reminder:', notificationError);
+        console.error('❌ Notification error details:', {
+          error: notificationError,
+          reminderId: reminderId || 'unknown',
+          reminderData: {
+            title: reminderData.title,
+            dueDate: reminderData.dueDate,
+            dueTime: reminderData.dueTime
+          }
+        });
+        // Don't throw here - the reminder was created successfully, just notification scheduling failed
+      }
+
+      console.log('✅ Reminder created successfully:', reminderId);
       return reminderId;
     } catch (error) {
       console.error('Error creating reminder:', error);
@@ -527,6 +665,229 @@ export const reminderService = {
       console.error('Error getting user reminders:', error);
       return [];
     }
+  },
+
+  // Get family reminders with proper permission checking and performance optimizations
+  async getFamilyReminders(
+    userId: string, 
+    familyId: string, 
+    limit: number = 50,
+    page: number = 0,
+    useCache: boolean = true
+  ): Promise<{ reminders: Reminder[]; hasMore: boolean; totalCount: number }> {
+    try {
+  
+      
+      // Check cache first
+      if (useCache) {
+        const cached = getCachedReminders(userId, familyId);
+        if (cached) {
+          console.log('📦 Using cached family reminders');
+          const startIndex = page * limit;
+          const endIndex = startIndex + limit;
+          const paginatedReminders = cached.slice(startIndex, endIndex);
+          
+          return {
+            reminders: paginatedReminders,
+            hasMore: endIndex < cached.length,
+            totalCount: cached.length
+          };
+        }
+      }
+
+      const firestoreInstance = getFirestoreInstance();
+      const remindersRef = firestoreInstance.collection('reminders');
+
+      // Get user's family membership to check permissions
+      const familyMembers = await this.getFamilyMembers(familyId);
+      const userMember = familyMembers.find((m: FamilyMember) => m.userId === userId);
+      
+      if (!userMember) {
+        console.log('User is not a member of this family');
+        return { reminders: [], hasMore: false, totalCount: 0 };
+      }
+
+      // Use optimized queries with proper indexing
+      const allReminders: Reminder[] = [];
+      const seenIds = new Set<string>();
+
+      // 1. Get user's own reminders (using index)
+      try {
+        const userQuery = remindersRef
+          .where('userId', '==', userId)
+          .orderBy('createdAt', 'desc')
+          .limit(limit * 2); // Get more to account for filtering
+
+        const userSnapshot = await userQuery.get();
+        userSnapshot.forEach((doc) => {
+          const data = doc.data() as any;
+          if (!data.deletedAt) {
+            seenIds.add(doc.id);
+            allReminders.push({
+              id: doc.id,
+              ...data,
+              createdAt: convertTimestamp(data.createdAt),
+              updatedAt: convertTimestamp(data.updatedAt),
+              dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+              deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error getting user reminders:', error);
+      }
+
+      // 2. Get reminders assigned to this user (using index)
+      try {
+        const assignedQuery = remindersRef
+          .where('assignedTo', 'array-contains', userId)
+          .orderBy('createdAt', 'desc')
+          .limit(limit * 2);
+
+        const assignedSnapshot = await assignedQuery.get();
+        const assignedReminders = assignedSnapshot && !assignedSnapshot.empty
+          ? assignedSnapshot.docs.map((doc: any) => ({
+              id: doc.id,
+              ...doc.data()
+            } as Reminder))
+          : [];
+
+        assignedSnapshot.forEach((doc) => {
+          const data = doc.data() as any;
+          // Filter out user's own reminders in memory instead of using != in query
+          if (!seenIds.has(doc.id) && !data.deletedAt && data.userId !== userId) {
+            seenIds.add(doc.id);
+            allReminders.push({
+              id: doc.id,
+              ...data,
+              createdAt: convertTimestamp(data.createdAt),
+              updatedAt: convertTimestamp(data.updatedAt),
+              dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+              deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+            });
+          }
+        });
+      } catch (error) {
+        console.error('Error getting assigned reminders:', error);
+      }
+
+      // 3. If user is owner/admin, get family members' reminders (with performance optimization)
+      if (userMember.role === 'owner' || userMember.role === 'admin') {
+        const familyUserIds = familyMembers.map((m: FamilyMember) => m.userId);
+        
+        // For large families, limit the number of queries
+        const maxFamilyQueries = Math.min(familyUserIds.length - 1, 5); // Max 5 additional queries
+        const familyUserIdsToQuery = familyUserIds
+          .filter(id => id !== userId)
+          .slice(0, maxFamilyQueries);
+        
+        for (const familyUserId of familyUserIdsToQuery) {
+          try {
+            const familyQuery = remindersRef
+              .where('userId', '==', familyUserId)
+              .where('sharedWithFamily', '==', true) // Only get shared reminders
+              .orderBy('createdAt', 'desc')
+              .limit(Math.ceil(limit / familyUserIdsToQuery.length)); // Distribute limit
+
+            const familySnapshot = await familyQuery.get();
+            familySnapshot.forEach((doc) => {
+              const data = doc.data() as any;
+              if (!seenIds.has(doc.id) && !data.deletedAt) {
+                seenIds.add(doc.id);
+                allReminders.push({
+                  id: doc.id,
+                  ...data,
+                  createdAt: convertTimestamp(data.createdAt),
+                  updatedAt: convertTimestamp(data.updatedAt),
+                  dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+                  deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+                });
+              }
+            });
+          } catch (error) {
+            console.error(`Error getting reminders for family member ${familyUserId}:`, error);
+          }
+        }
+      }
+
+      // Sort by updatedAt
+      const sortedReminders = allReminders.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      
+      // Cache the full result
+      if (useCache) {
+        setCachedReminders(userId, sortedReminders, familyId);
+      }
+
+      // Apply pagination
+      const startIndex = page * limit;
+      const endIndex = startIndex + limit;
+      const paginatedReminders = sortedReminders.slice(startIndex, endIndex);
+
+      return {
+        reminders: paginatedReminders,
+        hasMore: endIndex < sortedReminders.length,
+        totalCount: sortedReminders.length
+      };
+
+    } catch (error) {
+      console.error('Error getting family reminders:', error);
+      return { reminders: [], hasMore: false, totalCount: 0 };
+    }
+  },
+
+  // Check if user has permission to view this reminder
+  checkReminderPermission(
+    reminderData: any, 
+    userId: string, 
+    userMember: FamilyMember, 
+    familyMembers: FamilyMember[]
+  ): boolean {
+    // Owner can always view
+    if (reminderData.userId === userId) {
+      return true;
+    }
+
+    // If reminder is shared with family and user is a family member
+    if (reminderData.sharedWithFamily && userMember) {
+      // Check if user is assigned to this reminder
+      if (reminderData.assignedTo && reminderData.assignedTo.includes(userId)) {
+        return true;
+      }
+
+      // Check if user has admin role
+      if (userMember.role === 'admin' || userMember.role === 'owner') {
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  // Check if user has permission to edit this reminder
+  checkReminderEditPermission(
+    reminderData: any, 
+    userId: string, 
+    userMember: FamilyMember
+  ): boolean {
+    // Owner can always edit
+    if (reminderData.userId === userId) {
+      return true;
+    }
+
+    // If reminder is shared for editing and user is a family member
+    if (reminderData.sharedForEditing && userMember) {
+      // Check if user is assigned to this reminder
+      if (reminderData.assignedTo && reminderData.assignedTo.includes(userId)) {
+        return true;
+      }
+
+      // Check if user has admin role
+      if (userMember.role === 'admin' || userMember.role === 'owner') {
+        return true;
+      }
+    }
+
+    return false;
   },
 
   // Get deleted reminders for trash
@@ -591,9 +952,12 @@ export const reminderService = {
             deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
           });
         });
+    
         callback(reminders);
       }, (error) => {
         console.error('Error in reminders listener:', error);
+        // Return empty array on error to trigger refetch
+
         callback([]);
       });
     } catch (error) {
@@ -620,6 +984,14 @@ export const reminderService = {
               createdAt: convertTimestamp(data?.createdAt || new Date()),
               updatedAt: convertTimestamp(data?.updatedAt || new Date()),
               isAnonymous: data?.isAnonymous || false,
+              fcmTokens: data?.fcmTokens || [],
+              notificationSettings: data?.notificationSettings || {
+                enabled: true,
+                reminderNotifications: true,
+                assignmentNotifications: true,
+                familyNotifications: true,
+                pushNotifications: true,
+              },
               preferences: data?.preferences || {
                 theme: 'system',
                 notifications: true,
@@ -639,6 +1011,74 @@ export const reminderService = {
     return unsubscribe;
   },
 
+  // Get a specific reminder by ID
+  async getReminderById(reminderId: string): Promise<Reminder | null> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      
+      const doc = await reminderRef.get();
+      
+      if (!doc.exists) {
+        console.log('❌ Reminder not found:', reminderId);
+        return null;
+      }
+      
+      const data = doc.data();
+      if (!data) {
+        console.log('❌ Reminder data is undefined');
+        return null;
+      }
+      
+      const reminder: Reminder = {
+        id: doc.id,
+        userId: data.userId,
+        title: data.title,
+        description: data.description,
+        type: data.type || 'task',
+        priority: data.priority || 'medium',
+        status: data.status || 'pending',
+        dueDate: convertTimestamp(data.dueDate),
+        dueTime: data.dueTime,
+        startDate: convertTimestamp(data.startDate),
+        startTime: data.startTime,
+        endDate: convertTimestamp(data.endDate),
+        endTime: data.endTime,
+        location: data.location,
+        isFavorite: data.isFavorite || false,
+        isRecurring: data.isRecurring || false,
+        repeatPattern: data.repeatPattern,
+        customInterval: data.customInterval,
+        hasNotification: data.hasNotification || false,
+        notificationTimings: data.notificationTimings,
+        assignedTo: data.assignedTo || [],
+        assignedBy: data.assignedBy,
+        tags: data.tags || [],
+        completed: data.completed || false,
+        deletedAt: convertTimestamp(data.deletedAt),
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
+        sharedWithFamily: data.sharedWithFamily || false,
+        sharedForEditing: data.sharedForEditing || false,
+        familyId: data.familyId,
+        repeatDays: data.repeatDays || [],
+        customFrequencyType: data.customFrequencyType,
+        recurringStartDate: convertTimestamp(data.recurringStartDate),
+        recurringEndDate: convertTimestamp(data.recurringEndDate),
+        recurringGroupId: data.recurringGroupId,
+      };
+      
+      console.log('✅ Reminder found:', reminder.title);
+      return reminder;
+    } catch (error) {
+      console.error('Error getting reminder by ID:', error);
+      if (handleFirebaseError(error, 'getReminderById')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot get reminder.');
+    }
+  },
+
   // Update a reminder
   async updateReminder(reminderId: string, updates: Partial<Reminder>): Promise<void> {
     try {
@@ -649,14 +1089,69 @@ export const reminderService = {
       const currentReminder = await reminderRef.get();
       const currentData = currentReminder.data() as Reminder;
       
-      await reminderRef.update({
+      // Remove undefined fields before updating to prevent Firestore errors
+      const cleanUpdates = removeUndefinedFields({
         ...updates,
         updatedAt: new Date(),
       });
+      
+      await reminderRef.update(cleanUpdates);
 
       // Handle recurring reminders - generate next occurrence if completed
       if (currentData.isRecurring && updates.completed === true) {
         await this.handleRecurringReminder(currentData);
+      }
+
+      // Update notifications if notification settings changed or recurring pattern changed
+      const updatedReminder = { ...currentData, ...updates, updatedAt: new Date() };
+      if (updates.hasNotification !== undefined || 
+          updates.notificationTimings !== undefined || 
+          updates.dueDate !== undefined || 
+          updates.dueTime !== undefined ||
+          updates.isRecurring !== undefined ||
+          updates.repeatPattern !== undefined ||
+          updates.repeatDays !== undefined ||
+          updates.recurringEndDate !== undefined ||
+          updates.recurringEndAfter !== undefined ||
+          updates.customInterval !== undefined) {
+        try {
+          await notificationService.updateReminderNotifications(updatedReminder);
+          console.log('✅ Notifications updated for reminder:', reminderId);
+        } catch (notificationError) {
+          console.error('Failed to update notifications for reminder:', notificationError);
+          // Don't throw here - the reminder was updated successfully, just notification update failed
+        }
+      }
+      
+      // Cancel notifications if reminder is completed
+      if (updates.completed === true || updates.status === 'completed') {
+        try {
+          const { notificationService } = await import('./notificationService');
+          notificationService.cancelReminderNotifications(reminderId);
+          console.log('🔔 Cancelled notifications for completed reminder');
+        } catch (notificationError) {
+          console.error('Failed to cancel notifications for completed reminder:', notificationError);
+          // Don't throw here - the reminder was updated successfully, just notification cancellation failed
+        }
+      }
+
+      // Send assignment notifications if assignments changed
+      if (updates.assignedTo && updates.assignedTo.length > 0) {
+        try {
+          console.log('🔔 Sending assignment notifications for updated reminder...');
+          const { notificationService } = await import('./notificationService');
+          await notificationService.sendAssignmentNotification(
+            reminderId,
+            currentData.title,
+            currentData.userId, // assigned by
+            currentData.assignedBy || 'Unknown', // assigned by display name
+            updates.assignedTo
+          );
+          console.log('✅ Assignment notifications sent for updated reminder');
+        } catch (assignmentError) {
+          console.error('❌ Failed to send assignment notifications for updated reminder:', assignmentError);
+          // Don't throw here - the reminder was updated successfully
+        }
       }
     } catch (error) {
       console.error('Error updating reminder:', error);
@@ -667,11 +1162,55 @@ export const reminderService = {
   // Handle recurring reminder logic
   async handleRecurringReminder(reminder: Reminder): Promise<void> {
     try {
+      console.log('🔄 Handling recurring reminder:', reminder.title);
+      console.log('📅 Current due date:', reminder.dueDate);
+      console.log('📅 End date:', reminder.recurringEndDate);
+      console.log('📅 End after:', reminder.recurringEndAfter);
+      console.log('📅 Pattern:', reminder.repeatPattern);
+      console.log('📅 Repeat days:', reminder.repeatDays);
+      
       const nextOccurrence = generateNextOccurrence(reminder);
       if (nextOccurrence) {
         console.log('🔄 Generating next occurrence for recurring reminder:', reminder.title);
-        await this.createReminder(nextOccurrence as Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>);
-        console.log('✅ Next occurrence created successfully');
+        console.log('📅 Next occurrence due date:', nextOccurrence.dueDate);
+        
+        // Check if we've reached the end conditions
+        let shouldCreateNext = true;
+        
+        // Check recurring end date
+        if (reminder.recurringEndDate && nextOccurrence.dueDate && nextOccurrence.dueDate > reminder.recurringEndDate) {
+          console.log('🔄 Reached recurring end date, stopping generation');
+          shouldCreateNext = false;
+        }
+        
+        // Check recurring end after count
+        if (reminder.recurringEndAfter) {
+          // Count existing occurrences in this recurring group
+          const existingOccurrences = await this.getRecurringGroupReminders(reminder.recurringGroupId || reminder.id);
+          const completedCount = existingOccurrences.filter(r => r.completed).length;
+          
+          console.log('🔄 Existing completed occurrences:', completedCount, 'of', reminder.recurringEndAfter);
+          
+          if (completedCount >= reminder.recurringEndAfter) {
+            console.log('🔄 Reached recurring end after count, stopping generation');
+            shouldCreateNext = false;
+          }
+        }
+        
+        if (shouldCreateNext) {
+          // Use the same recurring group ID for all occurrences
+          const nextOccurrenceData = {
+            ...nextOccurrence,
+            recurringGroupId: reminder.recurringGroupId || reminder.id,
+          } as Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>;
+          
+          await this.createReminder(nextOccurrenceData);
+          console.log('✅ Next occurrence created successfully');
+        } else {
+          console.log('🔄 Stopped generating next occurrence due to end conditions');
+        }
+      } else {
+        console.log('❌ No next occurrence generated (likely past end date or invalid pattern)');
       }
     } catch (error) {
       console.error('Error handling recurring reminder:', error);
@@ -681,20 +1220,244 @@ export const reminderService = {
   // Check and generate recurring reminders that are overdue
   async checkAndGenerateRecurringReminders(userId: string): Promise<void> {
     try {
-      const reminders = await this.getUserReminders(userId);
-      const now = new Date();
+      const now = Date.now();
+      const lastCheck = reminderService.lastRecurringCheckTime[userId] || 0;
+      const timeSinceLastCheck = now - lastCheck;
       
+      // Only check every 5 minutes to prevent excessive generation
+      if (timeSinceLastCheck < 5 * 60 * 1000) {
+        console.log('⏰ Skipping recurring check - too soon since last check:', Math.round(timeSinceLastCheck / 1000), 'seconds ago');
+        return;
+      }
+      
+      reminderService.lastRecurringCheckTime[userId] = now;
+      console.log('🔄 Starting recurring reminder check for user:', userId);
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Recurring reminder check timeout')), 10000); // 10 second timeout
+      });
+      
+      const checkPromise = this.performRecurringReminderCheck(userId, now);
+      
+      await Promise.race([checkPromise, timeoutPromise]);
+    } catch (error) {
+      console.error('Error checking recurring reminders:', error);
+    }
+  },
+
+  // Separate method to perform the actual check
+  async performRecurringReminderCheck(userId: string, now: number): Promise<void> {
+    try {
+      
+      const reminders = await this.getUserReminders(userId);
+      const currentDate = new Date();
+      
+      // Group reminders by recurring group to avoid multiple queries
+      const recurringGroups = new Map<string, Reminder[]>();
+      
+      // First pass: group reminders by recurring group
       for (const reminder of reminders) {
         if (reminder.isRecurring && reminder.repeatPattern && !reminder.completed) {
-          const dueDate = reminder.dueDate;
-          if (dueDate && dueDate <= now) {
-            console.log('🔄 Generating overdue recurring reminder:', reminder.title);
-            await this.handleRecurringReminder(reminder);
+          const recurringGroupId = reminder.recurringGroupId || reminder.id;
+          if (!recurringGroups.has(recurringGroupId)) {
+            recurringGroups.set(recurringGroupId, []);
           }
+          recurringGroups.get(recurringGroupId)!.push(reminder);
         }
+      }
+      
+      // Second pass: process each group efficiently
+      for (const [recurringGroupId, groupReminders] of recurringGroups) {
+        try {
+          // Get all reminders in this group in one query
+          const allGroupReminders = await this.getRecurringGroupReminders(recurringGroupId);
+          
+          // Process each overdue reminder in the group
+          for (const reminder of groupReminders) {
+            const dueDate = reminder.dueDate;
+            console.log('🔍 Checking reminder:', reminder.title);
+            console.log('📅 Due date:', dueDate);
+            console.log('📅 Current date:', currentDate);
+            console.log('📅 End date:', reminder.recurringEndDate);
+            
+            if (dueDate && dueDate <= currentDate) {
+              // Check if there's already a future occurrence
+              const hasFutureOccurrence = allGroupReminders.some(r => 
+                r.id !== reminder.id && // Not the current reminder
+                r.dueDate && 
+                r.dueDate > currentDate && 
+                !r.completed && 
+                !r.deletedAt
+              );
+              
+              // Track recurring reminder processing for analytics
+              if (__DEV__) {
+                console.log('🔍 Has future occurrence:', hasFutureOccurrence);
+                console.log('🔍 Total reminders in group:', allGroupReminders.length);
+              }
+              
+              // Check if we've recently processed this recurring reminder (within last 10 minutes)
+              const reminderKey = `${reminder.id}-${recurringGroupId}`;
+              const lastProcessed = reminderService.recentlyProcessedRecurring[reminderKey] || 0;
+              const timeSinceLastProcessed = now - lastProcessed;
+              
+              if (timeSinceLastProcessed < 10 * 60 * 1000) {
+                if (__DEV__) {
+                  console.log('⏭️ Skipping recurring reminder - recently processed:', reminder.title, Math.round(timeSinceLastProcessed / 1000), 'seconds ago');
+                }
+                // Track skipped processing for analytics
+                this.trackRecurringReminderEvent('skipped_recently_processed', {
+                  reminderId: reminder.id,
+                  timeSinceLastProcessed: Math.round(timeSinceLastProcessed / 1000),
+                  title: reminder.title
+                });
+              } else if (!hasFutureOccurrence) {
+                if (__DEV__) {
+                  console.log('🔄 Generating overdue recurring reminder:', reminder.title);
+                }
+                reminderService.recentlyProcessedRecurring[reminderKey] = now;
+                await this.handleRecurringReminder(reminder);
+                
+                // Track successful generation for analytics
+                this.trackRecurringReminderEvent('generated_overdue', {
+                  reminderId: reminder.id,
+                  title: reminder.title,
+                  groupSize: allGroupReminders.length
+                });
+              } else {
+                if (__DEV__) {
+                  console.log('⏭️ Skipping recurring reminder generation - future occurrence already exists:', reminder.title);
+                }
+                // Track skipped due to future occurrence for analytics
+                this.trackRecurringReminderEvent('skipped_future_exists', {
+                  reminderId: reminder.id,
+                  title: reminder.title,
+                  groupSize: allGroupReminders.length
+                });
+              }
+            } else {
+              if (__DEV__) {
+                console.log('⏭️ Reminder not overdue or no due date');
+              }
+            }
+          }
+        } catch (groupError) {
+          console.error('Error processing recurring group:', recurringGroupId, groupError);
+          // Continue with other groups even if one fails
+        }
+      }
+      
+      if (__DEV__) {
+        console.log('✅ Recurring reminder check completed for user:', userId);
       }
     } catch (error) {
       console.error('Error checking recurring reminders:', error);
+    }
+  },
+
+  // Track recurring reminder events for analytics
+  trackRecurringReminderEvent(eventType: string, metadata: any): void {
+    // Analytics tracking removed to fix Firebase issues
+    if (__DEV__) {
+      console.log('Recurring reminder event:', eventType, metadata);
+    }
+  },
+
+  // Get all reminders in a recurring group
+  async getRecurringGroupReminders(recurringGroupId: string): Promise<Reminder[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const querySnapshot = await firestoreInstance
+        .collection('reminders')
+        .where('recurringGroupId', '==', recurringGroupId)
+        .orderBy('dueDate', 'asc')
+        .get();
+
+      const reminders: Reminder[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (!data.deletedAt) {
+          reminders.push({
+            id: doc.id,
+            ...data,
+            createdAt: convertTimestamp(data.createdAt),
+            updatedAt: convertTimestamp(data.updatedAt),
+            dueDate: data.dueDate ? convertTimestamp(data.dueDate) : undefined,
+            deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt) : undefined,
+          } as Reminder);
+        }
+      });
+
+      return reminders;
+    } catch (error) {
+      console.error('Error getting recurring group reminders:', error);
+      throw error;
+    }
+  },
+
+  // Delete all reminders in a recurring group
+  async deleteRecurringGroup(recurringGroupId: string): Promise<void> {
+    try {
+      const reminders = await this.getRecurringGroupReminders(recurringGroupId);
+      
+      // Cancel notifications for all reminders in the group
+      const { notificationService } = await import('./notificationService');
+      for (const reminder of reminders) {
+        try {
+          notificationService.cancelReminderNotifications(reminder.id);
+        } catch (notificationError) {
+          console.error('Failed to cancel notifications for reminder:', reminder.id, notificationError);
+        }
+      }
+
+      // Soft delete all reminders in the group
+      const firestoreInstance = getFirestoreInstance();
+      const batch = firestoreInstance.batch();
+      
+      for (const reminder of reminders) {
+        const reminderRef = firestoreInstance.collection('reminders').doc(reminder.id);
+        batch.update(reminderRef, {
+          status: 'cancelled',
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+
+      await batch.commit();
+      console.log(`✅ Deleted ${reminders.length} reminders from recurring group: ${recurringGroupId}`);
+    } catch (error) {
+      console.error('Error deleting recurring group:', error);
+      throw error;
+    }
+  },
+
+  // Delete a single occurrence of a recurring reminder
+  async deleteRecurringOccurrence(reminderId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
+      
+      // Cancel notifications for this specific reminder
+      try {
+        const { notificationService } = await import('./notificationService');
+        notificationService.cancelReminderNotifications(reminderId);
+        console.log('🔔 Cancelled notifications for deleted recurring occurrence');
+      } catch (notificationError) {
+        console.error('Failed to cancel notifications for deleted recurring occurrence:', notificationError);
+      }
+
+      // Soft delete just this occurrence
+      await reminderRef.update({
+        status: 'cancelled',
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      });
+      
+      console.log('✅ Recurring occurrence deleted');
+    } catch (error) {
+      console.error('Error deleting recurring occurrence:', error);
+      throw error;
     }
   },
 
@@ -703,11 +1466,34 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      await reminderRef.update({
-        status: 'cancelled',
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      });
+      
+      // Get the reminder data to check if it's recurring
+      const reminderDoc = await reminderRef.get();
+      const reminderData = reminderDoc.data();
+      
+      if (reminderData?.isRecurring && reminderData?.recurringGroupId) {
+        // For recurring reminders, delete the entire group
+        // Note: This will be overridden by the confirmation dialog in the UI
+        await this.deleteRecurringGroup(reminderData.recurringGroupId);
+      } else {
+        // For non-recurring reminders, just delete this one
+        await reminderRef.update({
+          status: 'cancelled',
+          deletedAt: new Date(),
+          updatedAt: new Date(),
+        });
+        
+        // Cancel all notifications for this reminder
+        try {
+          const { notificationService } = await import('./notificationService');
+          notificationService.cancelReminderNotifications(reminderId);
+          console.log('🔔 Cancelled notifications for deleted reminder');
+        } catch (notificationError) {
+          console.error('Failed to cancel notifications for deleted reminder:', notificationError);
+          // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
+        }
+      }
+      
       console.log('✅ Reminder moved to trash');
     } catch (error) {
       console.error('Error deleting reminder:', error);
@@ -738,12 +1524,25 @@ export const reminderService = {
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
       await reminderRef.delete();
+      
+      // Cancel all notifications for this reminder
+      try {
+        const { notificationService } = await import('./notificationService');
+        notificationService.cancelReminderNotifications(reminderId);
+        console.log('🔔 Cancelled notifications for permanently deleted reminder');
+      } catch (notificationError) {
+        console.error('Failed to cancel notifications for permanently deleted reminder:', notificationError);
+        // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
+      }
+      
       console.log('✅ Reminder permanently deleted');
     } catch (error) {
       console.error('Error permanently deleting reminder:', error);
       throw error;
     }
   },
+
+
 
   // Get reminders by type
   async getRemindersByType(userId: string, type: Reminder['type']): Promise<Reminder[]> {
@@ -808,390 +1607,424 @@ export const reminderService = {
       return [];
     }
   },
-};
 
-// Task Type Operations
-export const taskTypeService = {
-  // Create a new task type
-  async createTaskType(taskTypeData: Omit<TaskType, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const userId = taskTypeData.createdBy || auth().currentUser?.uid;
-      if (!userId) {throw new Error('No user ID available');}
-
-      console.log('📝 Creating task type:', taskTypeData.name);
-
-      const taskType: Omit<TaskType, 'id'> = {
-        ...taskTypeData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        createdBy: userId,
-      };
-
-      const docRef = await firestoreInstance.collection('taskTypes').add(taskType);
-      console.log('✅ Task type created with ID:', docRef.id);
-
-      return docRef.id;
-    } catch (error) {
-      if (handleFirebaseError(error, 'createTaskType')) {
-        throw error;
-      }
-      // If permission denied, throw a specific error that can be handled by the hook
-      throw new Error('Firebase permission denied. Using fallback task types.');
+  // Cache management functions
+  clearReminderCache: (userId?: string) => {
+    if (userId) {
+      clearUserCache(userId);
+    } else {
+      reminderCache.clear();
     }
   },
 
-  // Get all task types
-  async getAllTaskTypes(): Promise<TaskType[]> {
+  // Get cache statistics for debugging
+  getCacheStats: () => {
+    return {
+      cacheSize: reminderCache.size,
+      cacheKeys: Array.from(reminderCache.keys()),
+      cacheEntries: Array.from(reminderCache.entries()).map(([key, value]) => ({
+        key,
+        timestamp: value.timestamp,
+        dataLength: value.data.length,
+        familyId: value.familyId
+      }))
+    };
+  },
+
+  // Check if family is large enough to use polling instead of real-time
+  shouldUsePollingForFamily: (familySize: number): boolean => {
+    return familySize > MAX_FAMILY_SIZE_FOR_REALTIME;
+  },
+
+  // Get reminders with family permissions (optimized with indexes)
+  async getRemindersWithFamilyPermissions(userId: string, familyId?: string): Promise<Reminder[]> {
+    // Analytics tracking removed to fix Firebase issues
+    
     try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('📋 Fetching all task types...');
-
-      const snapshot = await firestoreInstance
-        .collection('taskTypes')
-        .where('isActive', '==', true)
-        .orderBy('sortOrder', 'asc')
-        .orderBy('name', 'asc')
-        .get();
-
-      const taskTypes: TaskType[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        taskTypes.push({
-          id: doc.id,
-          name: data.name,
-          label: data.label,
-          color: data.color,
-          icon: data.icon,
-          description: data.description,
-          isDefault: data.isDefault || false,
-          isActive: data.isActive !== false,
-          sortOrder: data.sortOrder || 0,
-          createdAt: convertTimestamp(data.createdAt),
-          updatedAt: convertTimestamp(data.updatedAt),
-          createdBy: data.createdBy,
-        });
-      });
-
-      console.log(`✅ Found ${taskTypes.length} task types`);
-      return taskTypes;
-    } catch (error) {
-      if (handleFirebaseError(error, 'getAllTaskTypes')) {
-        throw error;
+      // Get family members first
+      const familyMembers = await this.getFamilyMembers(familyId);
+      console.log('👥 Getting family members...');
+      
+      if (!familyMembers || familyMembers.length === 0) {
+        console.log('❌ No family members found, falling back to user-only reminders');
+        return this.getUserReminders(userId);
       }
-      // Return empty array if permission denied, so fallback types can be used
-      console.log('📋 Returning empty task types array due to Firebase permission issues');
+      
+      console.log(`✅ Retrieved ${familyMembers.length} family members`);
+      
+      // Get user's own reminders
+      const userReminders = await this.getUserReminders(userId);
+      console.log(`📋 Found ${userReminders.length} user reminders`);
+      
+      // Get reminders assigned to this user (using index)
+      let assignedReminders: Reminder[] = [];
+      try {
+        const firestoreInstance = getFirestoreInstance();
+        const assignedQuery = firestoreInstance
+          .collection('reminders')
+          .where('assignedTo', 'array-contains', userId)
+          .orderBy('createdAt', 'desc')
+          .limit(50); // Limit for performance
+
+        const assignedSnapshot = await assignedQuery.get();
+        assignedReminders = assignedSnapshot && !assignedSnapshot.empty
+          ? assignedSnapshot.docs.map((doc: any) => ({
+              id: doc.id,
+              ...doc.data()
+            } as Reminder))
+          : [];
+        console.log(`📋 Found ${assignedReminders.length} assigned reminders`);
+      } catch (error) {
+        console.error('Error getting assigned reminders:', error);
+      }
+      
+      // Get family-shared reminders
+      let familyReminders: Reminder[] = [];
+      try {
+        const firestoreInstance = getFirestoreInstance();
+        const familyQuery = firestoreInstance
+          .collection('reminders')
+          .where('sharedWithFamily', '==', true)
+          .where('familyId', '==', familyId)
+          .orderBy('createdAt', 'desc')
+          .limit(50);
+
+        const familySnapshot = await familyQuery.get();
+        familyReminders = familySnapshot.docs
+          .map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          } as Reminder))
+          .filter(reminder => reminder.userId !== userId); // Filter out user's own
+        console.log(`🏠 Found ${familyReminders.length} family-shared reminders`);
+      } catch (error) {
+        console.error('Error getting family reminders:', error);
+      }
+      
+      // Combine all reminders and remove duplicates
+      const allReminders = [...userReminders, ...assignedReminders, ...familyReminders];
+      const uniqueReminders = allReminders.filter((reminder, index, self) => 
+        index === self.findIndex(r => r.id === reminder.id)
+      );
+      
+      console.log(`✅ Total unique reminders: ${uniqueReminders.length}`);
+      
+      return uniqueReminders;
+    } catch (error) {
+      console.error('Error in getRemindersWithFamilyPermissions:', error);
+      throw error;
+    }
+  },
+
+  // Get reminders for a specific family member (with error handling)
+  async getRemindersForFamilyMember(memberId: string): Promise<Reminder[]> {
+    try {
+      console.log(`👤 Getting reminders for family member ${memberId}...`);
+      
+      const firestoreInstance = getFirestoreInstance();
+      const memberQuery = firestoreInstance
+        .collection('reminders')
+        .where('userId', '==', memberId);
+
+      const memberSnapshot = await memberQuery.get();
+      const memberReminders = memberSnapshot && !memberSnapshot.empty 
+        ? memberSnapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          } as Reminder))
+        : [];
+      
+      console.log(`✅ Found ${memberReminders.length} reminders for member ${memberId}`);
+      return memberReminders;
+      
+    } catch (error) {
+      console.error(`❌ Error getting reminders for family member ${memberId}:`, error);
+      // Return empty array instead of throwing
       return [];
     }
   },
 
-  // Get default task types
-  async getDefaultTaskTypes(): Promise<TaskType[]> {
+  // Get reminders assigned to a user (with error handling)
+  async getAssignedReminders(userId: string): Promise<Reminder[]> {
     try {
+      console.log(`📋 Getting reminders assigned to user ${userId}...`);
+      
       const firestoreInstance = getFirestoreInstance();
+      const assignedQuery = firestoreInstance
+        .collection('reminders')
+        .where('assignedTo', 'array-contains', userId)
+        .where('userId', '!=', userId); // Exclude user's own reminders
 
-      console.log('📋 Fetching default task types...');
-
-      const snapshot = await firestoreInstance
-        .collection('taskTypes')
-        .where('isDefault', '==', true)
-        .where('isActive', '==', true)
-        .orderBy('sortOrder', 'asc')
-        .get();
-
-      const taskTypes: TaskType[] = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        taskTypes.push({
-          id: doc.id,
-          name: data.name,
-          label: data.label,
-          color: data.color,
-          icon: data.icon,
-          description: data.description,
-          isDefault: data.isDefault || false,
-          isActive: data.isActive !== false,
-          sortOrder: data.sortOrder || 0,
-          createdAt: convertTimestamp(data.createdAt),
-          updatedAt: convertTimestamp(data.updatedAt),
-          createdBy: data.createdBy,
-        });
-      });
-
-      console.log(`✅ Found ${taskTypes.length} default task types`);
-      return taskTypes;
+      const assignedSnapshot = await assignedQuery.get();
+      const assignedReminders = assignedSnapshot && !assignedSnapshot.empty
+        ? assignedSnapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          } as Reminder))
+        : [];
+      
+      console.log(`✅ Found ${assignedReminders.length} assigned reminders`);
+      return assignedReminders;
+      
     } catch (error) {
-      if (handleFirebaseError(error, 'getDefaultTaskTypes')) {
-        throw error;
-      }
-      // Return empty array if permission denied
-      console.log('📋 Returning empty default task types array due to Firebase permission issues');
+      console.error(`❌ Error getting assigned reminders:`, error);
+      // Return empty array instead of throwing
       return [];
     }
   },
 
-  // Get task type by ID
-  async getTaskTypeById(id: string): Promise<TaskType | null> {
+  // Get family members with error handling
+  async getFamilyMembers(familyId?: string): Promise<FamilyMember[]> {
+    try {
+      if (!familyId) {
+        console.log('❌ No family ID provided');
+        return [];
+      }
+
+      console.log('👥 Getting family members...');
+      
+      const firestoreInstance = getFirestoreInstance();
+      const membersQuery = firestoreInstance
+        .collection('familyMembers')
+        .where('familyId', '==', familyId);
+
+      const membersSnapshot = await membersQuery.get();
+      if (!membersSnapshot || !membersSnapshot.docs) {
+        console.log('❌ membersSnapshot is null or docs is undefined');
+        return [];
+      }
+      const members = !membersSnapshot.empty
+        ? membersSnapshot.docs.map((doc: any) => ({
+            id: doc.id,
+            ...doc.data()
+          } as FamilyMember))
+        : [];
+      
+      console.log(`✅ Retrieved ${members.length} family members`);
+      return members;
+      
+    } catch (error) {
+      console.error('❌ Error getting family members:', error);
+      return [];
+    }
+  },
+
+  // Get user's family (simplified version)
+  async getUserFamily(userId: string): Promise<Family | null> {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-      console.log('📋 Fetching task type by ID:', id);
+  
 
-      const doc = await firestoreInstance.collection('taskTypes').doc(id).get();
+      // Get all family memberships for this user
+      const memberQuery = await firestoreInstance
+        .collection('familyMembers')
+        .where('userId', '==', userId)
+        .get();
 
-      if (!doc.exists) {
-        console.log('❌ Task type not found');
+      if (!memberQuery || !memberQuery.docs) {
+        console.log('❌ memberQuery is null or docs is undefined');
         return null;
       }
 
-      const data = doc.data()!;
-      const taskType: TaskType = {
-        id: doc.id,
+      if (memberQuery.empty) {
+        console.log('ℹ️ User is not part of any family');
+        return null;
+      }
+
+      // Sort by joinedAt descending and get the most recent
+      const members = memberQuery.docs && memberQuery.docs.length > 0
+        ? memberQuery.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+          } as any)).sort((a, b) => {
+            const aDate = convertTimestamp(a.joinedAt);
+            const bDate = convertTimestamp(b.joinedAt);
+            return bDate.getTime() - aDate.getTime();
+          })
+        : [];
+
+      const mostRecentMember = members[0];
+      if (!mostRecentMember) {
+        console.log('ℹ️ No family members found');
+        return null;
+      }
+      
+      const familyId = mostRecentMember.familyId;
+
+      const familyDoc = await firestoreInstance
+        .collection('families')
+        .doc(familyId)
+        .get();
+
+      if (!familyDoc.exists) {
+        console.log('ℹ️ Family not found');
+        return null;
+      }
+
+      const data = familyDoc.data();
+      if (!data) {
+        console.log('ℹ️ Family data is null');
+        return null;
+      }
+
+      const family: Family = {
+        id: familyDoc.id,
         name: data.name,
-        label: data.label,
-        color: data.color,
-        icon: data.icon,
         description: data.description,
-        isDefault: data.isDefault || false,
-        isActive: data.isActive !== false,
-        sortOrder: data.sortOrder || 0,
+        ownerId: data.ownerId,
+        ownerName: data.ownerName,
+        memberCount: data.memberCount,
+        maxMembers: data.maxMembers || 2, // Default to free tier limit
         createdAt: convertTimestamp(data.createdAt),
         updatedAt: convertTimestamp(data.updatedAt),
-        createdBy: data.createdBy,
+        settings: data.settings,
       };
 
-      console.log('✅ Task type found:', taskType.name);
-      return taskType;
+      console.log('✅ Family retrieved successfully');
+      return family;
     } catch (error) {
-      if (handleFirebaseError(error, 'getTaskTypeById')) {
-        throw error;
-      }
+      console.error('❌ Error getting user family:', error);
       return null;
     }
   },
 
-  // Update task type
-  async updateTaskType(id: string, updates: Partial<TaskType>): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('📝 Updating task type:', id);
-
-      const updateData = {
-        ...removeUndefinedFields(updates),
-        updatedAt: new Date(),
-      };
-
-      await firestoreInstance.collection('taskTypes').doc(id).update(updateData);
-      console.log('✅ Task type updated successfully');
-    } catch (error) {
-      if (handleFirebaseError(error, 'updateTaskType')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot update task type.');
-    }
-  },
-
-  // Delete task type (soft delete by setting isActive to false)
-  async deleteTaskType(id: string): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('🗑️ Soft deleting task type:', id);
-
-      await firestoreInstance.collection('taskTypes').doc(id).update({
-        isActive: false,
-        updatedAt: new Date(),
-      });
-
-      console.log('✅ Task type soft deleted successfully');
-    } catch (error) {
-      if (handleFirebaseError(error, 'deleteTaskType')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot delete task type.');
-    }
-  },
-
-  // Hard delete task type
-  async hardDeleteTaskType(id: string): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('🗑️ Hard deleting task type:', id);
-
-      await firestoreInstance.collection('taskTypes').doc(id).delete();
-
-      console.log('✅ Task type hard deleted successfully');
-    } catch (error) {
-      if (handleFirebaseError(error, 'hardDeleteTaskType')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot delete task type.');
-    }
-  },
-
-  // Seed default task types
-  async seedDefaultTaskTypes(): Promise<void> {
+  // Add family member (simplified version)
+  async addFamilyMember(memberData: Omit<FamilyMember, 'id' | 'joinedAt' | 'lastActive' | 'isOnline'>): Promise<string> {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
       if (!userId) {throw new Error('No user ID available');}
 
-      console.log('🌱 Seeding default task types...');
+      console.log('👤 Adding family member...');
 
-      // First, check if default task types already exist
-      const existingTypes = await this.getAllTaskTypes();
-      const existingNames = existingTypes.map(type => type.name);
+      const docRef = firestoreInstance.collection('familyMembers').doc();
+      const memberId = docRef.id;
 
-      console.log(`📋 Found ${existingTypes.length} existing task types:`, existingNames);
+      const member: FamilyMember = {
+        id: memberId,
+        ...memberData,
+        isOnline: false,
+        lastActive: new Date(),
+        joinedAt: new Date(),
+      };
 
-      const defaultTaskTypes = [
-        {
-          name: 'task',
-          label: 'Task',
-          color: '#3B82F6',
-          icon: 'CheckSquare',
-          description: 'General tasks and to-dos',
-          isDefault: true,
-          isActive: true,
-          sortOrder: 1,
-          createdBy: userId,
-        },
-        {
-          name: 'bill',
-          label: 'Bill',
-          color: '#EF4444',
-          icon: 'CreditCard',
-          description: 'Bills and payments due',
-          isDefault: true,
-          isActive: true,
-          sortOrder: 2,
-          createdBy: userId,
-        },
-        {
-          name: 'med',
-          label: 'Medicine',
-          color: '#10B981',
-          icon: 'Pill',
-          description: 'Medications and health reminders',
-          isDefault: true,
-          isActive: true,
-          sortOrder: 3,
-          createdBy: userId,
-        },
-        {
-          name: 'event',
-          label: 'Event',
-          color: '#8B5CF6',
-          icon: 'Calendar',
-          description: 'Meetings and appointments',
-          isDefault: true,
-          isActive: true,
-          sortOrder: 4,
-          createdBy: userId,
-        },
-        {
-          name: 'note',
-          label: 'Note',
-          color: '#F59E0B',
-          icon: 'FileText',
-          description: 'Important notes and ideas',
-          isDefault: true,
-          isActive: true,
-          sortOrder: 5,
-          createdBy: userId,
-        },
-      ];
+      await docRef.set(member);
 
-      // Filter out task types that already exist
-      const newTaskTypes = defaultTaskTypes.filter(taskType => !existingNames.includes(taskType.name));
-
-      if (newTaskTypes.length === 0) {
-        console.log('✅ All default task types already exist, skipping seeding');
-        return;
-      }
-
-      console.log(`🌱 Creating ${newTaskTypes.length} new default task types:`, newTaskTypes.map(t => t.name));
-
-      const batch = firestoreInstance.batch();
-
-      for (const taskType of newTaskTypes) {
-        const docRef = firestoreInstance.collection('taskTypes').doc();
-        batch.set(docRef, {
-          ...taskType,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
-      }
-
-      await batch.commit();
-      console.log('✅ Default task types seeded successfully');
+      console.log('✅ Family member added successfully:', memberId);
+      return memberId;
     } catch (error) {
-      if (handleFirebaseError(error, 'seedDefaultTaskTypes')) {
-        throw error;
-      }
-      console.warn('⚠️ Could not seed default task types due to Firebase permission issues. Using fallback types.');
-      // Don't throw error, just log and continue
+      console.error('❌ Error adding family member:', error);
+      throw error;
     }
   },
 
-  // Listen to task type changes
-  onTaskTypesChange(callback: (taskTypes: TaskType[]) => void) {
+  // Remove family member (simplified version)
+  async removeFamilyMember(memberId: string, familyId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-      const unsubscribe = firestoreInstance
-        .collection('taskTypes')
-        .where('isActive', '==', true)
-        .orderBy('sortOrder', 'asc')
-        .orderBy('name', 'asc')
-        .onSnapshot(
-          (snapshot) => {
-            const taskTypes: TaskType[] = [];
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              taskTypes.push({
-                id: doc.id,
-                name: data.name,
-                label: data.label,
-                color: data.color,
-                icon: data.icon,
-                description: data.description,
-                isDefault: data.isDefault || false,
-                isActive: data.isActive !== false,
-                sortOrder: data.sortOrder || 0,
-                createdAt: convertTimestamp(data.createdAt),
-                updatedAt: convertTimestamp(data.updatedAt),
-                createdBy: data.createdBy,
-              });
-            });
-            callback(taskTypes);
-          },
-          (error) => {
-            if (handleFirebaseError(error, 'onTaskTypesChange')) {
-              console.error('Error listening to task types changes:', error);
-            }
-            // Return empty array on error
-            callback([]);
-          }
-        );
+      console.log('👤 Removing family member...');
 
-      return unsubscribe;
+      await firestoreInstance.collection('familyMembers').doc(memberId).delete();
+
+      console.log('✅ Family member removed successfully');
     } catch (error) {
-      if (handleFirebaseError(error, 'onTaskTypesChange')) {
-        console.error('Error setting up task types listener:', error);
-      }
-      // Return a no-op function
-      return () => {};
+      console.error('❌ Error removing family member:', error);
+      throw error;
     }
   },
-};
 
-// Family Management
-export const familyService = {
-  // Family Management
+  // Create family activity (simplified version)
+  async createFamilyActivity(activityData: Omit<FamilyActivity, 'id' | 'createdAt'>): Promise<string> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+
+      console.log('📝 Creating family activity...');
+
+      const docRef = firestoreInstance.collection('familyActivities').doc();
+      const activityId = docRef.id;
+
+      const activity: FamilyActivity = {
+        id: activityId,
+        ...activityData,
+        createdAt: new Date(),
+      };
+
+      await docRef.set(activity);
+
+      console.log('✅ Family activity created successfully:', activityId);
+      return activityId;
+    } catch (error) {
+      console.error('❌ Error creating family activity:', error);
+      throw error;
+    }
+  },
+
+  // Get family activities (simplified version)
+  async getFamilyActivities(familyId: string, limit: number = 50): Promise<FamilyActivity[]> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+
+      console.log('📝 Getting family activities...');
+
+      const querySnapshot = await firestoreInstance
+        .collection('familyActivities')
+        .where('familyId', '==', familyId)
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
+
+      const activities: FamilyActivity[] = [];
+      querySnapshot.forEach((doc) => {
+        try {
+          const data = doc.data();
+          
+          // Validate required fields
+          if (!data.familyId || !data.type || !data.title || !data.description || !data.memberId || !data.memberName) {
+            console.warn('Skipping family activity with missing required fields:', doc.id);
+            return;
+          }
+
+          // Convert timestamp with error handling
+          let createdAt: Date;
+          try {
+            createdAt = convertTimestamp(data.createdAt);
+            if (isNaN(createdAt.getTime())) {
+              console.warn('Invalid createdAt timestamp for activity:', doc.id, data.createdAt);
+              createdAt = new Date(); // Fallback to current time
+            }
+          } catch (timestampError) {
+            console.warn('Error converting timestamp for activity:', doc.id, timestampError);
+            createdAt = new Date(); // Fallback to current time
+          }
+
+          activities.push({
+            id: doc.id,
+            familyId: data.familyId,
+            type: data.type,
+            title: data.title,
+            description: data.description,
+            memberId: data.memberId,
+            memberName: data.memberName,
+            metadata: data.metadata,
+            createdAt: createdAt,
+          });
+        } catch (activityError) {
+          console.error('Error processing family activity:', doc.id, activityError);
+          // Continue with other activities instead of failing completely
+        }
+      });
+
+      console.log(`✅ Retrieved ${activities.length} family activities`);
+      return activities;
+    } catch (error) {
+      console.error('❌ Error getting family activities:', error);
+      return [];
+    }
+  },
+
+  // Create family (simplified version)
   async createFamily(familyData: Omit<Family, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
       const firestoreInstance = getFirestoreInstance();
@@ -1225,13 +2058,12 @@ export const familyService = {
       console.log('✅ Family created successfully:', familyId);
       return familyId;
     } catch (error) {
-      if (handleFirebaseError(error, 'createFamily')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot create family.');
+      console.error('❌ Error creating family:', error);
+      throw error;
     }
   },
 
+  // Create default family if needed (simplified version)
   async createDefaultFamilyIfNeeded(userId: string, userName: string, userEmail: string): Promise<Family | null> {
     try {
       console.log('🔍 Checking if user has a family...');
@@ -1252,6 +2084,7 @@ export const familyService = {
         ownerId: userId,
         ownerName: userName,
         memberCount: 1,
+        maxMembers: 2, // Free tier default
         settings: {
           allowMemberInvites: true,
           allowReminderSharing: true,
@@ -1279,241 +2112,7 @@ export const familyService = {
     }
   },
 
-  async getUserFamily(userId: string): Promise<Family | null> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('👨‍👩‍👧‍👦 Getting user family...');
-
-      // Get all family memberships for this user
-      const memberQuery = await firestoreInstance
-        .collection('familyMembers')
-        .where('userId', '==', userId)
-        .get();
-
-      if (memberQuery.empty) {
-        console.log('ℹ️ User is not part of any family');
-        return null;
-      }
-
-      // Sort by joinedAt descending and get the most recent
-      const members = memberQuery.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      } as any)).sort((a, b) => {
-        const aDate = convertTimestamp(a.joinedAt);
-        const bDate = convertTimestamp(b.joinedAt);
-        return bDate.getTime() - aDate.getTime();
-      });
-
-      const mostRecentMember = members[0];
-      const familyId = mostRecentMember.familyId;
-
-      const familyDoc = await firestoreInstance
-        .collection('families')
-        .doc(familyId)
-        .get();
-
-      if (!familyDoc.exists) {
-        console.log('ℹ️ Family not found');
-        return null;
-      }
-
-      const data = familyDoc.data();
-      if (!data) {
-        console.log('ℹ️ Family data is null');
-        return null;
-      }
-
-      const family: Family = {
-        id: familyDoc.id,
-        name: data.name,
-        description: data.description,
-        ownerId: data.ownerId,
-        ownerName: data.ownerName,
-        memberCount: data.memberCount,
-        createdAt: convertTimestamp(data.createdAt),
-        updatedAt: convertTimestamp(data.updatedAt),
-        settings: data.settings,
-      };
-
-      console.log('✅ Family retrieved successfully');
-      return family;
-    } catch (error) {
-      if (handleFirebaseError(error, 'getUserFamily')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot get family.');
-    }
-  },
-
-  async addFamilyMember(memberData: Omit<FamilyMember, 'id' | 'joinedAt' | 'lastActive' | 'isOnline'>): Promise<string> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const userId = auth().currentUser?.uid;
-      if (!userId) {throw new Error('No user ID available');}
-
-      console.log('👤 Adding family member...');
-
-      const docRef = firestoreInstance.collection('familyMembers').doc();
-      const memberId = docRef.id;
-
-      const member: FamilyMember = {
-        id: memberId,
-        ...memberData,
-        isOnline: false,
-        lastActive: new Date(),
-        joinedAt: new Date(),
-      };
-
-      await docRef.set(member);
-
-      // Update family member count
-      await firestoreInstance.collection('families').doc(memberData.familyId).update({
-        memberCount: firestore.FieldValue.increment(1),
-        updatedAt: new Date(),
-      });
-
-      console.log('✅ Family member added successfully:', memberId);
-      return memberId;
-    } catch (error) {
-      if (handleFirebaseError(error, 'addFamilyMember')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot add family member.');
-    }
-  },
-
-  async getFamilyMembers(familyId: string): Promise<FamilyMember[]> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('👥 Getting family members...');
-
-      const querySnapshot = await firestoreInstance
-        .collection('familyMembers')
-        .where('familyId', '==', familyId)
-        .orderBy('joinedAt', 'asc')
-        .get();
-
-      const members: FamilyMember[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        members.push({
-          id: doc.id,
-          familyId: data.familyId,
-          userId: data.userId,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          avatar: data.avatar,
-          isOnline: data.isOnline,
-          lastActive: convertTimestamp(data.lastActive),
-          joinedAt: convertTimestamp(data.joinedAt),
-          createdBy: data.createdBy,
-        });
-      });
-
-      console.log(`✅ Retrieved ${members.length} family members`);
-      return members;
-    } catch (error) {
-      if (handleFirebaseError(error, 'getFamilyMembers')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot get family members.');
-    }
-  },
-
-  async removeFamilyMember(memberId: string, familyId: string): Promise<void> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('👤 Removing family member...');
-
-      await firestoreInstance.collection('familyMembers').doc(memberId).delete();
-
-      // Update family member count
-      await firestoreInstance.collection('families').doc(familyId).update({
-        memberCount: firestore.FieldValue.increment(-1),
-        updatedAt: new Date(),
-      });
-
-      console.log('✅ Family member removed successfully');
-    } catch (error) {
-      if (handleFirebaseError(error, 'removeFamilyMember')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot remove family member.');
-    }
-  },
-
-  async createFamilyActivity(activityData: Omit<FamilyActivity, 'id' | 'createdAt'>): Promise<string> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('📝 Creating family activity...');
-
-      const docRef = firestoreInstance.collection('familyActivities').doc();
-      const activityId = docRef.id;
-
-      const activity: FamilyActivity = {
-        id: activityId,
-        ...activityData,
-        createdAt: new Date(),
-      };
-
-      await docRef.set(activity);
-
-      console.log('✅ Family activity created successfully:', activityId);
-      return activityId;
-    } catch (error) {
-      if (handleFirebaseError(error, 'createFamilyActivity')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot create family activity.');
-    }
-  },
-
-  async getFamilyActivities(familyId: string, limit: number = 50): Promise<FamilyActivity[]> {
-    try {
-      const firestoreInstance = getFirestoreInstance();
-
-      console.log('📝 Getting family activities...');
-
-      const querySnapshot = await firestoreInstance
-        .collection('familyActivities')
-        .where('familyId', '==', familyId)
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
-        .get();
-
-      const activities: FamilyActivity[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        activities.push({
-          id: doc.id,
-          familyId: data.familyId,
-          type: data.type,
-          title: data.title,
-          description: data.description,
-          memberId: data.memberId,
-          memberName: data.memberName,
-          metadata: data.metadata,
-          createdAt: convertTimestamp(data.createdAt),
-        });
-      });
-
-      console.log(`✅ Retrieved ${activities.length} family activities`);
-      return activities;
-    } catch (error) {
-      if (handleFirebaseError(error, 'getFamilyActivities')) {
-        throw error;
-      }
-      throw new Error('Firebase permission denied. Cannot get family activities.');
-    }
-  },
-
-  // Listen to family members changes
+  // Listen to family members changes (simplified version)
   onFamilyMembersChange(familyId: string, callback: (members: FamilyMember[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
@@ -1525,28 +2124,31 @@ export const familyService = {
         .onSnapshot(
           (snapshot) => {
             const members: FamilyMember[] = [];
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              members.push({
-                id: doc.id,
-                familyId: data.familyId,
-                userId: data.userId,
-                name: data.name,
-                email: data.email,
-                role: data.role,
-                avatar: data.avatar,
-                isOnline: data.isOnline,
-                lastActive: convertTimestamp(data.lastActive),
-                joinedAt: convertTimestamp(data.joinedAt),
-                createdBy: data.createdBy,
+            
+            // Add null check for snapshot
+            if (snapshot && !snapshot.empty) {
+              snapshot.forEach((doc) => {
+                const data = doc.data();
+                members.push({
+                  id: doc.id,
+                  familyId: data.familyId,
+                  userId: data.userId,
+                  name: data.name,
+                  email: data.email,
+                  role: data.role,
+                  avatar: data.avatar,
+                  isOnline: data.isOnline,
+                  lastActive: convertTimestamp(data.lastActive),
+                  joinedAt: convertTimestamp(data.joinedAt),
+                  createdBy: data.createdBy,
+                });
               });
-            });
+            }
+            
             callback(members);
           },
           (error) => {
-            if (handleFirebaseError(error, 'onFamilyMembersChange')) {
-              console.error('Error listening to family members changes:', error);
-            }
+            console.error('Error listening to family members changes:', error);
             // Return empty array on error
             callback([]);
           }
@@ -1554,15 +2156,13 @@ export const familyService = {
 
       return unsubscribe;
     } catch (error) {
-      if (handleFirebaseError(error, 'onFamilyMembersChange')) {
-        console.error('Error setting up family members listener:', error);
-      }
+      console.error('Error setting up family members listener:', error);
       // Return a no-op function
       return () => {};
     }
   },
 
-  // Listen to family activities changes
+  // Listen to family activities changes (simplified version)
   onFamilyActivitiesChange(familyId: string, callback: (activities: FamilyActivity[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
@@ -1575,26 +2175,54 @@ export const familyService = {
         .onSnapshot(
           (snapshot) => {
             const activities: FamilyActivity[] = [];
-            snapshot.forEach((doc) => {
-              const data = doc.data();
-              activities.push({
-                id: doc.id,
-                familyId: data.familyId,
-                type: data.type,
-                title: data.title,
-                description: data.description,
-                memberId: data.memberId,
-                memberName: data.memberName,
-                metadata: data.metadata,
-                createdAt: convertTimestamp(data.createdAt),
+            
+            // Add null check for snapshot
+            if (snapshot && !snapshot.empty) {
+              snapshot.forEach((doc) => {
+                try {
+                  const data = doc.data();
+                  
+                  // Validate required fields
+                  if (!data.familyId || !data.type || !data.title || !data.description || !data.memberId || !data.memberName) {
+                    console.warn('Skipping family activity with missing required fields:', doc.id);
+                    return;
+                  }
+
+                  // Convert timestamp with error handling
+                  let createdAt: Date;
+                  try {
+                    createdAt = convertTimestamp(data.createdAt);
+                    if (isNaN(createdAt.getTime())) {
+                      console.warn('Invalid createdAt timestamp for activity:', doc.id, data.createdAt);
+                      createdAt = new Date(); // Fallback to current time
+                    }
+                  } catch (timestampError) {
+                    console.warn('Error converting timestamp for activity:', doc.id, timestampError);
+                    createdAt = new Date(); // Fallback to current time
+                  }
+
+                  activities.push({
+                    id: doc.id,
+                    familyId: data.familyId,
+                    type: data.type,
+                    title: data.title,
+                    description: data.description,
+                    memberId: data.memberId,
+                    memberName: data.memberName,
+                    metadata: data.metadata,
+                    createdAt: createdAt,
+                  });
+                } catch (activityError) {
+                  console.error('Error processing family activity in listener:', doc.id, activityError);
+                  // Continue with other activities instead of failing completely
+                }
               });
-            });
+            }
+            
             callback(activities);
           },
           (error) => {
-            if (handleFirebaseError(error, 'onFamilyActivitiesChange')) {
-              console.error('Error listening to family activities changes:', error);
-            }
+            console.error('Error listening to family activities changes:', error);
             // Return empty array on error
             callback([]);
           }
@@ -1602,9 +2230,7 @@ export const familyService = {
 
       return unsubscribe;
     } catch (error) {
-      if (handleFirebaseError(error, 'onFamilyActivitiesChange')) {
-        console.error('Error setting up family activities listener:', error);
-      }
+      console.error('Error setting up family activities listener:', error);
       // Return a no-op function
       return () => {};
     }
@@ -1650,7 +2276,7 @@ export const familyService = {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-      console.log('📧 Getting pending invitations...');
+  
 
       const querySnapshot = await firestoreInstance
         .collection('familyInvitations')
@@ -1968,6 +2594,131 @@ export const familyService = {
       return () => {};
     }
   },
+
+  // Update list permissions (owner only)
+  async updateListPermissions(
+    listId: string,
+    permissions: {
+      isPrivate: boolean;
+      sharedWithFamily: boolean;
+    }
+  ): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const userId = auth().currentUser?.uid;
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      console.log('🔐 Updating list permissions:', listId);
+
+      // Get the current list to verify ownership
+      const list = await listService.getListById(listId);
+      if (!list) {
+        throw new Error('List not found');
+      }
+
+      if (list.createdBy !== userId) {
+        throw new Error('Only list owner can update permissions');
+      }
+
+      // Get user's family to set proper familyId
+      let userFamilyId: string | null = null;
+      if (permissions.sharedWithFamily) {
+        try {
+          const userFamily = await reminderService.getUserFamily(userId);
+          if (userFamily) {
+            userFamilyId = userFamily.id;
+            console.log('👨‍👩‍👧‍👦 User has family:', userFamily.name);
+          } else {
+            throw new Error('User is not in a family. Cannot share with family.');
+          }
+        } catch (error) {
+          console.error('Could not get user family for permission update:', error);
+          throw new Error('Could not verify family membership');
+        }
+      }
+
+      // Update the list permissions
+      const updateData = {
+        isPrivate: permissions.isPrivate,
+        familyId: permissions.sharedWithFamily ? userFamilyId : null,
+        updatedAt: new Date(),
+      };
+
+      await firestoreInstance.collection('lists').doc(listId).update(updateData);
+      console.log('✅ List permissions updated successfully');
+
+      // Create family activity if sharing with family
+      if (permissions.sharedWithFamily && userFamilyId) {
+        try {
+          await reminderService.createFamilyActivity({
+            familyId: userFamilyId,
+            type: 'reminder_shared',
+            title: 'List Shared with Family',
+            description: `Shared list "${list.name}" with family`,
+            memberId: userId,
+            memberName: auth().currentUser?.displayName || 'Family Member',
+            metadata: {
+              listId: listId,
+              listName: list.name,
+              isPrivate: permissions.isPrivate,
+            }
+          });
+          console.log('✅ Family activity created for list sharing');
+        } catch (activityError) {
+          console.error('Failed to create family activity for list sharing:', activityError);
+          // Don't throw here - the permissions were updated successfully
+        }
+      }
+    } catch (error) {
+      if (handleFirebaseError(error, 'updateListPermissions')) {
+        throw error;
+      }
+      throw new Error('Firebase permission denied. Cannot update list permissions.');
+    }
+  },
+
+  // Check if user has permission to view a list
+  async checkListPermission(listId: string, userId: string): Promise<{
+    canView: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+    reason?: string;
+  }> {
+    try {
+      const list = await listService.getListById(listId);
+      if (!list) {
+        return { canView: false, canEdit: false, canDelete: false, reason: 'List not found' };
+      }
+
+      // Owner can do everything
+      if (list.createdBy === userId) {
+        return { canView: true, canEdit: true, canDelete: true };
+      }
+
+      // Check if user is in the same family
+      if (list.familyId) {
+        try {
+          const userFamily = await reminderService.getUserFamily(userId);
+          if (userFamily && userFamily.id === list.familyId) {
+            // Family members can view non-private lists
+            if (!list.isPrivate) {
+              return { canView: true, canEdit: false, canDelete: false };
+            }
+          }
+        } catch (error) {
+          console.error('Error checking family membership:', error);
+        }
+      }
+
+      return { canView: false, canEdit: false, canDelete: false, reason: 'No permission' };
+    } catch (error) {
+      console.error('Error checking list permission:', error);
+      return { canView: false, canEdit: false, canDelete: false, reason: 'Error checking permission' };
+    }
+  }
 };
 
 // List Management
@@ -1976,21 +2727,39 @@ export const listService = {
   async createList(listData: Omit<UserList, 'id' | 'createdAt' | 'updatedAt' | 'items'>): Promise<string> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      const userId = listData.createdBy || auth().currentUser?.uid;
-      if (!userId) {throw new Error('No user ID available');}
+      const userId = auth().currentUser?.uid;
+      
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
 
-      console.log('📝 Creating list:', listData.name);
+      console.log('📋 Creating list with family support...');
 
-      // Create the list object with all required fields
+      // Get user's family to set proper familyId
+      let userFamilyId: string | null = null;
+      try {
+        const userFamily = await reminderService.getUserFamily(userId);
+        if (userFamily) {
+          userFamilyId = userFamily.id;
+          console.log('👨‍👩‍👧‍👦 User has family:', userFamily.name);
+        }
+      } catch (error) {
+        console.log('⚠️ Could not get user family for list creation:', error);
+      }
+
+      // Determine if list should be shared with family
+      const shouldShareWithFamily = listData.familyId !== null || 
+        (userFamilyId && !listData.isPrivate);
+
       const list: Omit<UserList, 'id'> = {
-        name: listData.name || '',
+        name: listData.name,
         description: listData.description,
+        items: [],
         format: listData.format || 'checkmark',
         isFavorite: listData.isFavorite || false,
         isPrivate: listData.isPrivate || false,
-        familyId: listData.familyId || null, // Use null instead of undefined
+        familyId: shouldShareWithFamily ? userFamilyId : null,
         createdBy: listData.createdBy || userId,
-        items: [],
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -2000,6 +2769,30 @@ export const listService = {
 
       const docRef = await firestoreInstance.collection('lists').add(cleanListData);
       console.log('✅ List created with ID:', docRef.id);
+      
+      // Create family activity if shared with family
+      if (shouldShareWithFamily && userFamilyId) {
+        try {
+          await reminderService.createFamilyActivity({
+            familyId: userFamilyId,
+            type: 'reminder_created',
+            title: 'New Family List',
+            description: `Created a new shared list: "${listData.name}"`,
+            memberId: userId,
+            memberName: auth().currentUser?.displayName || 'Family Member',
+            metadata: {
+              listId: docRef.id,
+              listName: listData.name,
+              isPrivate: listData.isPrivate,
+            }
+          });
+          console.log('✅ Family activity created for new list');
+        } catch (activityError) {
+          console.error('Failed to create family activity for list:', activityError);
+          // Don't throw here - the list was created successfully
+        }
+      }
+      
       return docRef.id;
     } catch (error) {
       if (handleFirebaseError(error, 'createList')) {
@@ -2009,7 +2802,7 @@ export const listService = {
     }
   },
 
-  // Get all lists for a user (including family-shared lists)
+  // Get user lists with family support
   async getUserLists(userId: string): Promise<UserList[]> {
     try {
       const firestoreInstance = getFirestoreInstance();
@@ -2019,7 +2812,8 @@ export const listService = {
       // First, get user's family to check for shared lists
       let userFamilyId: string | null = null;
       try {
-        const userFamily = await familyService.getUserFamily(userId);
+        // Use reminderService to get user family since it has the method
+        const userFamily = await reminderService.getUserFamily(userId);
         if (userFamily) {
           userFamilyId = userFamily.id;
           console.log('👨‍👩‍👧‍👦 User has family:', userFamily.name);
@@ -2194,16 +2988,11 @@ export const listService = {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-      console.log('📝 Adding item to list:', listId);
+      console.log('➕ Adding item to list:', listId);
 
-      // Create the item object with all required fields
       const item: ListItem = {
-        title: itemData.title || '',
-        description: itemData.description,
-        completed: itemData.completed || false,
-        format: itemData.format || 'checkmark',
-        sortOrder: itemData.sortOrder || 0,
-        id: Date.now().toString(),
+        ...itemData,
+        id: firestoreInstance.collection('_temp').doc().id, // Generate ID
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -2213,7 +3002,7 @@ export const listService = {
 
       const listRef = firestoreInstance.collection('lists').doc(listId);
       await listRef.update({
-        items: firestore.FieldValue.arrayUnion(cleanItem),
+        items: FirebaseFirestoreTypes.FieldValue.arrayUnion(cleanItem),
         updatedAt: new Date(),
       });
 
@@ -2312,21 +3101,40 @@ export const listService = {
     }
   },
 
-  // Listen to user lists changes
+  // Listen to user lists changes (including family shared lists, real-time)
   onUserListsChange(userId: string, callback: (lists: UserList[]) => void) {
     try {
       const firestoreInstance = getFirestoreInstance();
+      let userLists: UserList[] = [];
+      let familyLists: UserList[] = [];
+      let unsubUser: (() => void) | null = null;
+      let unsubFamily: (() => void) | null = null;
+      let userFamilyId: string | null = null;
 
-      const unsubscribe = firestoreInstance
-        .collection('lists')
-        .where('createdBy', '==', userId)
-        .orderBy('updatedAt', 'desc')
-        .onSnapshot(
-          (snapshot) => {
-            const lists: UserList[] = [];
-            snapshot.forEach((doc) => {
+      // Helper to merge and callback
+      const update = () => {
+        // Deduplicate by id
+        const all = [...userLists, ...familyLists].filter(
+          (list, idx, arr) => arr.findIndex(l => l.id === list.id) === idx
+        );
+        // Sort by updatedAt
+        all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+        callback(all);
+      };
+
+      // Get familyId, then set up listeners
+      reminderService.getUserFamily(userId).then(family => {
+        userFamilyId = family?.id || null;
+
+        // Listen to user's own lists
+        unsubUser = firestoreInstance
+          .collection('lists')
+          .where('createdBy', '==', userId)
+          .onSnapshot(snapshot => {
+            userLists = [];
+            snapshot.forEach(doc => {
               const data = doc.data();
-              lists.push({
+              userLists.push({
                 id: doc.id,
                 name: data.name,
                 description: data.description,
@@ -2340,18 +3148,46 @@ export const listService = {
                 createdBy: data.createdBy,
               });
             });
-            callback(lists);
-          },
-          (error) => {
-            if (handleFirebaseError(error, 'onUserListsChange')) {
-              console.error('Error listening to lists changes:', error);
-            }
-            // Return empty array on error
-            callback([]);
-          }
-        );
+            update();
+          });
 
-      return unsubscribe;
+        // Listen to family shared lists (if in a family)
+        if (userFamilyId) {
+          unsubFamily = firestoreInstance
+            .collection('lists')
+            .where('familyId', '==', userFamilyId)
+            .where('isPrivate', '==', false)
+            .onSnapshot(snapshot => {
+              familyLists = [];
+              snapshot.forEach(doc => {
+                const data = doc.data();
+                // Exclude user's own lists
+                if (data.createdBy !== userId) {
+                  familyLists.push({
+                    id: doc.id,
+                    name: data.name,
+                    description: data.description,
+                    items: data.items || [],
+                    format: data.format || 'checkmark',
+                    isFavorite: data.isFavorite || false,
+                    isPrivate: data.isPrivate || false,
+                    familyId: data.familyId,
+                    createdAt: convertTimestamp(data.createdAt),
+                    updatedAt: convertTimestamp(data.updatedAt),
+                    createdBy: data.createdBy,
+                  });
+                }
+              });
+              update();
+            });
+        }
+      });
+
+      // Return unsubscribe function
+      return () => {
+        if (unsubUser) unsubUser();
+        if (unsubFamily) unsubFamily();
+      };
     } catch (error) {
       if (handleFirebaseError(error, 'onUserListsChange')) {
         console.error('Error setting up lists listener:', error);
@@ -2387,14 +3223,21 @@ export const listService = {
                   updatedAt: convertTimestamp(data.updatedAt),
                   createdBy: data.createdBy,
                 };
+                console.log('📡 List updated via listener:', list.name);
                 callback(list);
               }
+            } else {
+              console.log('📡 List not found in listener:', listId);
+              // Call callback with null to indicate list was deleted
+              callback(null as any);
             }
           },
           (error) => {
             if (handleFirebaseError(error, 'onListChange')) {
               console.error('Error listening to list changes:', error);
             }
+            // Call callback with empty data on error to trigger refetch
+            callback(null as any);
           }
         );
 
@@ -2409,6 +3252,44 @@ export const listService = {
   },
 };
 
+// Add caching and performance optimizations
+const reminderCache = new Map<string, { data: Reminder[]; timestamp: number; familyId?: string }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const MAX_FAMILY_SIZE_FOR_REALTIME = 10; // Use polling for families larger than 10 members
+
+// Helper function to get cached reminders
+const getCachedReminders = (userId: string, familyId?: string): Reminder[] | null => {
+  const cacheKey = familyId ? `${userId}_${familyId}` : userId;
+  const cached = reminderCache.get(cacheKey);
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  return null;
+};
+
+// Helper function to set cached reminders
+const setCachedReminders = (userId: string, reminders: Reminder[], familyId?: string): void => {
+  const cacheKey = familyId ? `${userId}_${familyId}` : userId;
+  reminderCache.set(cacheKey, {
+    data: reminders,
+    timestamp: Date.now(),
+    familyId
+  });
+};
+
+// Helper function to clear cache for a user
+const clearUserCache = (userId: string): void => {
+  const keysToDelete: string[] = [];
+  for (const [key] of reminderCache) {
+    if (key.startsWith(userId)) {
+      keysToDelete.push(key);
+    }
+  }
+  keysToDelete.forEach(key => reminderCache.delete(key));
+};
+
 // Main firebaseService object that combines all services
 const firebaseService = {
   // Initialize Firebase
@@ -2420,21 +3301,63 @@ const firebaseService = {
   // Reminder services
   ...reminderService,
 
-  // Task type services
-  ...taskTypeService,
-
-  // Family services
-  ...familyService,
-
-  // Countdown services
-  createCountdown: familyService.createCountdown,
-  getCountdowns: familyService.getCountdowns,
-  updateCountdown: familyService.updateCountdown,
-  deleteCountdown: familyService.deleteCountdown,
-  onUserCountdownsChange: familyService.onUserCountdownsChange,
-
   // List services
   ...listService,
+
+  // Cache management functions
+  clearReminderCache: (userId?: string) => {
+    if (userId) {
+      clearUserCache(userId);
+    } else {
+      reminderCache.clear();
+    }
+  },
+
+  // Get cache statistics for debugging
+  getCacheStats: () => {
+    return {
+      cacheSize: reminderCache.size,
+      cacheKeys: Array.from(reminderCache.keys()),
+      cacheEntries: Array.from(reminderCache.entries()).map(([key, value]) => ({
+        key,
+        timestamp: value.timestamp,
+        dataLength: value.data.length,
+        familyId: value.familyId
+      }))
+    };
+  },
 };
+
+/**
+ * Add a notification to the familyNotifications collection
+ * @param notification { familyId, type, reminderId, assignedTo, createdBy, createdAt, message, [extra fields] }
+ */
+export async function addFamilyNotification(notification: {
+  familyId: string;
+  type: string;
+  reminderId?: string;
+  assignedTo?: string[];
+  createdBy: string;
+  createdAt?: Date;
+  message: string;
+  [key: string]: any;
+}): Promise<string> {
+  try {
+    const firestoreInstance = getFirestoreInstance();
+    const docRef = firestoreInstance.collection('familyNotifications').doc();
+    const notificationId = docRef.id;
+    const now = new Date();
+    await docRef.set({
+      id: notificationId,
+      ...notification,
+      createdAt: notification.createdAt || now,
+    });
+    console.log('✅ Family notification created:', notificationId);
+    return notificationId;
+  } catch (error) {
+    console.error('Error creating family notification:', error);
+    throw error;
+  }
+}
 
 export default firebaseService;

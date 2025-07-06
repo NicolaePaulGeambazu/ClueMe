@@ -12,6 +12,8 @@ interface NotificationTimingSelectorProps {
   notificationTimings: NotificationTiming[];
   onNotificationTimingsChange: (timings: NotificationTiming[]) => void;
   colors: typeof Colors.light;
+  showTimingSelector?: boolean;
+  onShowTimingSelectorChange?: (show: boolean) => void;
 }
 
 export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProps> = ({
@@ -20,9 +22,10 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
   notificationTimings,
   onNotificationTimingsChange,
   colors,
+  showTimingSelector = false,
+  onShowTimingSelectorChange,
 }) => {
   const { t } = useTranslation();
-  const [showTimingSelector, setShowTimingSelector] = useState(false);
 
   const addTiming = (timing: NotificationTiming) => {
     const exists = notificationTimings.some(
@@ -63,7 +66,7 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
             <Text style={styles.timingLabel}>{t('add.notificationTiming')}</Text>
             <TouchableOpacity
               style={styles.addTimingButton}
-              onPress={() => setShowTimingSelector(!showTimingSelector)}
+              onPress={() => onShowTimingSelectorChange?.(!showTimingSelector)}
             >
               <Plus size={16} color={colors.primary} />
             </TouchableOpacity>

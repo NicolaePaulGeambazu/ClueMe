@@ -28,7 +28,18 @@ export const TimelineGrid: React.FC<TimelineGridProps> = ({
   const styles = createStyles(colors);
 
   const getRemindersForTimeSlot = (timeSlot: string) => {
-    return reminders.filter(reminder => reminder.dueTime === timeSlot);
+    return reminders.filter(reminder => {
+      if (!reminder.dueTime) return false;
+      
+      // Extract hour from timeSlot (e.g., '20:00' -> '20')
+      const timeSlotHour = timeSlot.split(':')[0];
+      
+      // Extract hour from reminder time (e.g., '20:28' -> '20')
+      const reminderHour = reminder.dueTime.split(':')[0];
+      
+      // Match reminders to the time slot based on hour
+      return reminderHour === timeSlotHour;
+    });
   };
 
   const formatTime = (timeSlot: string) => {

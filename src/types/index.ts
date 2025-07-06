@@ -30,3 +30,10 @@ export interface AppSettings {
   notifications: boolean;
   analytics: boolean;
 }
+
+export interface Reminder {
+  repeatDays?: number[]; // Days of week for custom weekly patterns (0=Sunday, 1=Monday, ...)
+  recurringStartDate?: Date; // When recurring reminders should start
+  recurringEndDate?: Date; // When recurring reminders should stop (optional)
+  recurringEndAfter?: number; // Number of occurrences before ending (optional)
+}

@@ -7,11 +7,9 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import messaging from '@react-native-firebase/messaging';
 import { useNotifications } from '../hooks/useNotifications';
 import { Colors } from '../constants/Colors';
 import { useTheme } from '../contexts/ThemeContext';
-import { Fonts, FontSizes } from '../constants/Fonts';
 import { useAuth } from '../contexts/AuthContext';
 import { useFamily } from '../hooks/useFamily';
 import { useTranslation } from 'react-i18next';

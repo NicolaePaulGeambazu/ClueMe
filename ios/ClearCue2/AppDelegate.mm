@@ -31,28 +31,28 @@
 /*
 - (void)registerBackgroundTasks {
   // Register background fetch task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"com.clearcue.ClearCue2.background-fetch"
+  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.background-fetch"
                                                          usingQueue:nil
                                                       launchHandler:^(__kindof BGTask * _Nonnull task) {
     [self handleBackgroundFetch:task];
   }];
   
   // Register background processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"com.clearcue.ClearCue2.background-processing"
+  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.background-processing"
                                                          usingQueue:nil
                                                       launchHandler:^(__kindof BGTask * _Nonnull task) {
     [self handleBackgroundProcessing:task];
   }];
   
   // Register reminder processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"com.clearcue.ClearCue2.reminder-processing"
+  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.reminder-processing"
                                                          usingQueue:nil
                                                       launchHandler:^(__kindof BGTask * _Nonnull task) {
     [self handleReminderProcessing:task];
   }];
   
   // Register notification processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"com.clearcue.ClearCue2.notification-processing"
+  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.notification-processing"
                                                          usingQueue:nil
                                                       launchHandler:^(__kindof BGTask * _Nonnull task) {
     [self handleNotificationProcessing:task];
@@ -116,7 +116,7 @@
 }
 
 - (void)scheduleBackgroundFetch {
-  BGAppRefreshTaskRequest *request = [[BGAppRefreshTaskRequest alloc] initWithIdentifier:@"com.clearcue.ClearCue2.background-fetch"];
+      BGAppRefreshTaskRequest *request = [[BGAppRefreshTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.background-fetch"];
   request.earliestBeginDate = [NSDate dateWithTimeIntervalSinceNow:15 * 60]; // 15 minutes from now
   
   NSError *error = nil;
@@ -127,7 +127,7 @@
 }
 
 - (void)scheduleBackgroundProcessing {
-  BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.clearcue.ClearCue2.background-processing"];
+      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.background-processing"];
   request.requiresNetworkConnectivity = YES;
   request.requiresExternalPower = NO;
   
@@ -139,7 +139,7 @@
 }
 
 - (void)scheduleReminderProcessing {
-  BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.clearcue.ClearCue2.reminder-processing"];
+      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.reminder-processing"];
   request.requiresNetworkConnectivity = YES;
   request.requiresExternalPower = NO;
   
@@ -151,7 +151,7 @@
 }
 
 - (void)scheduleNotificationProcessing {
-  BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"com.clearcue.ClearCue2.notification-processing"];
+      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.notification-processing"];
   request.requiresNetworkConnectivity = YES;
   request.requiresExternalPower = NO;
   
