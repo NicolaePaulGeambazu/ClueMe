@@ -34,9 +34,19 @@
 		<true/>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>ClearCue uses your location to provide regional pricing and improve your experience.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>ClearCue uses notifications to remind you about important tasks and family updates.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ClearCue may use camera access for profile photos and document scanning features.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ClearCue may access your photo library to select profile pictures and images for reminders.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ClearCue may use microphone access for voice notes and audio reminders.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>ClearCue may access your calendar to sync reminders and events.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>ClearCue may access contacts to help you share reminders with family members.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

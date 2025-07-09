@@ -380,9 +380,6 @@ const fixDataCorruption = async (reminder: Reminder): Promise<Reminder> => {
  * Log error for analytics and debugging
  */
 export const logError = (error: AppError): void => {
-  if (__DEV__) {
-    console.error('🚨 Reminder Error:', error);
-  }
   analyticsService.trackError(
     error.messageKey,
     error.code,

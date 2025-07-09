@@ -118,30 +118,19 @@ export default function QuickAddListModal({
       familyId: family?.id || null,
     };
 
-    console.log('📝 Creating/updating list:', {
-      name: listData.name,
-      format: listData.format,
-      isPrivate: listData.isPrivate,
-      familyId: listData.familyId
-    });
-
     try {
       setIsSaving(true);
-      console.log('🔄 Starting list save...', { name: listData.name });
       
       await onSave(listData);
       
-      console.log('✅ List saved successfully, closing modal...');
       handleClose();
     } catch (error) {
-      console.error('❌ Error saving list:', error);
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleClose = () => {
-    console.log('🔄 QuickAddListModal: handleClose called...');
     
     // Reset all internal state
     setName('');
@@ -153,9 +142,7 @@ export default function QuickAddListModal({
     setIsSaving(false);
     
     // Then call the parent's onClose
-    console.log('🔄 QuickAddListModal: Calling onClose...');
     onClose();
-    console.log('✅ QuickAddListModal: handleClose completed');
   };
 
   const formatOptions = [

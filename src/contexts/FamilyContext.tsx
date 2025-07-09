@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import firebaseService, { FamilyMember, Family } from '../services/firebaseService';
+import firebaseService, { FamilyMember, Family, getValidFamilyMembers } from '../services/firebaseService';
 
 interface FamilyContextType {
   family: Family | null;
@@ -16,7 +16,7 @@ interface FamilyContextType {
   refreshFamily: () => Promise<void>;
 }
 
-const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
+export const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const { user, requireAuth } = useAuth();
@@ -46,7 +46,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
       if (userFamily) {
         setFamily(userFamily);
-        const members = await firebaseService.getFamilyMembers(userFamily.id);
+        const members = await getValidFamilyMembers(userFamily.id);
         setFamilyMembers(members);
 
         // Find current user's member record
@@ -62,7 +62,7 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
         if (defaultFamily) {
           setFamily(defaultFamily);
-          const members = await firebaseService.getFamilyMembers(defaultFamily.id);
+          const members = await getValidFamilyMembers(defaultFamily.id);
           setFamilyMembers(members);
 
           // Find current user's member record
@@ -71,7 +71,6 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Error loading family:', error);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +108,6 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
       await loadFamily();
     } catch (error) {
-      console.error('Error creating family:', error);
       throw error;
     }
   };
@@ -132,7 +130,6 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
 
       await loadFamily();
     } catch (error) {
-      console.error('Error inviting member:', error);
       throw error;
     }
   };
@@ -145,10 +142,8 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     try {
       // Note: Firebase service doesn't have updateFamilyMember method
       // This would need to be implemented in the Firebase service
-      console.warn('updateMember not implemented in Firebase service');
       await loadFamily();
     } catch (error) {
-      console.error('Error updating member:', error);
       throw error;
     }
   };
@@ -162,7 +157,6 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
       await firebaseService.removeFamilyMember(memberId, family.id);
       await loadFamily();
     } catch (error) {
-      console.error('Error removing member:', error);
       throw error;
     }
   };

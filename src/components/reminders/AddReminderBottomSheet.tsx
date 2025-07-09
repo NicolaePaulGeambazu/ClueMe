@@ -47,7 +47,6 @@ export const AddReminderBottomSheet = () => {
 
   const handleAddReminder = () => {
     // TODO: Add actual reminder creation logic here
-    console.log('Adding reminder:', { title, category, dateTime, repeatConfig, assignees });
     
     // Trigger interstitial ad after successful reminder creation
     setReminderAdded(true);
@@ -132,9 +131,9 @@ export const AddReminderBottomSheet = () => {
           <Text style={styles.assignToLabel}>Assign to:</Text>
           {familyMembers.map(member => (
             <TouchableOpacity
-              key={member.userId || member.id}
-              style={[styles.assigneeBtn, assignees.includes(member.userId || member.id) && styles.assigneeSelected]}
-              onPress={() => handleToggleAssignee(member.userId || member.id)}
+              key={member.userId}
+              style={[styles.assigneeBtn, assignees.includes(member.userId) && styles.assigneeSelected]}
+              onPress={() => handleToggleAssignee(member.userId)}
             >
               <Text>{member.name || member.email || 'Family Member'}</Text>
             </TouchableOpacity>

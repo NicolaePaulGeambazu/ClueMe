@@ -128,23 +128,18 @@ export default function CountdownScreen({ navigation, route }: any) {
     try {
       setIsLoading(true);
       if (isAnonymous) {
-        console.log('⏰ User is anonymous, skipping countdown load');
         setCountdowns([]);
         return;
       }
 
       if (!user?.uid) {
-        console.log('⏰ No user UID available, skipping countdown load');
         setCountdowns([]);
         return;
       }
 
-      console.log('⏰ Loading countdowns for user:', user.uid);
       const userCountdowns = await firebaseService.getCountdowns(user.uid);
-      console.log('⏰ Successfully loaded countdowns:', userCountdowns.length);
       setCountdowns(userCountdowns);
     } catch (error: any) {
-      console.error('❌ Error loading countdowns:', error);
 
       // Provide more specific error messages based on the error type
       let errorMessage = 'Failed to load countdowns';
@@ -171,7 +166,6 @@ export default function CountdownScreen({ navigation, route }: any) {
         {
           text: 'Retry',
           onPress: () => {
-            console.log('⏰ Retrying countdown load...');
             setTimeout(() => loadCountdowns(), 1000); // Retry after 1 second
           },
         },
@@ -191,16 +185,13 @@ export default function CountdownScreen({ navigation, route }: any) {
       return;
     }
 
-    console.log('⏰ Setting up countdowns listener for user:', user.uid);
     const unsubscribe = firebaseService.onUserCountdownsChange(user.uid, (updatedCountdowns) => {
-      console.log('⏰ Countdowns updated via real-time listener:', updatedCountdowns.length);
       setCountdowns(updatedCountdowns);
       setIsLoading(false);
     });
 
     // Cleanup listener on unmount or user change
     return () => {
-      console.log('⏰ Cleaning up countdowns listener');
       unsubscribe();
     };
   }, [user?.uid, isAnonymous]);
@@ -307,7 +298,6 @@ export default function CountdownScreen({ navigation, route }: any) {
         await firebaseService.deleteCountdown(countdown.id);
         setCountdowns(prev => prev.filter(c => c.id !== countdown.id));
       } catch (error) {
-        console.error('Error deleting countdown:', error);
         Alert.alert(t('common.error'), 'Failed to delete countdown');
       }
     };
@@ -341,7 +331,6 @@ export default function CountdownScreen({ navigation, route }: any) {
       }
       return formatDate(date);
     } catch (error) {
-      console.error('Error formatting date:', error);
       return 'Invalid Date';
     }
   };
@@ -353,7 +342,6 @@ export default function CountdownScreen({ navigation, route }: any) {
       date.setHours(parseInt(hours), parseInt(minutes));
       return formatTime(date);
     } catch (error) {
-      console.error('Error formatting time:', error);
       return 'Invalid Time';
     }
   };

@@ -1,5 +1,5 @@
 import { addDays, addWeeks, addMonths, addYears, startOfMonth, endOfMonth, getDay, isBefore, isAfter, isEqual, startOfDay, endOfDay, parseISO, format } from 'date-fns';
-import { Reminder } from '../services/firebaseService';
+import { Reminder, NotificationTiming } from '../design-system/reminders/types';
 
 /**
  * Comprehensive Recurring Reminder Utilities
@@ -37,7 +37,7 @@ export interface RecurringOccurrence {
   repeatPattern: string;
   customInterval?: number;
   hasNotification: boolean;
-  notificationTimings?: any[];
+  notificationTimings?: NotificationTiming[];
   assignedTo?: string[];
   tags?: string[];
   completed: boolean;
@@ -49,12 +49,18 @@ export interface RecurringOccurrence {
   customFrequencyType?: string;
 }
 
+
+
+interface ReminderWithRepeatDays extends Reminder {
+  repeatDays?: number[];
+}
+
 /**
  * Parse a recurring pattern from a reminder
  */
 export function parseRecurringPattern(reminder: Reminder): RecurringPattern {
   const pattern: RecurringPattern = {
-    type: reminder.repeatPattern as any || 'daily',
+    type: (reminder.repeatPattern as RecurringPattern['type']) || 'daily',
   };
 
   // Handle custom intervals
@@ -63,19 +69,20 @@ export function parseRecurringPattern(reminder: Reminder): RecurringPattern {
   }
 
   // Handle weekly patterns with specific days
-  if (reminder.repeatPattern === 'weekly' && (reminder as any).repeatDays) {
-    pattern.daysOfWeek = (reminder as any).repeatDays;
+  if (reminder.repeatPattern === 'weekly' && (reminder as ReminderWithRepeatDays).repeatDays) {
+    pattern.daysOfWeek = (reminder as ReminderWithRepeatDays).repeatDays;
   }
 
-  // Handle custom patterns with specific frequency types
-  if (reminder.repeatPattern === 'custom' && reminder.customFrequencyType) {
-    pattern.type = reminder.customFrequencyType as any;
-    
-    // For custom weekly patterns, also include the days
-    if (reminder.customFrequencyType === 'weekly' && (reminder as any).repeatDays) {
-      pattern.daysOfWeek = (reminder as any).repeatDays;
+      // Handle custom patterns with specific frequency types
+    if (reminder.repeatPattern === 'custom') {
+      // For custom patterns, use the repeatPattern as the type
+      pattern.type = 'custom';
+      
+      // For custom weekly patterns, also include the days
+      if ((reminder as ReminderWithRepeatDays).repeatDays) {
+        pattern.daysOfWeek = (reminder as ReminderWithRepeatDays).repeatDays;
+      }
     }
-  }
 
   // Handle first_monday and last_friday patterns
   if (reminder.repeatPattern === 'first_monday') {
@@ -243,7 +250,6 @@ export function calculateNextOccurrenceDate(
   }
 
   // If we've exceeded max iterations, return null
-  console.warn('Exceeded max iterations for recurring pattern calculation');
   return null;
 }
 
@@ -339,15 +345,13 @@ export function generateNextOccurrence(reminder: Reminder): RecurringOccurrence 
       completed: false,
       status: 'pending',
       userId: reminder.userId,
-      repeatDays: (reminder as any).repeatDays,
+      repeatDays: (reminder as ReminderWithRepeatDays).repeatDays,
       recurringStartDate: reminder.recurringStartDate,
       recurringEndDate: reminder.recurringEndDate,
-      customFrequencyType: reminder.customFrequencyType,
     };
 
     return nextOccurrence;
   } catch (error) {
-    console.error('Error generating next occurrence:', error);
     return null;
   }
 }
@@ -402,10 +406,9 @@ export function generateOccurrences(
         completed: false,
         status: 'pending',
         userId: reminder.userId,
-        repeatDays: (reminder as any).repeatDays,
-        recurringStartDate: reminder.recurringStartDate,
-        recurringEndDate: reminder.recurringEndDate,
-        customFrequencyType: reminder.customFrequencyType,
+        repeatDays: (reminder as ReminderWithRepeatDays).repeatDays,
+              recurringStartDate: reminder.recurringStartDate,
+      recurringEndDate: reminder.recurringEndDate,
       };
 
       occurrences.push(occurrence);
@@ -432,7 +435,6 @@ export function generateOccurrences(
 
     return occurrences;
   } catch (error) {
-    console.error('Error generating occurrences:', error);
     return [];
   }
 }
@@ -558,7 +560,6 @@ function parseDateSafely(date: Date | string | undefined): Date | null {
 
     return null;
   } catch (error) {
-    console.warn('Error parsing date:', date, error);
     return null;
   }
 }

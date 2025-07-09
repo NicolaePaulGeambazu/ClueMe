@@ -1,6 +1,7 @@
 {
   "quickAdd": {
     "newReminder": "Nouveau Rappel",
+    "editReminder": "Modifier le Rappel",
     "whatToRemember": "Que devez-vous vous rappeler ?",
     "placeholder": "Acheter du lait",
     "when": "Quand ?",
@@ -16,7 +17,50 @@
     "night": "Nuit (21h)",
     "pickTime": "Choisir une Heure...",
     "needMoreOptions": "Besoin de plus d'options ?",
-    "createReminder": "Créer le Rappel"
+    "createReminder": "Créer le Rappel",
+    "updateReminder": "Mettre à Jour le Rappel",
+    "doesNotRepeat": "Ne se répète pas",
+    "timezone": "Fuseau Horaire",
+    "selectTimezone": "Sélectionner le fuseau horaire",
+    "assignToMe": "👤 Moi"
+  },
+  "taskChunking": {
+    "sectionTitle": "Diviser la Tâche",
+    "breakDownTask": "Diviser en étapes plus petites",
+    "editSubTasks": "Modifier {{count}} sous-tâches",
+    "subTasksCreated": "Tâche divisée en étapes gérables",
+    "title": "Diviser la Tâche",
+    "emptyTitleError": "Le titre de la sous-tâche ne peut pas être vide",
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette sous-tâche ?",
+    "noSubTasksError": "Veuillez ajouter au moins une sous-tâche",
+    "completed": "terminées",
+    "addSubTaskPlaceholder": "Ajouter une sous-tâche...",
+    "emptyState": "Aucune sous-tâche pour le moment",
+    "emptyStateSubtext": "Divisez votre tâche en étapes plus petites et gérables pour faciliter sa réalisation",
+    "descriptionPlaceholder": "Ajouter une description (optionnel)"
+  },
+  "focusMode": {
+    "title": "Mode Focus",
+    "active": "Mode Focus Actif",
+    "subtitle": "Distractions minimisées • {{count}} tâches visibles",
+    "enable": "Activer le Mode Focus",
+    "disable": "Désactiver le Mode Focus",
+    "description": "Minimisez les distractions et concentrez-vous sur vos tâches les plus importantes",
+    "settings": {
+      "title": "Paramètres du Mode Focus",
+      "maxVisibleTasks": "Tâches visibles maximales",
+      "hideAds": "Masquer les publicités",
+      "simplifyUI": "Simplifier l'interface",
+      "showFocusBanner": "Afficher la bannière de focus",
+      "autoEnable": "Activer automatiquement pour les tâches longues"
+    },
+    "stats": {
+      "title": "Statistiques de Focus",
+      "totalFocusTime": "Temps total de focus",
+      "sessionsCompleted": "Sessions terminées",
+      "averageSessionLength": "Durée moyenne de session",
+      "longestSession": "Session la plus longue"
+    }
   },
   "wizard": {
     "createReminder": "Créer un Rappel",
@@ -30,6 +74,7 @@
     "descriptionPlaceholder": "Réviser les rapports Q4 et préparer les diapositives",
     "date": "Date",
     "time": "Heure",
+    "timezone": "Fuseau Horaire",
     "allDayEvent": "C'est un événement de toute la journée",
     "repeat": "Répéter",
     "doesNotRepeat": "Ne se répète pas",
@@ -49,7 +94,38 @@
     "day1": "1 jour avant",
     "back": "Retour",
     "next": "Suivant",
-    "create": "Créer"
+    "create": "Créer",
+    "selectDate": "Sélectionner la Date",
+    "selectTime": "Sélectionner l'Heure",
+    "selectRepeat": "Sélectionner le Modèle de Répétition",
+    "selectCategory": "Sélectionner la Catégorie",
+    "makeRecurring": "Rendre récurrent",
+    "repeatPattern": "Modèle de répétition",
+    "daily": "Quotidien",
+    "weekly": "Hebdomadaire",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "weekdays": "Jours ouvrables",
+    "custom": "Personnalisé",
+    "interval": "Intervalle",
+    "every": "Tous les",
+    "days": "jours",
+    "weeks": "semaines",
+    "months": "mois",
+    "years": "années",
+    "times": "fois",
+    "customInterval": "Intervalle personnalisé",
+    "configureCustom": "Configurer le modèle personnalisé",
+    "endCondition": "Condition de fin",
+    "neverEnd": "Ne se termine jamais",
+    "endOnDate": "Se terminer à une date",
+    "endAfterTimes": "Se terminer après X fois",
+    "patternPreview": "Aperçu du modèle",
+    "endDate": "Date de fin",
+    "selectEndDate": "Sélectionner la date de fin",
+    "endAfterOccurrences": "Se terminer après occurrences",
+    "endAfter": "Se terminer après",
+    "occurrences": "occurrences"
   },
   "add": {
     "selectedDate": "Date Sélectionnée",
@@ -160,8 +236,32 @@
       "createFailed": "Échec de la création du rappel. Veuillez réessayer.",
       "success": "Rappel créé avec succès !"
     },
-    "notificationTiming": "Notification Timing",
-    "notificationTimingHelp": "Tap + to add when you want to be notified"
+    "notificationTiming": "Timing de Notification",
+    "notificationTimingHelp": "Tap + to add when you want to be notified",
+    "repeatOptions": {
+      "upgradeRequired": "Mise à Niveau Requise",
+      "upgradeMessage": "Les utilisateurs gratuits peuvent sélectionner jusqu'à {{maxDays}} jours. Mettez à niveau pour sélectionner plus de jours.",
+      "upgradeToUnlock": "Mettre à Niveau pour Débloquer",
+      "upgradeFeatureMessage": "Cette fonctionnalité est disponible dans les niveaux supérieurs. Mettez à niveau pour accéder aux options avancées de planification de répétition.",
+      "learnMore": "En Savoir Plus",
+      "cancel": "Annuler",
+      "repeatPattern": "Modèle de Répétition",
+      "interval": "Intervalle",
+      "every": "Tous les",
+      "days": "jour(s)",
+      "weeks": "semaine(s)",
+      "months": "mois",
+      "years": "an(s)",
+      "times": "fois",
+      "upgrade": "Mettre à Niveau",
+      "premium": "Premium",
+      "repeatOnDays": "Répéter les Jours",
+      "endCondition": "Condition de Fin",
+      "noEndDate": "Aucune date de fin",
+      "onDate": "À la date",
+      "afterOccurrences": "Après les occurrences",
+      "patternPreview": "Aperçu du Modèle"
+    }
   },
   "calendar": {
     "title": "Calendrier",
@@ -495,29 +595,30 @@
     "testReminderTitle": "Tâche de Rappel de Test",
     "testReminderDescription": "Ceci est une tâche de rappel de test pour tester les notifications",
     "testUser": "Utilisateur de Test",
-    "notificationPreferences": "Notification Preferences",
-    "notificationPreferencesDescription": "Customize how and when you receive notifications",
-    "familyNotifications": "Family Notifications",
-    "familyNotificationsDescription": "Get notified about family activities and task updates",
-    "taskReminders": "Task Reminders",
-    "taskRemindersDescription": "Receive reminders for upcoming and overdue tasks",
-    "quietHours": "Quiet Hours",
-    "quietHoursDescription": "Set times when you don't want to receive notifications",
-    "quietHoursStart": "Start Time",
-    "quietHoursEnd": "End Time",
-    "quietHoursEnabled": "Enable Quiet Hours",
-    "notificationSound": "Notification Sound",
-    "notificationSoundDescription": "Choose your preferred notification sound",
+    "notificationPreferences": "Préférences de Notifications",
+    "notificationPreferencesDescription": "Personnalisez comment et quand vous recevez des notifications",
+    "familyNotifications": "Notifications Familiales",
+    "familyNotificationsDescription": "Recevez des notifications sur les activités familiales et les mises à jour de tâches",
+    "taskReminders": "Rappels de Tâches",
+    "taskRemindersDescription": "Recevez des rappels pour les tâches à venir et en retard",
+    "quietHours": "Heures Silencieuses",
+    "quietHoursDescription": "Définissez des heures où vous ne voulez pas recevoir de notifications",
+    "quietHoursStart": "Heure de Début",
+    "quietHoursEnd": "Heure de Fin",
+    "quietHoursEnabled": "Activer les Heures Silencieuses",
+    "notificationSound": "Son de Notification",
+    "notificationSoundDescription": "Choisissez votre son de notification préféré",
     "vibrationEnabled": "Vibration",
-    "vibrationEnabledDescription": "Vibrate when receiving notifications",
-    "ledEnabled": "LED Light",
-    "ledEnabledDescription": "Flash LED light for notifications",
-    "priorityNotifications": "Priority Notifications",
-    "priorityNotificationsDescription": "Always show notifications for high-priority tasks",
-    "batchNotifications": "Batch Notifications",
-    "batchNotificationsDescription": "Group multiple notifications together",
-    "locationBasedReminders": "Location-Based Reminders",
-    "locationBasedRemindersDescription": "Get reminded when you're near a specific location"
+    "vibrationEnabledDescription": "Vibrer lors de la réception de notifications",
+    "ledEnabled": "Lumière LED",
+    "ledEnabledDescription": "Faire clignoter la lumière LED pour les notifications",
+    "priorityNotifications": "Notifications Prioritaires",
+    "priorityNotificationsDescription": "Toujours afficher les notifications pour les tâches de haute priorité",
+    "batchNotifications": "Notifications par Lot",
+    "batchNotificationsDescription": "Grouper plusieurs notifications ensemble",
+    "locationBasedReminders": "Rappels Basés sur la Localisation",
+    "locationBasedRemindersDescription": "Recevez des rappels quand vous êtes près d'un endroit spécifique",
+    "testFamilyAssignment": "Tester l'Assignation Familiale"
   },
   "language": {
     "title": "Langue",
@@ -635,6 +736,12 @@
     "deleteReminder": "Supprimer le Rappel",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer ce rappel ?",
     "deleteError": "Erreur lors de la suppression du rappel",
+    "deleteThisOnly": "Cette occurrence seulement",
+    "deleteAllFuture": "Supprimer tout l'avenir",
+    "deleteConfirmation": {
+      "title": "Supprimer le rappel",
+      "message": "Êtes-vous sûr de vouloir supprimer ce rappel ? Cette action ne peut pas être annulée."
+    },
     "edit": "Modifier",
     "editReminder": "Modifier le Rappel",
     "completed": "Terminé",
@@ -798,6 +905,22 @@
       "3Months": "3 mois",
       "6Months": "6 mois",
       "1Year": "1 an"
+    },
+    "notificationTiming": {
+      "15minBefore": "15 minutes avant",
+      "30minBefore": "30 minutes avant",
+      "1hrBefore": "1 heure avant",
+      "1dayBefore": "1 jour avant",
+      "atDueTime": "Au moment d'échéance",
+      "15minAfter": "15 minutes après",
+      "30minAfter": "30 minutes après",
+      "1hrAfter": "1 heure après"
+    },
+    "escalating": {
+      "gentle": "30 minutes avant (Doux)",
+      "medium": "15 minutes avant (Moyen)",
+      "urgent": "5 minutes avant (Urgent)",
+      "description": "Recevez des rappels progressivement plus urgents"
     }
   },
   "auth": {
@@ -831,7 +954,31 @@
       "sendReset": "Envoyer le Lien de Réinitialisation",
       "sending": "Envoi en cours...",
       "backToLogin": "Retour à la Connexion"
-    }
+    },
+    "validation": {
+      "title": "Connexion Requise",
+      "requiredFields": "Veuillez remplir tous les champs requis."
+    },
+    "error": {
+      "generic": "Une erreur s'est produite. Veuillez réessayer.",
+      "title": "Erreur d'Authentification"
+    },
+    "loginPrompt": {
+      "title": "Connexion Requise",
+      "message": "Veuillez vous connecter pour continuer."
+    },
+    "signIn": "Se Connecter",
+    "signUp": "S'Inscrire",
+    "fields": {
+      "fullName": "Nom Complet",
+      "email": "E-mail",
+      "password": "Mot de Passe"
+    },
+    "signingIn": "Connexion en cours...",
+    "creatingAccount": "Création de compte...",
+    "createAccount": "Créer un Compte",
+    "anonymousDataPreserved": "Vos données anonymes seront conservées après la connexion.",
+    "termsAgreement": "En vous inscrivant, vous acceptez nos Conditions de Service."
   },
   "forms": {
     "placeholders": {
@@ -896,7 +1043,12 @@
     "itemTitle": "Titre de l'Élément",
     "itemDescription": "Description de l'Élément (Optionnel)",
     "completed": "terminé",
-    "of": "sur"
+    "of": "sur",
+    "noSharedLists": "Aucune liste partagée avec la famille.",
+    "listsTab": "Listes",
+    "myLists": "Mes Listes",
+    "sharedLists": "Listes Partagées",
+    "noMyLists": "Vous n'avez pas encore de listes."
   },
   "activity": {
     "day": "jour",
@@ -928,7 +1080,8 @@
       "reminderNotFound": "Rappel introuvable",
       "loadFailed": "Échec du chargement des données du rappel",
       "updateFailed": "Échec de la mise à jour du rappel. Veuillez réessayer.",
-      "permissionDenied": "Vous n'avez pas la permission de modifier ce rappel"
+      "permissionDenied": "Vous n'avez pas la permission de modifier ce rappel",
+      "noReminderId": "Aucun ID de rappel fourni"
     }
   },
   "validation": {
@@ -986,7 +1139,8 @@
       "checkRequiredFields": "Vérifiez tous les champs obligatoires",
       "ensureValidDates": "Assurez-vous que les dates et heures sont valides",
       "dataCorrupted": "Les données sont corrompues et ne peuvent pas être récupérées"
-    }
+    },
+    "unknown": "Une erreur inconnue s'est produite. Veuillez réessayer."
   },
   "warnings": {
     "pastDueDate": "La date d'échéance est dans le passé",
@@ -1100,8 +1254,32 @@
     "year": "year",
     "or": "or",
     "save": "Save 40%",
-    "features": "Pro Features",
-    "maybeLater": "Maybe Later",
+    "features": "Fonctionnalités Pro",
+    "maybeLater": "Peut-être Plus Tard",
     "terms": "Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage subscriptions in your App Store settings."
+  },
+  "pro": {
+    "unlockFeature": "Débloquer {{feature}}",
+    "unlockEverything": "Débloquer toute la puissance de ClearCue",
+    "whatYouGet": "Ce que vous obtenez avec Pro",
+    "multipleNotifications": "Notifications Multiples",
+    "multipleNotificationsDesc": "Configurez jusqu'à 5 notifications par rappel",
+    "advancedRecurring": "Récurrence Avancée",
+    "advancedRecurringDesc": "Intervalles personnalisés et motifs complexes",
+    "familySharing": "Partage Familial",
+    "familySharingDesc": "Partagez des listes et des rappels avec la famille",
+    "prioritySupport": "Support Prioritaire",
+    "prioritySupportDesc": "Obtenez de l'aide quand vous en avez le plus besoin",
+    "customThemes": "Thèmes Personnalisés",
+    "customThemesDesc": "Personnalisez votre expérience",
+    "advancedAnalytics": "Analyses Avancées",
+    "advancedAnalyticsDesc": "Suivez vos modèles de productivité",
+    "monthly": "Mensuel",
+    "perMonth": "par mois",
+    "allFeatures": "Toutes les fonctionnalités Pro incluses",
+    "cancelAnytime": "Annuler à tout moment",
+    "freeTrial": "Essai gratuit de 7 jours",
+    "upgradeToPro": "Passer à Pro",
+    "maybeLater": "Peut-être Plus Tard"
   }
 }

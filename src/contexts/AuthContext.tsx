@@ -19,7 +19,7 @@ interface AuthContextType {
   updateUserProfile: (updates: { displayName?: string; photoURL?: string }) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Helper function to convert Firebase User to our User type
 const convertFirebaseUserToUser = (firebaseUser: FirebaseAuthTypes.User): User => ({
@@ -42,6 +42,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
           try {
             if (firebaseUser) {
+              // Ensure user profile exists in Firestore
+              try {
+                await userService.createUserProfile({
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName,
+                  isAnonymous: firebaseUser.isAnonymous,
+                });
+              } catch (profileError) {
+                console.warn('Failed to create/update user profile:', profileError);
+                // Don't fail the auth state change if profile creation fails
+              }
+              
               const convertedUser = convertFirebaseUserToUser(firebaseUser);
               setUser(convertedUser);
             } else {
@@ -49,12 +62,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               try {
                 await auth().signInAnonymously();
               } catch (error) {
-                console.error('Error signing in anonymously:', error);
                 setUser(null);
               }
             }
           } catch (error) {
-            console.error('Error in auth state change:', error);
             setUser(null);
           } finally {
             setIsLoading(false);
@@ -63,7 +74,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         return unsubscribe;
       } catch (error) {
-        console.error('Error initializing auth:', error);
         setIsLoading(false);
       }
     };
@@ -93,7 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAnonymous: firebaseUser.isAnonymous,
         });
       } catch (error) {
-        console.warn('Could not create/update Firebase user profile:', error);
+        console.warn('Failed to create user profile during sign in:', error);
+        // Don't fail the sign in if profile creation fails
       }
 
       // Force update the user state since onAuthStateChanged might not trigger immediately
@@ -101,7 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(convertedUser);
 
     } catch (error: any) {
-      console.error('Firebase sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -128,7 +138,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAnonymous: firebaseUser.isAnonymous,
         });
       } catch (error) {
-        console.warn('Could not create Firebase user profile:', error);
       }
 
       // Force update the user state since onAuthStateChanged might not trigger immediately
@@ -136,7 +145,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(convertedUser);
 
     } catch (error) {
-      console.error('Firebase sign up error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -152,7 +160,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       // The onAuthStateChanged listener will handle signing in anonymously
     } catch (error: any) {
-      console.error('❌ Firebase sign out error:', error);
       // Don't throw error if no user is signed in
       if (error.code !== 'auth/no-current-user') {
         throw error;
@@ -167,7 +174,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await auth().signInAnonymously();
     } catch (error) {
-      console.error('❌ Firebase anonymous sign in error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -203,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAnonymous: firebaseUser.isAnonymous,
         });
       } catch (error) {
-        console.warn('Could not create Firebase user profile:', error);
       }
 
       // Force update the user state since onAuthStateChanged might not trigger immediately
@@ -211,7 +216,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(convertedUser);
 
     } catch (error) {
-      console.error('Firebase upgrade error:', error);
       throw error;
     } finally {
       setIsLoading(false);
@@ -222,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await auth().sendPasswordResetEmail(email);
     } catch (error) {
-      console.error('❌ Firebase reset password error:', error);
       throw error;
     }
   };
@@ -242,7 +245,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(convertedUser);
       }
     } catch (error) {
-      console.error('❌ Firebase update user profile error:', error);
       throw error;
     } finally {
       setIsLoading(false);

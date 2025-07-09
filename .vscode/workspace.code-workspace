@@ -1,0 +1,220 @@
+{
+  "folders": [
+    {
+      "name": "ClearCue",
+      "path": "."
+    }
+  ],
+  "settings": {
+    // i18n-ally Configuration for ClearCue
+    // This configures the i18n-ally extension to work with both client-side and Cloud Functions translations
+    
+    // Enable i18n-ally
+    "i18n-ally.enabled": true,
+    
+    // Supported languages
+    "i18n-ally.localesPaths": [
+      "src/locales",
+      "functions/translations"
+    ],
+    
+    // Source language
+    "i18n-ally.sourceLanguage": "en",
+    
+    // Display language
+    "i18n-ally.displayLanguage": "en",
+    
+    // Namespace support
+    "i18n-ally.namespace": true,
+    
+    // Key separator
+    "i18n-ally.keySeparator": ".",
+    
+    // Keep FQN in display
+    "i18n-ally.keepFqn": true,
+    
+    // Sort keys
+    "i18n-ally.sortKeys": true,
+    
+    // Enable fuzzy translation
+    "i18n-ally.enableFuzzyTranslation": true,
+    
+    // Enable auto-completion
+    "i18n-ally.enableAutoCompletion": true,
+    
+    // Enable validation
+    "i18n-ally.enableValidation": true,
+    
+    // Translation file patterns
+    "i18n-ally.pathMatcher": "{locale}.json",
+    
+    // Ignore files
+    "i18n-ally.ignoreFiles": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.git/**"
+    ],
+    
+    // Enable hardcoded string detection
+    "i18n-ally.enableHardcodedStringDetection": true,
+    
+    // Enable annotation
+    "i18n-ally.annotation": true,
+    
+    // Enable hover
+    "i18n-ally.hover": true,
+    
+    // Enable inlay hints
+    "i18n-ally.inlayHints": true,
+    
+    // Enable progress bar
+    "i18n-ally.progressBar": true,
+    
+    // Enable tree view
+    "i18n-ally.treeView": true,
+    
+    // Enable status bar
+    "i18n-ally.statusBar": true,
+    
+    // Enable context menu
+    "i18n-ally.contextMenu": true,
+    
+    // Enable command palette
+    "i18n-ally.commandPalette": true,
+    
+    // Enable telemetry
+    "i18n-ally.telemetry": false,
+    
+    // Translation engines
+    "i18n-ally.translate.engines": [
+      "google",
+      "deepl"
+    ],
+    
+    // Google Translate API key (optional)
+    "i18n-ally.translate.google.apiKey": "",
+    
+    // DeepL API key (optional)
+    "i18n-ally.translate.deepl.apiKey": "",
+    
+    // Custom translation function
+    "i18n-ally.translate.customFunction": "",
+    
+    // Translation cache
+    "i18n-ally.translate.cache": true,
+    
+    // Translation cache TTL (in seconds)
+    "i18n-ally.translate.cacheTTL": 3600,
+    
+    // Translation cache path
+    "i18n-ally.translate.cachePath": ".i18n-ally-cache",
+    
+    // Translation cache max size (in MB)
+    "i18n-ally.translate.cacheMaxSize": 100,
+    
+    // Translation cache cleanup interval (in hours)
+    "i18n-ally.translate.cacheCleanupInterval": 24,
+    
+    // Translation cache cleanup threshold (in MB)
+    "i18n-ally.translate.cacheCleanupThreshold": 50,
+    
+    // Translation cache cleanup strategy
+    "i18n-ally.translate.cacheCleanupStrategy": "lru",
+    
+    // Translation cache compression
+    "i18n-ally.translate.cacheCompression": true,
+    
+    // Translation cache encryption
+    "i18n-ally.translate.cacheEncryption": false,
+    
+    // Translation cache encryption key
+    "i18n-ally.translate.cacheEncryptionKey": "",
+    
+    // Translation cache encryption algorithm
+    "i18n-ally.translate.cacheEncryptionAlgorithm": "aes-256-gcm",
+    
+    // Translation cache encryption iv
+    "i18n-ally.translate.cacheEncryptionIv": "",
+    
+    // Translation cache encryption salt
+    "i18n-ally.translate.cacheEncryptionSalt": "",
+    
+    // Translation cache encryption iterations
+    "i18n-ally.translate.cacheEncryptionIterations": 100000,
+    
+    // Translation cache encryption key length
+    "i18n-ally.translate.cacheEncryptionKeyLength": 32,
+    
+    // Translation cache encryption tag length
+    "i18n-ally.translate.cacheEncryptionTagLength": 16,
+    
+    // Translation cache encryption encoding
+    "i18n-ally.translate.cacheEncryptionEncoding": "hex",
+    
+    // Translation cache encryption format
+    "i18n-ally.translate.cacheEncryptionFormat": "json",
+    
+    // Translation cache encryption version
+    "i18n-ally.translate.cacheEncryptionVersion": "1.0.0",
+    
+    // Translation cache encryption metadata
+    "i18n-ally.translate.cacheEncryptionMetadata": true,
+    
+    // Translation cache encryption metadata key
+    "i18n-ally.translate.cacheEncryptionMetadataKey": "metadata",
+    
+    // Translation cache encryption metadata version
+    "i18n-ally.translate.cacheEncryptionMetadataVersion": "1.0.0",
+    
+    // Translation cache encryption metadata algorithm
+    "i18n-ally.translate.cacheEncryptionMetadataAlgorithm": "sha256",
+    
+    // Translation cache encryption metadata encoding
+    "i18n-ally.translate.cacheEncryptionMetadataEncoding": "hex",
+    
+    // Translation cache encryption metadata format
+    "i18n-ally.translate.cacheEncryptionMetadataFormat": "json",
+    
+    // Translation cache encryption metadata compression
+    "i18n-ally.translate.cacheEncryptionMetadataCompression": true,
+    
+    // Translation cache encryption metadata encryption
+    "i18n-ally.translate.cacheEncryptionMetadataEncryption": false,
+    
+    // Translation cache encryption metadata encryption key
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionKey": "",
+    
+    // Translation cache encryption metadata encryption algorithm
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionAlgorithm": "aes-256-gcm",
+    
+    // Translation cache encryption metadata encryption iv
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionIv": "",
+    
+    // Translation cache encryption metadata encryption salt
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionSalt": "",
+    
+    // Translation cache encryption metadata encryption iterations
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionIterations": 100000,
+    
+    // Translation cache encryption metadata encryption key length
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionKeyLength": 32,
+    
+    // Translation cache encryption metadata encryption tag length
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionTagLength": 16,
+    
+    // Translation cache encryption metadata encryption encoding
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionEncoding": "hex",
+    
+    // Translation cache encryption metadata encryption format
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionFormat": "json",
+    
+    // Translation cache encryption metadata encryption version
+    "i18n-ally.translate.cacheEncryptionMetadataEncryptionVersion": "1.0.0"
+  },
+  "extensions": {
+    "recommendations": [
+      "antfu.i18n-ally"
+    ]
+  }
+} 

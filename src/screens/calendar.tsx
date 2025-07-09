@@ -11,20 +11,17 @@ import {
   Grid3X3,
   List,
   Calendar as CalendarIcon,
-  Users,
-  Star,
-  Bell,
   CheckCircle,
   AlertTriangle,
   Repeat,
   Eye,
   EyeOff
 } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
-import { useReminders } from '../hooks/useReminders';
+import { useReminderContext } from '../contexts/ReminderContext';
+import { useModal } from '../contexts/ModalContext';
 import { LoginPrompt } from '../components/auth/LoginPrompt';
 import WeekView from '../components/calendar/WeekView';
 import { Colors } from '../constants/Colors';
@@ -39,6 +36,9 @@ import {
   assignEventsToTimeBlocks,
   CalendarEvent
 } from '../utils/calendarUtils';
+import BannerAdComponent from '../components/ads/BannerAdComponent';
+import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
+import { usePremium } from '../hooks/usePremium';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -46,12 +46,12 @@ type ViewMode = 'month' | 'week' | 'day' | 'agenda';
 type FilterType = 'all' | 'task' | 'event' | 'bill' | 'med' | 'note';
 
 export default function CalendarScreen({ navigation }: any) {
-  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const { user, isAnonymous } = useAuth();
+  const { isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt } = useAuthGuard();
-  const { reminders, isLoading, loadReminders } = useReminders();
+  const { reminders, loadReminders } = useReminderContext();
+  const { isPremium } = usePremium();
   
   // State management
   const [selectedDate, setSelectedDate] = useState(getTodayISO());
@@ -68,7 +68,6 @@ export default function CalendarScreen({ navigation }: any) {
       try {
         await loadReminders();
       } catch (error) {
-        console.error('Error loading reminders:', error);
       }
     };
     loadData();
@@ -95,12 +94,12 @@ export default function CalendarScreen({ navigation }: any) {
 
   // Memoize marked dates
   const markedDates = useMemo(() => {
-    return createMarkedDates(allCalendarEvents, selectedDate);
-  }, [allCalendarEvents, selectedDate]);
+    return createMarkedDates(allCalendarEvents);
+  }, [allCalendarEvents]);
 
   // Memoize events for selected date
   const selectedDateEvents = useMemo(() => {
-    return getEventsForDate(allCalendarEvents, selectedDate);
+    return getEventsForDate(allCalendarEvents, new Date(selectedDate));
   }, [allCalendarEvents, selectedDate]);
 
   // Memoize time blocks for day/agenda view
@@ -176,13 +175,15 @@ export default function CalendarScreen({ navigation }: any) {
     });
   }, [selectedDate, navigation]);
 
+  const { showEditReminderModal } = useModal();
+
   const handleEventPress = useCallback((event: CalendarEvent) => {
     if (event.type === 'event') {
-      navigation.navigate('EditReminder', { reminderId: event.id });
+      showEditReminderModal(event.id);
     } else {
       Alert.alert(event.title, event.description || '');
     }
-  }, [navigation]);
+  }, [showEditReminderModal]);
 
   const getTypeIcon = useCallback((type: string) => {
     switch (type) {
@@ -533,6 +534,17 @@ export default function CalendarScreen({ navigation }: any) {
       ) : (
         renderAgendaView()
       )}
+
+      {/* Banner Ad - Bottom of Calendar Screen (only for free users) */}
+      {!isPremium && (
+        <BannerAdComponent style={{ marginBottom: 20 }} />
+      )}
+
+      {/* Interstitial Ad Trigger - Show after user views 5 different dates */}
+      <InterstitialAdTrigger
+        triggerOnAction={true}
+        actionCompleted={selectedDate !== getTodayISO()}
+      />
 
       {/* Enhanced Floating Action Button */}
       <TouchableOpacity 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { reminderService, Family, FamilyMember, FamilyActivity, FamilyInvitation } from '../services/firebaseService';
+import { reminderService, Family, FamilyMember, FamilyActivity, FamilyInvitation, getValidFamilyMembers } from '../services/firebaseService';
 
 export const useFamily = () => {
   const { user } = useAuth();
@@ -41,7 +41,7 @@ export const useFamily = () => {
 
       if (userFamily) {
         // Load family members
-        const familyMembers = await reminderService.getFamilyMembers(userFamily.id);
+        const familyMembers = await getValidFamilyMembers(userFamily.id);
         setMembers(familyMembers);
 
         // Load family activities
@@ -52,7 +52,6 @@ export const useFamily = () => {
         setActivities([]);
       }
     } catch (err) {
-      console.error('Error loading family:', err);
       setError(err instanceof Error ? err.message : 'Failed to load family');
       setFamily(null);
       setMembers([]);
@@ -77,7 +76,6 @@ export const useFamily = () => {
 
       return familyId;
     } catch (err) {
-      console.error('Error creating family:', err);
       setError(err instanceof Error ? err.message : 'Failed to create family');
       throw err;
     }
@@ -94,11 +92,9 @@ export const useFamily = () => {
       const memberId = await reminderService.addFamilyMember(memberData);
 
       // The listeners will automatically update the members list
-      console.log('✅ Family member added, listeners will update data');
       
       return memberId;
     } catch (err) {
-      console.error('Error adding family member:', err);
       setError(err instanceof Error ? err.message : 'Failed to add family member');
       throw err;
     }
@@ -115,9 +111,7 @@ export const useFamily = () => {
       await reminderService.removeFamilyMember(memberId, family.id);
 
       // The listeners will automatically update the members list
-      console.log('✅ Family member removed, listeners will update data');
     } catch (err) {
-      console.error('Error removing family member:', err);
       setError(err instanceof Error ? err.message : 'Failed to remove family member');
       throw err;
     }
@@ -134,11 +128,9 @@ export const useFamily = () => {
       const activityId = await reminderService.createFamilyActivity(activityData);
 
       // The listeners will automatically update the activities list
-      console.log('✅ Family activity created, listeners will update data');
       
       return activityId;
     } catch (err) {
-      console.error('Error creating family activity:', err);
       setError(err instanceof Error ? err.message : 'Failed to create family activity');
       throw err;
     }
@@ -155,7 +147,6 @@ export const useFamily = () => {
       const invitations = await reminderService.getPendingInvitations(user.email);
       setPendingInvitations(invitations);
     } catch (err) {
-      console.error('Error loading pending invitations:', err);
       setPendingInvitations([]);
     }
   }, [user?.email]);
@@ -179,7 +170,6 @@ export const useFamily = () => {
 
       return invitationId;
     } catch (err) {
-      console.error('Error sending invitation:', err);
       setError(err instanceof Error ? err.message : 'Failed to send invitation');
       throw err;
     }
@@ -204,7 +194,6 @@ export const useFamily = () => {
       await loadFamily();
       await loadPendingInvitations();
     } catch (err) {
-      console.error('Error accepting invitation:', err);
       setError(err instanceof Error ? err.message : 'Failed to accept invitation');
       throw err;
     }
@@ -219,7 +208,6 @@ export const useFamily = () => {
       // Reload invitations
       await loadPendingInvitations();
     } catch (err) {
-      console.error('Error declining invitation:', err);
       setError(err instanceof Error ? err.message : 'Failed to decline invitation');
       throw err;
     }
@@ -245,7 +233,6 @@ export const useFamily = () => {
       setMembers([]);
       setActivities([]);
     } catch (err) {
-      console.error('Error leaving family:', err);
       setError(err instanceof Error ? err.message : 'Failed to leave family');
       throw err;
     }
@@ -268,7 +255,6 @@ export const useFamily = () => {
       
           setMembers(newMembers);
         } catch (error) {
-          console.error('Error processing family members from listener:', error);
           // Fallback to manual load on error
           loadFamily();
         }
@@ -279,31 +265,27 @@ export const useFamily = () => {
       
           setActivities(newActivities);
         } catch (error) {
-          console.error('Error processing family activities from listener:', error);
           // Fallback to manual load on error
           loadFamily();
         }
       });
     } catch (error) {
-      console.error('Error setting up family listeners:', error);
       // Fallback to manual loading
       loadFamily();
     }
 
     return () => {
-      console.log('🔇 Cleaning up family listeners');
+              // Cleaning up family listeners
       if (unsubscribeMembers) {
         try {
           unsubscribeMembers();
         } catch (error) {
-          console.error('Error cleaning up members listener:', error);
         }
       }
       if (unsubscribeActivities) {
         try {
           unsubscribeActivities();
         } catch (error) {
-          console.error('Error cleaning up activities listener:', error);
         }
       }
     };

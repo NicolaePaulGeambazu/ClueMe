@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Modal, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Edit, Trash2, CheckSquare, Hash, List as ListIcon, Star, FileText, Search, Lock, ChevronRight, X } from 'lucide-react-native';
+import { ArrowLeft, Plus, Edit, Trash2, CheckSquare, Hash, List as ListIcon, Star, FileText, Search, Lock, ChevronRight, X, Users } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 import { useTheme } from '../contexts/ThemeContext';
@@ -29,13 +29,14 @@ export default function ListsScreen({ navigation }: any) {
   const [editingList, setEditingList] = useState<UserList | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [listFilter, setListFilter] = useState<'my' | 'shared'>('my');
 
   const styles = createStyles(colors);
 
   // Debug log only when relevant data changes
   useEffect(() => {
     if (__DEV__) {
-      console.log('📋 ListsScreen rendering:', {
+      console.log({
         isLoading,
         listsCount: lists.length,
         searchQuery,
@@ -44,14 +45,19 @@ export default function ListsScreen({ navigation }: any) {
     }
   }, [isLoading, lists, searchQuery, error]);
 
-  // Memoize filtered lists
+  // Split lists into myLists and sharedLists
+  const myLists = React.useMemo(() => lists.filter(list => list.createdBy === user?.uid), [lists, user?.uid]);
+  const sharedLists = React.useMemo(() => lists.filter(list => list.createdBy !== user?.uid), [lists, user?.uid]);
+
+  // Filtered lists based on filter and search
   const filteredLists = React.useMemo(() => {
-    if (!searchQuery) return lists;
-    return lists.filter(list =>
+    const base = listFilter === 'my' ? myLists : sharedLists;
+    if (!searchQuery) return base;
+    return base.filter(list =>
       list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (list.description && list.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-  }, [lists, searchQuery]);
+  }, [listFilter, myLists, sharedLists, searchQuery]);
 
   // Error/empty state component
   const ErrorState = () => (
@@ -65,18 +71,14 @@ export default function ListsScreen({ navigation }: any) {
   // Load lists
   const loadLists = useCallback(async () => {
     if (!user?.uid) {
-      console.log('No user, skipping lists load');
       return;
     }
 
     setIsLoading(true);
     try {
-      console.log('🔄 Loading lists...');
       const userLists = await listService.getUserLists(user.uid);
-      console.log(`✅ Loaded ${userLists.length} lists`);
       setLists(userLists);
     } catch (error) {
-      console.error('❌ Error loading lists:', error);
       Alert.alert('Error', 'Failed to load lists. Please try again.');
     } finally {
       setIsLoading(false);
@@ -90,18 +92,25 @@ export default function ListsScreen({ navigation }: any) {
 
   // Set up real-time listener for lists
   useEffect(() => {
-    if (!user?.uid) {return;}
+    if (!user?.uid) {
+      return;
+    }
 
-    console.log('👂 Setting up lists listener...');
-    const unsubscribe = listService.onUserListsChange(user.uid, (userLists) => {
-      console.log('📡 Lists updated via listener:', userLists.length);
-      setLists(userLists);
-    });
+    try {
+      const unsubscribe = listService.onUserListsChange(user.uid, (userLists) => {
+        setLists(userLists);
+      });
 
-    return () => {
-      console.log('🔇 Cleaning up lists listener...');
-      unsubscribe();
-    };
+      // Force a manual check after 2 seconds to see if listener works
+      setTimeout(() => {
+        // This will trigger the listener callback if it's working
+      }, 2000);
+
+      return () => {
+        unsubscribe();
+      };
+    } catch (error) {
+    }
   }, [user?.uid]);
 
   const handleRefresh = useCallback(async () => {
@@ -109,7 +118,6 @@ export default function ListsScreen({ navigation }: any) {
     try {
       await loadLists();
     } catch (error) {
-      console.error('Error refreshing:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -150,7 +158,6 @@ export default function ListsScreen({ navigation }: any) {
     setActionLoading(true);
     setError(null);
     try {
-      console.log('🔄 Creating new list...');
       const listId = await listService.createList({
         name: listData.name,
         description: listData.description,
@@ -160,10 +167,8 @@ export default function ListsScreen({ navigation }: any) {
         createdBy: user.uid,
         familyId: family?.id || null,
       });
-      console.log('✅ List created successfully:', listId);
       
       // The listener will automatically update the lists
-      console.log('📡 List created, listener will update data');
       
       setIsCreateModalVisible(false);
     } catch (err: any) {
@@ -183,17 +188,14 @@ export default function ListsScreen({ navigation }: any) {
     setActionLoading(true);
     setError(null);
     try {
-      console.log('🔄 Updating list...');
       await listService.updateList(editingList.id, {
         name: listData.name,
         description: listData.description,
         format: listData.format,
         isPrivate: listData.isPrivate,
       });
-      console.log('✅ List updated successfully');
       
       // The listener will automatically update the lists
-      console.log('📡 List updated, listener will update data');
       
       setIsCreateModalVisible(false);
       setEditingList(null);
@@ -217,12 +219,9 @@ export default function ListsScreen({ navigation }: any) {
             setActionLoading(true);
             setError(null);
             try {
-              console.log('🔄 Deleting list...');
               await listService.deleteList(list.id);
-              console.log('✅ List deleted successfully');
               
               // The listener will automatically update the lists
-              console.log('📡 List deleted, listener will update data');
             } catch (err: any) {
               setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
             } finally {
@@ -236,16 +235,12 @@ export default function ListsScreen({ navigation }: any) {
 
   const handleToggleFavorite = async (list: UserList) => {
     try {
-      console.log('🔄 Toggling favorite...');
       await listService.updateList(list.id, {
         isFavorite: !list.isFavorite,
       });
-      console.log('✅ Favorite toggled successfully');
       
       // The listener will automatically update the lists
-      console.log('📡 Favorite toggled, listener will update data');
     } catch (error) {
-      console.error('❌ Error toggling favorite:', error);
       Alert.alert('Error', 'Failed to update list. Please try again.');
     }
   };
@@ -254,6 +249,8 @@ export default function ListsScreen({ navigation }: any) {
     setSearchQuery('');
     setIsSearchFocused(false);
   };
+
+
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -289,6 +286,39 @@ export default function ListsScreen({ navigation }: any) {
             </TouchableOpacity>
           )}
         </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 12 }}>
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: listFilter === 'my' ? colors.primary + '22' : 'transparent',
+            paddingVertical: 10,
+            borderRadius: 8,
+            marginHorizontal: 8,
+            alignItems: 'center',
+          }}
+          onPress={() => setListFilter('my')}
+        >
+          <Text style={{ color: listFilter === 'my' ? colors.primary : colors.textSecondary, fontFamily: Fonts.text.semibold }}>
+            {t('lists.myLists') || 'My Lists'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{
+            flex: 1,
+            backgroundColor: listFilter === 'shared' ? colors.primary + '22' : 'transparent',
+            paddingVertical: 10,
+            borderRadius: 8,
+            marginHorizontal: 8,
+            alignItems: 'center',
+          }}
+          onPress={() => setListFilter('shared')}
+        >
+          <Text style={{ color: listFilter === 'shared' ? colors.primary : colors.textSecondary, fontFamily: Fonts.text.semibold }}>
+            {t('lists.sharedLists') || 'Shared Lists'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView

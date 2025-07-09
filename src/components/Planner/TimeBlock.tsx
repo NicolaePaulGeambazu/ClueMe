@@ -68,7 +68,6 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       const now = new Date();
       return dueDateTime < now;
     } catch (error) {
-      console.warn('Error checking if reminder is overdue:', error);
       // Fallback to date-only comparison
       const dueDate = new Date(reminder.dueDate);
       const now = new Date();

@@ -1,7 +1,55 @@
 import { Platform } from 'react-native';
 
+export interface FontFamily {
+  regular: string;
+  medium: string;
+  semibold: string;
+  bold: string;
+  heavy: string;
+}
+
+export interface FontConfig {
+  display: FontFamily;
+  text: FontFamily;
+  headline: string;
+  title: string;
+  body: string;
+  bodyMedium: string;
+  bodySemibold: string;
+  caption: string;
+  button: string;
+}
+
+export interface FontSizeConfig {
+  largeTitle: number;
+  title1: number;
+  title2: number;
+  title3: number;
+  headline: number;
+  body: number;
+  callout: number;
+  subheadline: number;
+  footnote: number;
+  caption1: number;
+  caption2: number;
+}
+
+export interface LineHeightConfig {
+  largeTitle: number;
+  title1: number;
+  title2: number;
+  title3: number;
+  headline: number;
+  body: number;
+  callout: number;
+  subheadline: number;
+  footnote: number;
+  caption1: number;
+  caption2: number;
+}
+
 // iOS System Font Configuration
-export const Fonts = {
+export const Fonts: FontConfig = {
   // System fonts that are automatically available on iOS
   display: {
     regular: Platform.OS === 'ios' ? 'System' : 'System',
@@ -31,7 +79,7 @@ export const Fonts = {
 };
 
 // Font size guidelines following iOS Human Interface Guidelines
-export const FontSizes = {
+export const FontSizes: FontSizeConfig = {
   // Large Title (34pt) - Main screen titles
   largeTitle: 34,
 
@@ -67,7 +115,7 @@ export const FontSizes = {
 };
 
 // Line height guidelines for optimal readability
-export const LineHeights = {
+export const LineHeights: LineHeightConfig = {
   largeTitle: 41,
   title1: 34,
   title2: 28,

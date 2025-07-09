@@ -111,7 +111,6 @@ export default function AddCountdownScreen({ navigation, route }: any) {
           updatedAt: new Date(),
         };
         await firebaseService.updateCountdown(updatedCountdown);
-        console.log('✅ Countdown updated successfully:', updatedCountdown.id);
       } else {
         // Add new countdown
         const newCountdown = {
@@ -123,13 +122,10 @@ export default function AddCountdownScreen({ navigation, route }: any) {
           color: colors.primary,
         };
         await firebaseService.createCountdown(newCountdown);
-        console.log('✅ Countdown created successfully:', newCountdown.id);
       }
 
       navigation.goBack();
     } catch (error: any) {
-      console.error('❌ Error saving countdown:', error);
-
       let errorMessage = 'Failed to save countdown';
       let errorTitle = 'Save Error';
 
@@ -154,7 +150,6 @@ export default function AddCountdownScreen({ navigation, route }: any) {
         {
           text: 'Retry',
           onPress: () => {
-            console.log('⏰ Retrying countdown save...');
             setTimeout(() => handleSaveCountdown(), 1000);
           },
         },

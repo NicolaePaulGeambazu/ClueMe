@@ -25,6 +25,10 @@ export interface Reminder {
   endDate?: Date;
   endTime?: string;
   
+  // Timezone fields - Critical for proper notification scheduling
+  timezone?: string; // IANA timezone identifier (e.g., 'America/New_York')
+  timezoneOffset?: number; // User's timezone offset in minutes when reminder was created
+  
   // Location and metadata
   location?: string;
   tags?: string[];
@@ -40,9 +44,13 @@ export interface Reminder {
   recurringEndAfter?: number; // Number of occurrences before ending (optional)
   recurringGroupId?: string; // ID to group related recurring reminders together
   
-  // Notification fields
+  // Notification fields - Updated for premium features
   hasNotification?: boolean;
   notificationTimings?: NotificationTiming[];
+  notificationTimes?: number[]; // Legacy field for backward compatibility (minutes before due)
+  
+  // Premium feature flags
+  isPremiumFeature?: boolean; // Indicates if this reminder uses premium features
   
   // Assignment fields
   assignedTo?: string[];
@@ -52,6 +60,12 @@ export interface Reminder {
   sharedWithFamily?: boolean;
   sharedForEditing?: boolean;
   familyId?: string;
+  
+  // Task chunking fields - ADHD-friendly feature
+  isChunked?: boolean; // Indicates if this task has been broken down into sub-tasks
+  subTasks?: SubTask[]; // Array of sub-tasks
+  parentTaskId?: string; // ID of parent task (for sub-tasks)
+  chunkedProgress?: number; // Progress percentage (0-100) for chunked tasks
   
   // System fields
   completed?: boolean;
@@ -99,11 +113,24 @@ export enum NotificationType {
   AFTER = 'after',
 }
 
+// Sub-task interface for task chunking
+export interface SubTask {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  order: number; // For maintaining sub-task order
+  estimatedMinutes?: number; // Estimated time to complete
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Notification timing interface
 export interface NotificationTiming {
   type: NotificationType;
   value: number; // minutes before/after due time, or 0 for exact
-  labelKey: string; // Translation key for the label
+  label?: string; // Human-readable label (legacy)
+  labelKey?: string; // Translation key for the label (new)
 }
 
 // Form data interface for creating/editing reminders
@@ -130,6 +157,12 @@ export interface ReminderFormData {
   recurringStartDate?: Date;
   recurringEndDate?: Date;
   assignedTo: string[];
+  
+  // Task chunking fields
+  isChunked?: boolean;
+  subTasks?: SubTask[];
+  parentTaskId?: string;
+  chunkedProgress?: number;
 }
 
 // Recurring occurrence interface

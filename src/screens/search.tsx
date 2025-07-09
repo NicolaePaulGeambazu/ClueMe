@@ -24,7 +24,6 @@ export default function SearchScreen({ navigation }: any) {
   const handleSearch = () => {
     const searchAction = () => {
       // Mock search - replace with actual API call
-      console.log('Searching for:', searchQuery);
       setSearchResults([
         { id: 1, title: 'Sample Reminder 1', description: 'This is a sample reminder' },
         { id: 2, title: 'Sample Reminder 2', description: 'Another sample reminder' },
@@ -104,7 +103,6 @@ export default function SearchScreen({ navigation }: any) {
       <LoginPrompt
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
-        onSuccess={() => executeAfterAuth(() => console.log('Search access granted'))}
         title={t('navigation.access.searchReminders')}
         message={t('add.anonymousBanner')}
       />

@@ -44,7 +44,6 @@ const createMockReminder = (overrides: Partial<Reminder> = {}): Reminder => ({
 
 // Simple test runner
 const runTests = () => {
-  console.log('🧪 Running RecurringReminderUtils tests...');
   
   let passedTests = 0;
   let failedTests = 0;
@@ -52,10 +51,8 @@ const runTests = () => {
   const test = (name: string, fn: () => void) => {
     try {
       fn();
-      console.log(`✅ ${name}`);
       passedTests++;
     } catch (error) {
-      console.error(`❌ ${name}:`, error);
       failedTests++;
     }
   };
@@ -501,13 +498,10 @@ const runTests = () => {
     expect(endTime - startTime).toBeLessThanOrEqual(100); // Should be fast
   });
 
-  console.log(`\n📊 Test Results: ${passedTests} passed, ${failedTests} failed`);
   
   if (failedTests > 0) {
-    console.error(`❌ ${failedTests} tests failed!`);
     process.exit(1);
   } else {
-    console.log('🎉 All tests passed!');
   }
 };
 

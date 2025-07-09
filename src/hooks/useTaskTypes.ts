@@ -90,63 +90,11 @@ export const useTaskTypes = () => {
       setTaskTypes(defaultTaskTypes);
       
     } catch (err) {
-      console.error('Error loading task types:', err);
       setError('Failed to load task types');
       // Use fallback types on error
       setTaskTypes(defaultTaskTypes);
     } finally {
       setIsLoading(false);
-    }
-  }, []);
-
-  // Create task type (simplified - just add to local state)
-  const createTaskType = useCallback(async (taskTypeData: Omit<TaskType, 'id' | 'createdAt' | 'updatedAt'>) => {
-    try {
-      setError(null);
-      
-      const newTaskType: TaskType = {
-        id: Date.now().toString(),
-        ...taskTypeData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      setTaskTypes(prev => [...prev, newTaskType]);
-      return newTaskType.id;
-    } catch (err) {
-      console.error('Error creating task type:', err);
-      setError('Failed to create task type');
-      throw err;
-    }
-  }, []);
-
-  // Update task type (simplified - just update local state)
-  const updateTaskType = useCallback(async (id: string, updates: Partial<TaskType>) => {
-    try {
-      setError(null);
-      
-      setTaskTypes(prev => prev.map(type => 
-        type.id === id 
-          ? { ...type, ...updates, updatedAt: new Date() }
-          : type
-      ));
-    } catch (err) {
-      console.error('Error updating task type:', err);
-      setError('Failed to update task type');
-      throw err;
-    }
-  }, []);
-
-  // Delete task type (simplified - just remove from local state)
-  const deleteTaskType = useCallback(async (id: string) => {
-    try {
-      setError(null);
-      
-      setTaskTypes(prev => prev.filter(type => type.id !== id));
-    } catch (err) {
-      console.error('Error deleting task type:', err);
-      setError('Failed to delete task type');
-      throw err;
     }
   }, []);
 
@@ -158,40 +106,9 @@ export const useTaskTypes = () => {
       // Reset to default types
       setTaskTypes(defaultTaskTypes);
     } catch (err) {
-      console.error('Error seeding default task types:', err);
       setError('Failed to seed default task types');
     }
   }, []);
-
-  // Get task type by ID
-  const getTaskTypeById = useCallback((id: string): TaskType | null => {
-    return taskTypes.find(type => type.id === id) || null;
-  }, [taskTypes]);
-
-  // Get task type by name
-  const getTaskTypeByName = useCallback((name: string): TaskType | null => {
-    return taskTypes.find(type => type.name === name) || null;
-  }, [taskTypes]);
-
-  // Get active task types
-  const getActiveTaskTypes = useCallback((): TaskType[] => {
-    return taskTypes.filter(type => type.isActive);
-  }, [taskTypes]);
-
-  // Get default task types
-  const getDefaultTaskTypes = useCallback((): TaskType[] => {
-    return taskTypes.filter(type => type.isDefault && type.isActive);
-  }, [taskTypes]);
-
-  // Listen to task type changes (simplified - no-op since we're using local state)
-  const onTaskTypesChange = useCallback((callback: (types: TaskType[]) => void) => {
-    // Since we're using local state, we don't need real-time updates
-    // Just call the callback with current types
-    callback(taskTypes);
-    
-    // Return a no-op unsubscribe function
-    return () => {};
-  }, [taskTypes]);
 
   // Load task types on mount
   useEffect(() => {
@@ -203,14 +120,6 @@ export const useTaskTypes = () => {
     isLoading,
     error,
     loadTaskTypes,
-    createTaskType,
-    updateTaskType,
-    deleteTaskType,
     seedDefaultTaskTypes,
-    getTaskTypeById,
-    getTaskTypeByName,
-    getActiveTaskTypes,
-    getDefaultTaskTypes,
-    onTaskTypesChange,
   };
 };

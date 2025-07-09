@@ -1,4 +1,18 @@
-import { format as formatDateFns, parseISO, isToday as isTodayFns, isYesterday as isYesterdayFns, isThisWeek, isThisYear, getDay, startOfMonth, getDaysInMonth as getDaysInMonthFns, addDays, addWeeks, addMonths, addYears, addHours, isBefore, isAfter, isEqual, startOfDay, endOfDay } from 'date-fns';
+import { format as formatDateFns, parseISO, isToday as isTodayFns, isYesterday as isYesterdayFns, isThisWeek, isThisYear, getDay, startOfMonth, getDaysInMonth as getDaysInMonthFns, addDays, addWeeks, addMonths, addYears, addHours, isBefore, isAfter, isEqual, startOfDay, endOfDay, getDate, getMonth, getYear, isValid } from 'date-fns';
+import { 
+  generateOccurrences,
+  getNextOccurrenceDate,
+  getRecurringDescription,
+  validateRecurringConfig
+} from '../design-system/reminders/utils/recurring-utils';
+import {
+  createTimezoneAwareDate,
+  convertToTimezone,
+  convertFromTimezone,
+  getCurrentTimezone,
+  getTimezoneAbbreviation
+} from './timezoneUtils';
+import { Reminder, ReminderType, ReminderPriority, ReminderStatus, RepeatPattern } from '../design-system/reminders/types';
 
 /**
  * Calendar-specific date utilities that handle timezone and date comparison consistently
@@ -26,13 +40,35 @@ export interface CalendarEvent {
   location?: string;
   type: string;
   isRecurring: boolean;
-  recurringEndDate?: string;
+  recurringEndDate?: Date;
   completed?: boolean;
   priority?: string;
   status?: string;
   userId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  timezone?: string;
+  notificationCount?: number;
+  isNextOccurrence?: boolean;
+}
+
+interface ReminderWithDates extends Reminder {
+  recurringEndDate?: Date;
+}
+
+interface MarkedDateConfig {
+  marked: boolean;
+  dotColor: string;
+  textColor: string;
+  selectedColor: string;
+  dots?: Array<{
+    color: string;
+    key: string;
+  }>;
+}
+
+interface MarkedDates {
+  [date: string]: MarkedDateConfig;
 }
 
 /**
@@ -40,111 +76,71 @@ export interface CalendarEvent {
  * This ensures all date comparisons use the same format
  */
 export function getTodayISO(): string {
-  const today = new Date();
-  return formatDateFns(today, 'yyyy-MM-dd');
+  return formatDateFns(new Date(), 'yyyy-MM-dd');
 }
 
 /**
  * Parse a date string or Firestore timestamp to a Date object with proper timezone handling
  */
-export function parseCalendarDate(dateInput: string | Date | any, timeString?: string): Date {
-  // Handle Firestore Timestamp objects
-  if (dateInput && typeof dateInput === 'object' && 'toDate' in dateInput && typeof dateInput.toDate === 'function') {
-    try {
-      const date = dateInput.toDate();
-      if (timeString) {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        if (!isNaN(hours) && !isNaN(minutes)) {
-          date.setHours(hours, minutes, 0, 0);
-        }
-      } else {
-        date.setHours(0, 0, 0, 0);
-      }
-      return date;
-    } catch (error) {
-      console.warn('parseCalendarDate: Error converting Firestore timestamp:', error);
-      return new Date(NaN);
-    }
-  }
-  
-  // Handle Firestore timestamp objects with seconds/nanoseconds
-  if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
-    try {
-      const seconds = dateInput.seconds || 0;
-      const nanoseconds = dateInput.nanoseconds || 0;
-      const date = new Date(seconds * 1000 + nanoseconds / 1000000);
-      if (timeString) {
-        const [hours, minutes] = timeString.split(':').map(Number);
-        if (!isNaN(hours) && !isNaN(minutes)) {
-          date.setHours(hours, minutes, 0, 0);
-        }
-      } else {
-        date.setHours(0, 0, 0, 0);
-      }
-      return date;
-    } catch (error) {
-      console.warn('parseCalendarDate: Error converting Firestore timestamp object:', error);
-      return new Date(NaN);
-    }
+export function parseCalendarDate(dateInput: string | Date | unknown, timeString?: string): Date {
+  if (!dateInput) {
+    return new Date();
   }
 
-  // Handle Date objects
   if (dateInput instanceof Date) {
-    const date = new Date(dateInput);
-    if (timeString) {
-      const [hours, minutes] = timeString.split(':').map(Number);
-      if (!isNaN(hours) && !isNaN(minutes)) {
-        date.setHours(hours, minutes, 0, 0);
+    return dateInput;
+  }
+
+  if (typeof dateInput === 'string') {
+    try {
+      // Handle ISO date strings
+      if (dateInput.includes('T') || dateInput.includes('Z')) {
+        return parseISO(dateInput);
       }
-    } else {
-      date.setHours(0, 0, 0, 0);
+      
+      // Handle YYYY-MM-DD format
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+        const parsed = parseISO(dateInput);
+        if (isValid(parsed)) {
+          return parsed;
+        }
+      }
+      
+      // Handle other date formats
+      const parsed = new Date(dateInput);
+      if (isValid(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      // Fallback to current date
     }
-    return date;
   }
 
-  // Handle string dates (original logic)
-  if (!dateInput || typeof dateInput !== 'string' || dateInput.length < 8) {
-    console.warn('parseCalendarDate: Invalid or missing dateString:', dateInput);
-    return new Date(NaN);
-  }
-
-  let date: Date;
-  try {
-    date = parseISO(dateInput);
-  } catch (e) {
-    console.warn('parseCalendarDate: Failed to parse dateString:', dateInput, e);
-    return new Date(NaN);
-  }
-  
-  if (timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      date.setHours(hours, minutes, 0, 0);
-    }
-  } else {
-    date.setHours(0, 0, 0, 0);
-  }
-
-  return date;
+  return new Date();
 }
 
 /**
  * Check if a date is today using consistent comparison
  */
-export function isDateToday(date: Date | string | any): boolean {
-  const dateObj = typeof date === 'string' ? parseISO(date) : 
-                 date instanceof Date ? date :
-                 parseCalendarDate(date);
-  return isTodayFns(dateObj);
+export function isDateToday(date: Date | string | unknown): boolean {
+  const dateObj = typeof date === 'string' ? parseCalendarDate(date) : date;
+  if (!(dateObj instanceof Date)) {
+    return false;
+  }
+  
+  const today = new Date();
+  return formatDateFns(dateObj, 'yyyy-MM-dd') === formatDateFns(today, 'yyyy-MM-dd');
 }
 
 /**
  * Check if a date is in the past (before today)
  */
-export function isDateInPast(date: Date | string | any): boolean {
-  const dateObj = typeof date === 'string' ? parseISO(date) : 
-                 date instanceof Date ? date :
-                 parseCalendarDate(date);
+export function isDateInPast(date: Date | string | unknown): boolean {
+  const dateObj = typeof date === 'string' ? parseCalendarDate(date) : date;
+  if (!(dateObj instanceof Date)) {
+    return false;
+  }
+  
   const today = startOfDay(new Date());
   return isBefore(dateObj, today);
 }
@@ -152,23 +148,25 @@ export function isDateInPast(date: Date | string | any): boolean {
 /**
  * Check if a date is in the future (after today)
  */
-export function isDateInFuture(date: Date | string | any): boolean {
-  const dateObj = typeof date === 'string' ? parseISO(date) : 
-                 date instanceof Date ? date :
-                 parseCalendarDate(date);
+export function isDateInFuture(date: Date | string | unknown): boolean {
+  const dateObj = typeof date === 'string' ? parseCalendarDate(date) : date;
+  if (!(dateObj instanceof Date)) {
+    return false;
+  }
+  
   const today = startOfDay(new Date());
-  return isAfter(dateObj, today);
+  return !isBefore(dateObj, today) && !isDateToday(dateObj);
 }
 
 /**
  * Compare two dates consistently
  * Returns: -1 if date1 < date2, 0 if equal, 1 if date1 > date2
  */
-export function compareCalendarDates(date1: Date | string | any, date2: Date | string | any): number {
-  const d1 = typeof date1 === 'string' ? parseISO(date1) : 
+export function compareCalendarDates(date1: Date | string | unknown, date2: Date | string | unknown): number {
+  const d1 = typeof date1 === 'string' ? parseCalendarDate(date1) : 
              date1 instanceof Date ? date1 :
              parseCalendarDate(date1);
-  const d2 = typeof date2 === 'string' ? parseISO(date2) : 
+  const d2 = typeof date2 === 'string' ? parseCalendarDate(date2) : 
              date2 instanceof Date ? date2 :
              parseCalendarDate(date2);
   
@@ -181,273 +179,154 @@ export function compareCalendarDates(date1: Date | string | any, date2: Date | s
  * Get events for a specific date with proper date comparison
  * This fixes the issue where events show on wrong dates
  */
-export function getEventsForDate(events: CalendarEvent[], dateString: string): CalendarEvent[] {
+export function getEventsForDate(events: CalendarEvent[], targetDate: Date, timezone?: string): CalendarEvent[] {
+  const targetDateStr = formatDateFns(targetDate, 'yyyy-MM-dd');
+  
   return events.filter(event => {
-    // Use consistent date string comparison with safety check
-    return event.dateString && typeof event.dateString === 'string' && event.dateString === dateString;
+    const eventDateStr = formatDateFns(event.date, 'yyyy-MM-dd');
+    return eventDateStr === targetDateStr;
   });
 }
 
 /**
  * Check if a reminder is overdue with proper timezone handling
  */
-export function isReminderOverdue(dueDate?: string | Date | any, completed?: boolean, dueTime?: string): boolean {
-  if (!dueDate || completed) {
+export function isReminderOverdue(dueDate?: string | Date | unknown, completed?: boolean, dueTime?: string, timezone?: string): boolean {
+  if (completed) {
     return false;
   }
 
-  try {
-    const dueDateTime = parseCalendarDate(dueDate, dueTime);
-    const now = new Date();
-    
-    return dueDateTime < now;
-  } catch (error) {
-    console.warn('Error checking if reminder is overdue:', error);
-    // Fallback to date-only comparison
-    const today = getTodayISO();
-    // Convert dueDate to string for comparison if it's not already a string
-    const dueDateStr = typeof dueDate === 'string' ? dueDate : 
-                      dueDate instanceof Date ? dueDate.toISOString().split('T')[0] :
-                      dueDate && typeof dueDate === 'object' && 'toDate' in dueDate ? dueDate.toDate().toISOString().split('T')[0] :
-                      dueDate && typeof dueDate === 'object' && 'seconds' in dueDate ? new Date(dueDate.seconds * 1000).toISOString().split('T')[0] :
-                      '';
-    return dueDateStr < today;
+  if (!dueDate) {
+    return false;
   }
+
+  const dueDateObj = typeof dueDate === 'string' ? parseCalendarDate(dueDate) : dueDate;
+  if (!(dueDateObj instanceof Date)) {
+    return false;
+  }
+
+  const now = new Date();
+  return dueDateObj < now;
 }
 
 /**
- * Generate recurring occurrences for calendar display
- * This fixes the infinite loop and end date issues
+ * Generate recurring occurrences for calendar display with advanced pattern support
+ * This uses the new recurring utilities for better pattern handling
  */
 export function generateRecurringOccurrences(
-  baseReminder: any,
+  baseReminder: ReminderWithDates,
   startDate: Date = new Date(),
   endDate?: Date,
   maxOccurrences: number = 50
 ): CalendarEvent[] {
   if (!baseReminder.isRecurring || !baseReminder.repeatPattern || !baseReminder.dueDate) {
-    if (!baseReminder.dueDate) {
-      console.warn('generateRecurringOccurrences: Reminder missing dueDate:', baseReminder);
-    }
     return [];
   }
 
-  console.log('🔄 Generating recurring occurrences for:', {
-    id: baseReminder.id,
-    title: baseReminder.title,
-    pattern: baseReminder.repeatPattern,
-    repeatDays: baseReminder.repeatDays,
-    endDate: baseReminder.recurringEndDate,
-    recurringEndAfter: baseReminder.recurringEndAfter
-  });
+  // Convert recurringEndDate from ISO string to Date object if needed
+  const reminderWithProperDates: ReminderWithDates = {
+    ...baseReminder,
+    recurringEndDate: baseReminder.recurringEndDate ? 
+      (typeof baseReminder.recurringEndDate === 'string' ? new Date(baseReminder.recurringEndDate) : baseReminder.recurringEndDate) : 
+      undefined
+  };
 
-  const occurrences: CalendarEvent[] = [];
-  const baseDate = parseCalendarDate(baseReminder.dueDate);
-  if (isNaN(baseDate.getTime())) {
-    console.warn('generateRecurringOccurrences: Invalid baseDate for reminder:', baseReminder);
-    return [];
-  }
+  // Use the new recurring utilities with properly formatted dates
+  const occurrences = generateOccurrences(reminderWithProperDates, maxOccurrences, startDate);
   
-  // If base date is in the past, start from today
-  let currentDate = isBefore(baseDate, startOfDay(new Date())) 
-    ? startOfDay(new Date()) 
-    : baseDate;
-
-  // Set end date to 6 months from now if not specified
-  const defaultEndDate = addMonths(new Date(), 6);
-  const finalEndDate = endDate || defaultEndDate;
-
-  let iterationCount = 0;
-  let occurrenceCount = 0;
-  
-  while (
-    currentDate <= finalEndDate && 
-    iterationCount < maxOccurrences &&
-    occurrences.length < maxOccurrences
-  ) {
-    // Check if we've reached the recurring end date
-    if (baseReminder.recurringEndDate) {
-      const recurringEnd = parseCalendarDate(baseReminder.recurringEndDate);
-      if (isAfter(currentDate, recurringEnd)) {
-        console.log('🔄 Reached recurring end date:', formatDateFns(recurringEnd, 'yyyy-MM-dd'));
-        break;
-      }
-    }
-
-    // Check if we've reached the recurring end after count
-    if (baseReminder.recurringEndAfter && occurrenceCount >= baseReminder.recurringEndAfter) {
-      console.log('🔄 Reached recurring end after count:', baseReminder.recurringEndAfter);
-      break;
-    }
-
-    const occurrence: CalendarEvent = {
-      id: `${baseReminder.id}_${formatDateFns(currentDate, 'yyyy-MM-dd')}`,
-      title: baseReminder.title,
-      description: baseReminder.description,
-      date: new Date(currentDate),
-      dateString: formatDateFns(currentDate, 'yyyy-MM-dd'),
-      time: baseReminder.dueTime,
-      dueTime: baseReminder.dueTime,
-      startTime: baseReminder.startTime,
-      endTime: baseReminder.endTime,
-      location: baseReminder.location,
-      type: baseReminder.type,
+  // Convert to CalendarEvent format
+  const calendarEvents: CalendarEvent[] = occurrences.map((occurrence) => {
+    const timezone = reminderWithProperDates.timezone || getCurrentTimezone();
+    const timezoneAbbr = getTimezoneAbbreviation(timezone);
+    
+    return {
+      id: occurrence.reminder.id,
+      title: occurrence.reminder.title,
+      description: occurrence.reminder.description,
+      date: occurrence.date,
+      dateString: formatDateFns(occurrence.date, 'yyyy-MM-dd'),
+      time: occurrence.reminder.dueTime,
+      dueTime: occurrence.reminder.dueTime,
+      startTime: occurrence.reminder.startTime,
+      endTime: occurrence.reminder.endTime,
+      location: occurrence.reminder.location,
+      type: occurrence.reminder.type,
       isRecurring: true,
-      recurringEndDate: baseReminder.recurringEndDate,
-      completed: baseReminder.completed,
-      priority: baseReminder.priority,
-      status: baseReminder.status,
-      userId: baseReminder.userId,
-      createdAt: baseReminder.createdAt,
-      updatedAt: baseReminder.updatedAt,
+      recurringEndDate: occurrence.reminder.recurringEndDate,
+      completed: occurrence.reminder.completed,
+      priority: occurrence.reminder.priority,
+      status: occurrence.reminder.status,
+      userId: occurrence.reminder.userId,
+      createdAt: occurrence.reminder.createdAt,
+      updatedAt: occurrence.reminder.updatedAt,
+      timezone: timezone,
+      notificationCount: occurrence.reminder.notificationTimings?.length || 0,
+      isNextOccurrence: occurrence.isNext
     };
-
-    occurrences.push(occurrence);
-    occurrenceCount++;
-
-    // Calculate next occurrence
-    const nextDate = calculateNextOccurrence(currentDate, baseReminder.repeatPattern, baseReminder.customInterval, baseReminder.repeatDays);
-    
-    // Safety check to prevent infinite loops
-    if (nextDate <= currentDate) {
-      console.warn('🔄 Next occurrence date is not in the future, stopping generation:', {
-        currentDate: formatDateFns(currentDate, 'yyyy-MM-dd'),
-        nextDate: formatDateFns(nextDate, 'yyyy-MM-dd'),
-        pattern: baseReminder.repeatPattern,
-        repeatDays: baseReminder.repeatDays
-      });
-      break;
-    }
-    
-    currentDate = nextDate;
-    iterationCount++;
-  }
-
-  console.log('🔄 Generated', occurrences.length, 'occurrences for reminder:', baseReminder.id, {
-    pattern: baseReminder.repeatPattern,
-    repeatDays: baseReminder.repeatDays,
-    iterations: iterationCount
   });
   
-  return occurrences;
+  return calendarEvents;
 }
 
 /**
- * Calculate the next occurrence date for recurring reminders
- * This fixes the Monday/Tuesday for 4 weeks pattern issue
+ * Calculate next occurrence using the new recurring utilities
  */
 export function calculateNextOccurrence(
-  currentDate: Date,
-  repeatPattern: string,
-  customInterval: number = 1,
-  repeatDays?: number[]
+  currentDate: Date, 
+  repeatPattern: string, 
+  customInterval?: number, 
+  repeatDays?: number[],
+  timezone?: string
 ): Date {
-  switch (repeatPattern) {
-    case 'hour':
-    case 'hourly':
-      return addHours(currentDate, customInterval);
-      
-    case 'daily':
-      return addDays(currentDate, customInterval);
-      
-    case 'weekly':
-      if (repeatDays && repeatDays.length > 0) {
-        // Enhanced logic for multiple days per week (e.g., Monday/Tuesday)
-        let nextDate = new Date(currentDate);
-        let found = false;
-        
-        // First, try to find the next occurrence in the current week
-        for (let i = 1; i <= 7; i++) {
-          const testDate = addDays(currentDate, i);
-          if (repeatDays.includes(testDate.getDay())) {
-            nextDate = testDate;
-            found = true;
-            break;
-          }
-        }
-        
-        // If not found in current week, move to next week and find first occurrence
-        if (!found) {
-          // Move to next week based on customInterval
-          nextDate = addWeeks(currentDate, customInterval);
-          
-          // Find the first occurrence on a specified day in the new week
-          for (let i = 0; i < 7; i++) {
-            const testDate = addDays(nextDate, i);
-            if (repeatDays.includes(testDate.getDay())) {
-              nextDate = testDate;
-              found = true;
-              break;
-            }
-          }
-        }
-        
-        // If still not found, this shouldn't happen but add safety
-        if (!found) {
-          console.warn('Could not find next occurrence for repeatDays:', repeatDays);
-          nextDate = addWeeks(currentDate, customInterval);
-        }
-        
-        return nextDate;
-      } else {
-        // Standard weekly pattern
-        return addWeeks(currentDate, customInterval);
-      }
-      
-    case 'monthly':
-      return addMonths(currentDate, customInterval);
-      
-    case 'yearly':
-      return addYears(currentDate, customInterval);
-      
-    case 'weekdays':
-      // Skip weekends
-      let nextDate = new Date(currentDate);
-      do {
-        nextDate = addDays(nextDate, 1);
-      } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
-      return nextDate;
-      
-    case 'weekends':
-      // Only weekends
-      let weekendDate = new Date(currentDate);
-      do {
-        weekendDate = addDays(weekendDate, 1);
-      } while (weekendDate.getDay() !== 0 && weekendDate.getDay() !== 6);
-      return weekendDate;
-      
-    default:
-      return addDays(currentDate, 1); // Default to daily
-  }
+  const mockReminder: Reminder = {
+    id: 'temp',
+    userId: 'temp',
+    title: 'Temp',
+    type: ReminderType.TASK,
+    priority: ReminderPriority.MEDIUM,
+    status: ReminderStatus.PENDING,
+    isRecurring: true,
+    repeatPattern: repeatPattern as RepeatPattern,
+    customInterval,
+    repeatDays,
+    dueDate: currentDate,
+    timezone,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  const nextDate = getNextOccurrenceDate(mockReminder, currentDate, timezone);
+  return nextDate || addDays(currentDate, 1); // Fallback
 }
 
 /**
  * Get all reminders including recurring occurrences for calendar display
- * This ensures consistent date handling across the app
+ * This ensures consistent date handling across the app with timezone support
  */
-export function getAllCalendarEvents(reminders: any[]): CalendarEvent[] {
+export function getAllCalendarEvents(reminders: Reminder[]): CalendarEvent[] {
   const allEvents: CalendarEvent[] = [];
   const today = startOfDay(new Date());
   
   reminders.forEach((reminder) => {
     if (!reminder.dueDate) {
-      console.warn('getAllCalendarEvents: Reminder missing dueDate:', reminder);
       return;
     }
 
     const reminderDate = parseCalendarDate(reminder.dueDate);
     if (isNaN(reminderDate.getTime())) {
-      console.warn('getAllCalendarEvents: Invalid reminderDate for reminder:', reminder);
       return;
     }
     
-    // For recurring reminders, generate all occurrences and let the calendar show them
+    // For recurring reminders, generate all occurrences using new utilities
     if (reminder.isRecurring && reminder.repeatPattern) {
-      const occurrences = generateRecurringOccurrences(reminder);
+      const occurrences = generateRecurringOccurrences(reminder as ReminderWithDates);
       allEvents.push(...occurrences);
     } else {
       // For non-recurring reminders, only add if they're today or in the future
       if (!isBefore(reminderDate, today)) {
+        const timezone = reminder.timezone || getCurrentTimezone();
+        const timezoneAbbr = getTimezoneAbbreviation(timezone);
+        
         allEvents.push({
           id: reminder.id,
           title: reminder.title,
@@ -460,7 +339,7 @@ export function getAllCalendarEvents(reminders: any[]): CalendarEvent[] {
           endTime: reminder.endTime,
           location: reminder.location,
           type: reminder.type,
-          isRecurring: reminder.isRecurring,
+          isRecurring: reminder.isRecurring || false,
           recurringEndDate: reminder.recurringEndDate,
           completed: reminder.completed,
           priority: reminder.priority,
@@ -468,6 +347,8 @@ export function getAllCalendarEvents(reminders: any[]): CalendarEvent[] {
           userId: reminder.userId,
           createdAt: reminder.createdAt,
           updatedAt: reminder.updatedAt,
+          timezone: timezone,
+          notificationCount: reminder.notificationTimings?.length || 0
         });
       }
     }
@@ -480,107 +361,95 @@ export function getAllCalendarEvents(reminders: any[]): CalendarEvent[] {
  * Create marked dates object for calendar display
  * This ensures consistent marking of dates with events
  */
-export function createMarkedDates(events: CalendarEvent[], selectedDate?: string): Record<string, any> {
-  const marked: Record<string, any> = {};
-  const today = getTodayISO();
-
-  // Mark today
-  marked[today] = {
-    selected: true,
-    selectedColor: '#007AFF', // Primary color
-    textColor: '#FFFFFF',
-    selectedTextColor: '#FFFFFF',
-  };
-
-  // Mark dates with events
+export function createMarkedDates(events: CalendarEvent[]): MarkedDates {
+  const markedDates: MarkedDates = {};
+  
   events.forEach(event => {
-    if (event.dateString && typeof event.dateString === 'string' && event.dateString !== today) {
-      if (!marked[event.dateString]) {
-        marked[event.dateString] = {
-          marked: true,
-          dotColor: getEventTypeColor(event.type),
-          dotStyle: {
-            width: 6,
-            height: 6,
-            borderRadius: 3,
-          },
-        };
-      } else {
-        // If multiple events on same date, use the most important type
-        const currentColor = marked[event.dateString].dotColor;
-        const newColor = getEventTypeColor(event.type);
-        if (getEventTypePriority(event.type) > getEventTypePriorityFromColor(currentColor)) {
-          marked[event.dateString].dotColor = newColor;
-        }
-      }
+    const dateStr = event.dateString;
+    
+    if (!markedDates[dateStr]) {
+      markedDates[dateStr] = {
+        marked: true,
+        dotColor: getPriorityColor(event.priority),
+        textColor: event.completed ? '#888' : '#000',
+        selectedColor: getPriorityColor(event.priority) + '20'
+      };
+    } else {
+      // Multiple events on same date
+      markedDates[dateStr].dots = markedDates[dateStr].dots || [];
+      markedDates[dateStr].dots!.push({
+        color: getPriorityColor(event.priority),
+        key: event.id
+      });
     }
   });
-
-  // Mark selected date if different from today
-  if (selectedDate && selectedDate !== today) {
-    if (marked[selectedDate]) {
-      marked[selectedDate].selected = true;
-      marked[selectedDate].selectedColor = '#007AFF';
-    } else {
-      marked[selectedDate] = {
-        selected: true,
-        selectedColor: '#007AFF',
-        textColor: '#FFFFFF',
-        selectedTextColor: '#FFFFFF',
-      };
-    }
-  }
-
-  return marked;
+  
+  return markedDates;
 }
 
 /**
  * Get color for event type
  */
 export function getEventTypeColor(type: string): string {
-  switch (type) {
-    case 'event': return '#007AFF'; // Primary blue
-    case 'task': return '#FF9500'; // Warning orange
-    case 'bill': return '#FF3B30'; // Error red
-    case 'med': return '#34C759'; // Success green
-    case 'note': return '#8E8E93'; // Secondary gray
-    default: return '#8E8E93';
-  }
+  const typeColors: { [key: string]: string } = {
+    task: '#007AFF',
+    reminder: '#FF9500',
+    event: '#34C759',
+    appointment: '#AF52DE',
+    meeting: '#5856D6',
+    deadline: '#FF3B30',
+    default: '#8E8E93'
+  };
+  
+  return typeColors[type] || typeColors.default;
 }
 
 /**
  * Get priority for event type (higher number = higher priority)
  */
 export function getEventTypePriority(type: string): number {
-  switch (type) {
-    case 'bill': return 4;
-    case 'med': return 3;
-    case 'event': return 2;
-    case 'task': return 1;
-    case 'note': return 0;
-    default: return 0;
-  }
+  const typePriorities: { [key: string]: number } = {
+    deadline: 1,
+    meeting: 2,
+    appointment: 3,
+    event: 4,
+    task: 5,
+    reminder: 6,
+    default: 7
+  };
+  
+  return typePriorities[type] || typePriorities.default;
 }
 
 /**
  * Get priority from color
  */
 export function getEventTypePriorityFromColor(color: string): number {
-  if (color === '#FF3B30') return 4; // Error red
-  if (color === '#34C759') return 3; // Success green
-  if (color === '#007AFF') return 2; // Primary blue
-  if (color === '#FF9500') return 1; // Warning orange
-  return 0;
+  const colorPriorities: { [key: string]: number } = {
+    '#FF3B30': 1, // deadline
+    '#5856D6': 2, // meeting
+    '#AF52DE': 3, // appointment
+    '#34C759': 4, // event
+    '#007AFF': 5, // task
+    '#FF9500': 6, // reminder
+  };
+  
+  return colorPriorities[color] || 7;
 }
 
 /**
  * Format date for display in calendar
  */
-export function formatCalendarDate(date: Date | string | any): string {
-  const dateObj = typeof date === 'string' ? parseISO(date) : 
-                 date instanceof Date ? date :
-                 parseCalendarDate(date);
-  return formatDateFns(dateObj, 'd'); // Just the day number
+export function formatCalendarDate(date: Date, timezone?: string): string {
+  try {
+    if (timezone && timezone !== getCurrentTimezone()) {
+      const convertedDate = convertToTimezone(date, timezone);
+      return formatDateFns(convertedDate, 'yyyy-MM-dd');
+    }
+    return formatDateFns(date, 'yyyy-MM-dd');
+  } catch (error) {
+    return formatDateFns(date, 'yyyy-MM-dd');
+  }
 }
 
 /**
@@ -588,7 +457,16 @@ export function formatCalendarDate(date: Date | string | any): string {
  */
 export function formatCalendarTime(timeString?: string): string {
   if (!timeString) return '';
-  return timeString; // HH:MM format
+  
+  try {
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${minutes} ${ampm}`;
+  } catch (error) {
+    return timeString;
+  }
 }
 
 /**
@@ -648,53 +526,116 @@ export function testRecurringPattern(
   startDate: Date = new Date(),
   maxOccurrences: number = 10
 ): Date[] {
-  console.log('🧪 Testing recurring pattern:', {
-    pattern,
-    repeatDays,
+  const mockReminder: Reminder = {
+    id: 'test',
+    userId: 'test',
+    title: 'Test Reminder',
+    type: ReminderType.TASK,
+    priority: ReminderPriority.MEDIUM,
+    status: ReminderStatus.PENDING,
+    isRecurring: true,
+    repeatPattern: pattern as RepeatPattern,
     customInterval,
-    startDate: formatDateFns(startDate, 'yyyy-MM-dd')
-  });
+    repeatDays,
+    dueDate: startDate,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
 
-  const occurrences: Date[] = [];
-  let currentDate = new Date(startDate);
-
-  for (let i = 0; i < maxOccurrences; i++) {
-    occurrences.push(new Date(currentDate));
-    
-    const nextDate = calculateNextOccurrence(currentDate, pattern, customInterval, repeatDays);
-    if (nextDate <= currentDate) {
-      console.warn('🧪 Pattern stopped generating future dates at iteration', i);
-      break;
-    }
-    
-    currentDate = nextDate;
-  }
-
-  console.log('🧪 Generated occurrences:', occurrences.map(date => formatDateFns(date, 'yyyy-MM-dd')));
-  return occurrences;
+  const occurrences = generateOccurrences(mockReminder, maxOccurrences, startDate);
+  return occurrences.map(o => o.date);
 }
 
 /**
  * Test the Monday/Tuesday for 4 weeks pattern specifically
  */
 export function testMondayTuesdayPattern(): void {
-  console.log('🧪 Testing Monday/Tuesday for 4 weeks pattern...');
+  const startDate = new Date('2024-01-01');
+  const occurrences = testRecurringPattern('weekly', [1, 2], 1, startDate, 10);
   
-  // Test with Monday (1) and Tuesday (2)
-  const mondayTuesdayPattern = testRecurringPattern(
-    'weekly',
-    [1, 2], // Monday and Tuesday
-    1, // Every week
-    new Date(), // Start from today
-    8 // Generate 8 occurrences (4 weeks * 2 days per week)
-  );
-  
-  console.log('🧪 Monday/Tuesday pattern result:', mondayTuesdayPattern.length, 'occurrences');
-  
-  // Verify the pattern
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  mondayTuesdayPattern.forEach((date, index) => {
-    const dayName = dayNames[date.getDay()];
-    console.log(`🧪 Occurrence ${index + 1}: ${formatDateFns(date, 'yyyy-MM-dd')} (${dayName})`);
+  occurrences.forEach((date, index) => {
+    const dayName = formatDateFns(date, 'EEEE');
+    const dateStr = formatDateFns(date, 'yyyy-MM-dd');
   });
+}
+
+/**
+ * Get color based on priority
+ */
+function getPriorityColor(priority?: string): string {
+  const priorityColors: { [key: string]: string } = {
+    high: '#FF3B30',
+    medium: '#FF9500',
+    low: '#34C759'
+  };
+  
+  return priorityColors[priority || 'medium'] || priorityColors.medium;
+}
+
+/**
+ * Get recurring pattern description for calendar display
+ */
+export function getCalendarRecurringDescription(reminder: Reminder): string {
+  if (!reminder.isRecurring || !reminder.repeatPattern) {
+    return '';
+  }
+
+  const description = getRecurringDescription(reminder);
+  const timezone = reminder.timezone || getCurrentTimezone();
+  const timezoneAbbr = getTimezoneAbbreviation(timezone);
+  
+  return `${description} (${timezoneAbbr})`;
+}
+
+/**
+ * Validate calendar event data
+ */
+export function validateCalendarEvent(event: CalendarEvent): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  if (!event.id) {
+    errors.push('Event ID is required');
+  }
+  
+  if (!event.title || event.title.trim().length === 0) {
+    errors.push('Event title is required');
+  }
+  
+  if (!event.date || isNaN(event.date.getTime())) {
+    errors.push('Valid event date is required');
+  }
+  
+  if (event.isRecurring && !event.timezone) {
+    errors.push('Timezone is required for recurring events');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Get timezone-aware event display info
+ */
+export function getEventDisplayInfo(event: CalendarEvent): {
+  dateDisplay: string;
+  timeDisplay: string;
+  timezoneDisplay: string;
+  recurringInfo: string;
+} {
+  const timezone = event.timezone || getCurrentTimezone();
+  const timezoneAbbr = getTimezoneAbbreviation(timezone);
+  
+  const dateDisplay = formatDateFns(event.date, 'MMM d, yyyy');
+  const timeDisplay = event.time ? formatCalendarTime(event.time) : '';
+  const timezoneDisplay = timezoneAbbr;
+  const recurringInfo = event.isRecurring ? '🔄 Recurring' : '';
+  
+  return {
+    dateDisplay,
+    timeDisplay,
+    timezoneDisplay,
+    recurringInfo
+  };
 } 

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { NotificationTiming, DEFAULT_NOTIFICATION_TIMINGS } from '../../services/notificationService';
+import { DisabledFeature } from '../premium/DisabledFeature';
+import { canUseMultipleNotifications, getMaxNotificationTimes } from '../../services/featureFlags';
 
 interface NotificationTimingSelectorProps {
   hasNotification: boolean;
@@ -14,6 +16,7 @@ interface NotificationTimingSelectorProps {
   colors: typeof Colors.light;
   showTimingSelector?: boolean;
   onShowTimingSelectorChange?: (show: boolean) => void;
+  onUpgradePress?: () => void;
 }
 
 export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProps> = ({
@@ -24,6 +27,7 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
   colors,
   showTimingSelector = false,
   onShowTimingSelectorChange,
+  onUpgradePress,
 }) => {
   const { t } = useTranslation();
 
@@ -32,6 +36,12 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
       t => t.type === timing.type && t.value === timing.value
     );
     if (!exists) {
+      // Check if user can add more notifications
+      const maxNotifications = getMaxNotificationTimes();
+      if (notificationTimings.length >= maxNotifications) {
+        onUpgradePress?.();
+        return;
+      }
       onNotificationTimingsChange([...notificationTimings, timing]);
     }
   };
@@ -123,6 +133,19 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
                   );
                 })}
               </ScrollView>
+              
+              {/* Premium features */}
+              {!canUseMultipleNotifications() && (
+                <View style={styles.premiumSection}>
+                  <DisabledFeature
+                    featureName={t('premium.features.multipleNotifications.title')}
+                    onUpgradePress={onUpgradePress || (() => {})}
+                    colors={colors}
+                    size="small"
+                    variant="subtle"
+                  />
+                </View>
+              )}
             </View>
           )}
 
@@ -252,5 +275,11 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     lineHeight: LineHeights.footnote,
     color: colors.textTertiary,
     fontStyle: 'italic',
+  },
+  premiumSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
 });

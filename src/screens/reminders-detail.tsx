@@ -17,10 +17,9 @@ export default function RemindersDetailScreen({ navigation, route }: any) {
   const styles = createStyles(colors);
 
   // Debug: Log the reminders data
-  console.log('RemindersDetailScreen - reminders:', reminders);
   if (reminders && reminders.length > 0) {
     reminders.forEach((reminder: any, index: number) => {
-      console.log(`Reminder ${index}:`, {
+      console.log({
         id: reminder.id,
         title: reminder.title,
         dueTime: reminder.dueTime,

@@ -10,6 +10,15 @@ interface PerformanceMetrics {
   timestamp: number;
 }
 
+interface PerformanceArgs {
+  memberCount?: number;
+  [key: string]: unknown;
+}
+
+interface DecoratorTarget {
+  [key: string]: unknown;
+}
+
 export class PerformanceMonitor {
   private metrics: PerformanceMetrics[] = [];
   private maxMetrics = 100; // Keep last 100 measurements
@@ -43,29 +52,61 @@ export class PerformanceMonitor {
 
     // Log performance warnings
     this.checkPerformanceWarnings(metric);
+    
+    // Track performance with analytics (safely)
+    try {
+      analyticsService.trackPerformance('reminder_load', metric.loadTime, {
+        cacheHit: metric.cacheHitRate,
+        queryCount: metric.queryCount,
+        familySize: metric.familySize
+      });
+    } catch (error) {
+      // Silent fail for analytics
+    }
   }
 
   // Check for performance issues and log warnings
   checkPerformanceWarnings(metric: PerformanceMetrics): void {
     const now = Date.now();
     const duration = now - this.startTime;
+    
     if (metric.loadTime > 3000) {
       if (__DEV__) {
-        console.warn(`⚠️ Slow reminder load: ${metric.loadTime}ms for family size ${metric.familySize}`);
+        // Development logging removed
       }
-      analyticsService.trackPerformance('performance_warning', duration, { details: `⚠️ Slow reminder load: ${metric.loadTime}ms for family size ${metric.familySize}` });
+      try {
+        analyticsService.trackPerformance('performance_warning', duration, { 
+          details: `⚠️ Slow reminder load: ${metric.loadTime}ms for family size ${metric.familySize}` 
+        });
+      } catch (error) {
+        // Silent fail for analytics
+      }
     }
+    
     if (metric.queryCount > 10) {
       if (__DEV__) {
-        console.warn(`⚠️ Too many queries: ${metric.queryCount} queries for family size ${metric.familySize}`);
+        // Development logging removed
       }
-      analyticsService.trackPerformance('performance_warning', duration, { details: `⚠️ Too many queries: ${metric.queryCount} queries for family size ${metric.familySize}` });
+      try {
+        analyticsService.trackPerformance('performance_warning', duration, { 
+          details: `⚠️ Too many queries: ${metric.queryCount} queries for family size ${metric.familySize}` 
+        });
+      } catch (error) {
+        // Silent fail for analytics
+      }
     }
+    
     if (metric.familySize > 20) {
       if (__DEV__) {
-        console.warn(`⚠️ Large family detected: ${metric.familySize} members - consider pagination`);
+        // Development logging removed
       }
-      analyticsService.trackPerformance('performance_warning', duration, { details: `⚠️ Large family detected: ${metric.familySize} members - consider pagination` });
+      try {
+        analyticsService.trackPerformance('performance_warning', duration, { 
+          details: `⚠️ Large family detected: ${metric.familySize} members - consider pagination` 
+        });
+      } catch (error) {
+        // Silent fail for analytics
+      }
     }
   }
 
@@ -136,10 +177,10 @@ export const performanceMonitor = new PerformanceMonitor();
 
 // Performance tracking decorator
 export const trackPerformance = (operation: string) => {
-  return (target: any, propertyName: string, descriptor: PropertyDescriptor) => {
+  return (target: DecoratorTarget, propertyName: string, descriptor: PropertyDescriptor) => {
     const method = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: PerformanceArgs[]) {
       const startTime = Date.now();
       try {
         const result = await method.apply(this, args);

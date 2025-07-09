@@ -23,7 +23,6 @@ const mockI18n = {
 
 // Simple test runner for now - we'll enhance this later
 const runTests = () => {
-  console.log('🧪 Running DateUtils tests...');
   
   let passedTests = 0;
   let failedTests = 0;
@@ -31,10 +30,8 @@ const runTests = () => {
   const test = (name: string, fn: () => void) => {
     try {
       fn();
-      console.log(`✅ ${name}`);
       passedTests++;
     } catch (error) {
-      console.error(`❌ ${name}:`, error);
       failedTests++;
     }
   };
@@ -342,7 +339,6 @@ const runTests = () => {
     expect(occurrences).toHaveLength(3); // 15th, 16th, 17th
   });
 
-  console.log(`\n📊 Test Results: ${passedTests} passed, ${failedTests} failed`);
   
   if (failedTests > 0) {
     throw new Error(`${failedTests} tests failed`);

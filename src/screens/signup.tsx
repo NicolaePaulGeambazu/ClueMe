@@ -57,7 +57,6 @@ export default function SignupScreen({ navigation }: any) {
 
       navigation.replace('MainTabs');
     } catch (error: any) {
-      console.error('Signup error:', error);
       let errorMessage = 'An unexpected error occurred. Please try again.';
       let errorTitle = 'Signup Failed';
 

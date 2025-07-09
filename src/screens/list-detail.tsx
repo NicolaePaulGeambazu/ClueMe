@@ -8,6 +8,7 @@ import { Colors } from '../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
 import { listService, UserList, ListItem } from '../services/firebaseService';
 import { useTranslation } from 'react-i18next';
+import GracePopup from '../components/common/GracePopup';
 
 export default function ListDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
@@ -25,13 +26,23 @@ export default function ListDetailScreen({ navigation, route }: any) {
   const [editingItem, setEditingItem] = useState<ListItem | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [gracePopup, setGracePopup] = useState<{
+    visible: boolean;
+    message: string;
+    type: 'error' | 'success' | 'info' | 'warning';
+    messageParams?: Record<string, any>;
+  }>({
+    visible: false,
+    message: '',
+    type: 'error',
+  });
 
   const styles = createStyles(colors);
 
   // Debug log only when relevant data changes
   useEffect(() => {
     if (__DEV__) {
-      console.log('📝 ListDetailScreen rendering:', {
+      console.log({
         isLoading,
         listName: list?.name,
         itemsCount: list?.items?.length,
@@ -61,13 +72,11 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
     setIsLoading(true);
     try {
-      console.log('🔄 Loading list details...');
       const listDetails = await listService.getListById(listId);
       if (listDetails) {
         setList(listDetails);
       }
     } catch (error) {
-      console.error('❌ Error loading list details:', error);
       Alert.alert('Error', 'Failed to load list details. Please try again.');
     } finally {
       setIsLoading(false);
@@ -83,14 +92,11 @@ export default function ListDetailScreen({ navigation, route }: any) {
   useEffect(() => {
     if (!listId) {return;}
 
-    console.log('👂 Setting up list detail listener...');
     const unsubscribe = listService.onListChange(listId, (updatedList) => {
-      console.log('📡 List updated via listener:', updatedList.name);
       setList(updatedList);
     });
 
     return () => {
-      console.log('🔇 Cleaning up list detail listener...');
       unsubscribe();
     };
   }, [listId]);
@@ -100,7 +106,6 @@ export default function ListDetailScreen({ navigation, route }: any) {
     try {
       await loadListDetails();
     } catch (error) {
-      console.error('Error refreshing:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -130,26 +135,33 @@ export default function ListDetailScreen({ navigation, route }: any) {
     if (!list) {return;}
 
     try {
-      console.log('🔄 Toggling item completion...', { itemId: item.id, currentCompleted: item.completed });
       await listService.updateListItem(listId, item.id, {
         completed: !item.completed,
       });
-      console.log('✅ Item toggled successfully');
       
       // The listener will automatically update the list
-      console.log('📡 Item toggled, listener will update data');
     } catch (error) {
-      console.error('❌ Error toggling item:', error);
       Alert.alert('Error', 'Failed to update item. Please try again.');
     }
   };
 
   const handleAddItem = async () => {
-    if (!list || !newItemTitle.trim()) {return;}
+    if (!list || !newItemTitle.trim()) {
+      console.log('Cannot add item: missing list or title');
+      return;
+    }
+    
+    console.log('Adding item to list:', {
+      listId,
+      title: newItemTitle.trim(),
+      description: newItemDescription.trim(),
+      format: list.format,
+      sortOrder: list.items.length
+    });
+    
     setActionLoading(true);
     setError(null);
     try {
-      console.log('🔄 Adding new item...');
       const itemId = await listService.addListItem(listId, {
         title: newItemTitle.trim(),
         description: newItemDescription.trim() || undefined,
@@ -157,16 +169,32 @@ export default function ListDetailScreen({ navigation, route }: any) {
         format: list.format,
         sortOrder: list.items.length,
       });
-      console.log('✅ Item added successfully:', itemId);
+      
+      console.log('Item added successfully with ID:', itemId);
       
       // The listener will automatically update the list
-      console.log('📡 Item added, listener will update data');
+      
+      // Store the title before clearing the form
+      const addedItemTitle = newItemTitle.trim();
       
       setNewItemTitle('');
       setNewItemDescription('');
       setIsAddModalVisible(false);
+      
+      // Show success popup
+      setGracePopup({
+        visible: true,
+        message: t('success.itemAdded', { title: addedItemTitle }),
+        type: 'success',
+      });
     } catch (err: any) {
-      setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
+      console.error('Error adding item to list:', err);
+      const errorMessage = err && err.message ? err.message : 'Unknown error';
+      setGracePopup({
+        visible: true,
+        message: t('errors.addItem', { error: errorMessage }),
+        type: 'error',
+      });
     } finally {
       setActionLoading(false);
     }
@@ -181,25 +209,39 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
   const handleUpdateItem = async () => {
     if (!editingItem || !newItemTitle.trim()) {
-      Alert.alert('Error', 'Please enter an item title');
+      setGracePopup({
+        visible: true,
+        message: t('validation.itemTitleRequired'),
+        type: 'warning',
+      });
       return;
     }
     setActionLoading(true);
     setError(null);
     try {
-      console.log('🔄 Updating item...');
       await listService.updateListItem(listId, editingItem.id, {
         title: newItemTitle.trim(),
         description: newItemDescription.trim() || undefined,
       });
 
-      console.log('✅ Item updated successfully');
       setNewItemTitle('');
       setNewItemDescription('');
       setEditingItem(null);
       setIsAddModalVisible(false);
+      
+      // Show success popup
+      setGracePopup({
+        visible: true,
+        message: t('success.itemUpdated', { title: newItemTitle.trim() }),
+        type: 'success',
+      });
     } catch (err: any) {
-      setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
+      const errorMessage = err && err.message ? err.message : 'Unknown error';
+      setGracePopup({
+        visible: true,
+        message: t('errors.updateItem', { error: errorMessage }),
+        type: 'error',
+      });
     } finally {
       setActionLoading(false);
     }
@@ -219,18 +261,36 @@ export default function ListDetailScreen({ navigation, route }: any) {
             text: 'Delete',
             style: 'destructive',
             onPress: async () => {
-              console.log('🔄 Deleting item...');
-              await listService.deleteListItem(listId, item.id);
-              console.log('✅ Item deleted successfully');
-              
-              // The listener will automatically update the list
-              console.log('📡 Item deleted, listener will update data');
+              try {
+                await listService.deleteListItem(listId, item.id);
+                
+                // The listener will automatically update the list
+                
+                // Show success popup
+                setGracePopup({
+                  visible: true,
+                  message: t('success.itemDeleted', { title: item.title }),
+                  type: 'success',
+                });
+              } catch (error) {
+                const errorMessage = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error);
+                setGracePopup({
+                  visible: true,
+                  message: t('errors.deleteItem', { error: errorMessage }),
+                  type: 'error',
+                });
+              }
             },
           },
         ]
       );
     } catch (err: any) {
-      setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
+      const errorMessage = err && err.message ? err.message : 'Unknown error';
+      setGracePopup({
+        visible: true,
+        message: t('errors.deleteItem', { error: errorMessage }),
+        type: 'error',
+      });
     } finally {
       setActionLoading(false);
     }
@@ -512,6 +572,14 @@ export default function ListDetailScreen({ navigation, route }: any) {
       </Modal>
 
       {error && <ErrorState />}
+      
+      <GracePopup
+        visible={gracePopup.visible}
+        message={gracePopup.message}
+        type={gracePopup.type}
+        onClose={() => setGracePopup(prev => ({ ...prev, visible: false }))}
+        duration={4000}
+      />
     </SafeAreaView>
   );
 }

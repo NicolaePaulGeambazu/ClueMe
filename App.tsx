@@ -14,9 +14,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { FamilyProvider } from './src/contexts/FamilyContext';
+import { ModalProvider } from './src/contexts/ModalContext';
+import { ToastProvider } from './src/contexts/ToastContext';
+import { ReminderProvider } from './src/contexts/ReminderContext';
+import { SettingsProvider } from './src/contexts/SettingsContext';
+import { FocusModeProvider } from './src/contexts/FocusModeContext';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
-import { notificationService } from './src/services/notificationService';
+import notificationService from './src/services/notificationService';
+import globalNotificationService from './src/services/globalNotificationService';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 // Analytics service removed to fix Firebase issues
 import { AppState, AppStateStatus } from 'react-native';
@@ -39,6 +45,7 @@ import CountdownScreen from './src/screens/countdown';
 import LoginScreen from './src/screens/login';
 import SignupScreen from './src/screens/signup';
 import ForgotPasswordScreen from './src/screens/forgot-password';
+import NotificationTestScreen from './src/screens/NotificationTestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -63,16 +70,31 @@ function AppContent() {
           timeoutPromise
         ]);
 
+        // Initialize global notification service
+        await globalNotificationService.initialize();
+
         // Start background reminder checking
         notificationService.startBackgroundReminderChecking();
+
+        // Sync assigned task notifications when app starts
+        // This ensures that if the user was assigned tasks while the app was closed,
+        // notifications are properly scheduled when they open the app
+        setTimeout(async () => {
+          try {
+            await notificationService.syncAssignedTaskNotifications();
+          } catch (error) {
+            console.error('Error syncing assigned task notifications:', error);
+          }
+        }, 5000); // Delay sync to ensure user is authenticated and data is loaded
       } catch (error) {
-        console.error('❌ Failed to initialize push notifications:', error);
+        // Failed to initialize push notifications
         
         // Try to initialize local notifications only (without FCM)
         try {
           notificationService.initializeLocalNotificationsOnly();
+          await globalNotificationService.initialize();
         } catch (localError) {
-          console.error('❌ Failed to initialize local notifications:', localError);
+          // Failed to initialize local notifications
         }
         
         // Continue anyway - notifications are not critical for app functionality
@@ -88,37 +110,17 @@ function AppContent() {
     return () => {
       clearTimeout(initTimer);
       notificationService.cleanup();
-    };
-  }, []);
-
-  useEffect(() => {
-    // Analytics removed to fix Firebase issues
-    
-    // Track app lifecycle (simplified)
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        console.log('App foregrounded');
-      } else if (nextAppState === 'background') {
-        console.log('App backgrounded');
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
-    console.log('App started');
-
-    return () => {
-      subscription?.remove();
-      console.log('App exiting');
+      globalNotificationService.cleanup();
     };
   }, []);
 
   return (
     <NavigationContainer>
       <StatusBar barStyle={theme === 'dark' ? 'light-content' : 'dark-content'} />
-      {!isLoading && user ? (
-        // User is authenticated, show main app
-        <Stack.Navigator
+      <ModalProvider>
+        {!isLoading && user ? (
+          // User is authenticated, show main app
+          <Stack.Navigator
           initialRouteName="MainTabs"
           screenOptions={{
             headerStyle: {
@@ -228,6 +230,15 @@ function AppContent() {
             component={ForgotPasswordScreen}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="NotificationTest"
+            component={NotificationTestScreen}
+            options={{
+              title: 'Test Notifications',
+              headerBackTitle: 'Back',
+              headerShadowVisible: false,
+            }}
+          />
         </Stack.Navigator>
       ) : (
         // User is not authenticated or still loading, show auth screens
@@ -268,41 +279,28 @@ function AppContent() {
           />
         </Stack.Navigator>
       )}
+      </ModalProvider>
     </NavigationContainer>
   );
 }
 
 export default function App() {
-  useEffect(() => {
-    // Analytics removed to fix Firebase issues
-    
-    // Track app lifecycle (simplified)
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        console.log('App foregrounded');
-      } else if (nextAppState === 'background') {
-        console.log('App backgrounded');
-      }
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    
-    console.log('App started');
-
-    return () => {
-      subscription?.remove();
-      console.log('App exiting');
-    };
-  }, []);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AuthProvider>
             <FamilyProvider>
-              <StatusBar barStyle="dark-content" />
-              <AppContent />
+              <ReminderProvider>
+                <SettingsProvider>
+                  <FocusModeProvider>
+                    <ToastProvider>
+                      <StatusBar barStyle="dark-content" />
+                      <AppContent />
+                    </ToastProvider>
+                  </FocusModeProvider>
+                </SettingsProvider>
+              </ReminderProvider>
             </FamilyProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -3,6 +3,34 @@
         "src/i18n",
         "src/locales",
         "ios/Pods/RCT-Folly/folly/lang",
-        "ios/Pods/boost/boost/predef/language"
-    ]
+        "ios/Pods/boost/boost/predef/language",
+        "functions/translations"
+    ],
+    "i18n-ally.enabled": true,
+    "i18n-ally.sourceLanguage": "en",
+    "i18n-ally.displayLanguage": "en",
+    "i18n-ally.namespace": true,
+    "i18n-ally.keySeparator": ".",
+    "i18n-ally.keepFqn": true,
+    "i18n-ally.sortKeys": true,
+    "i18n-ally.enableFuzzyTranslation": true,
+    "i18n-ally.enableAutoCompletion": true,
+    "i18n-ally.enableValidation": true,
+    "i18n-ally.pathMatcher": "{locale}.json",
+    "i18n-ally.ignoreFiles": [
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/.git/**"
+    ],
+    "i18n-ally.enableHardcodedStringDetection": true,
+    "i18n-ally.annotation": true,
+    "i18n-ally.hover": true,
+    "i18n-ally.inlayHints": true,
+    "i18n-ally.progressBar": true,
+    "i18n-ally.treeView": true,
+    "i18n-ally.statusBar": true,
+    "i18n-ally.contextMenu": true,
+    "i18n-ally.commandPalette": true,
+    "i18n-ally.telemetry": false
 }

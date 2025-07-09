@@ -1,4 +1,4 @@
-import { format as formatDateFns, parseISO, isToday as isTodayFns, isYesterday as isYesterdayFns, isThisWeek, isThisYear, getDay, startOfMonth, getDaysInMonth as getDaysInMonthFns } from 'date-fns';
+import { format as formatDateFns, parseISO, isToday as isTodayFns, isYesterday as isYesterdayFns, isThisWeek, isThisYear, getDay, startOfMonth, getDaysInMonth as getDaysInMonthFns, isValid as isValidDateFns } from 'date-fns';
 import { enUS, es, fr } from 'date-fns/locale';
 import i18n from '../i18n';
 
@@ -19,6 +19,14 @@ const localeMap = {
 const DEFAULT_DATE_FORMAT: DateFormat = 'european';
 const DEFAULT_TIME_FORMAT: TimeFormat = '24h';
 const DEFAULT_LOCALE = 'en';
+
+interface ReminderData {
+  isRecurring?: boolean;
+  recurringEndDate?: string;
+  dueDate?: string;
+  dueTime?: string;
+  completed?: boolean;
+}
 
 export class DateUtils {
   private static dateFormat: DateFormat = DEFAULT_DATE_FORMAT;
@@ -44,397 +52,291 @@ export class DateUtils {
 
   // Get current date in ISO format (YYYY-MM-DD)
   static getTodayISO(): string {
-    return formatDateFns(new Date(), 'yyyy-MM-dd');
+    const locale = this.getCurrentLocale();
+    return formatDateFns(new Date(), 'yyyy-MM-dd', { locale });
   }
 
   // Get current date in configured format
   static getTodayFormatted(): string {
-    return this.formatDate(new Date());
+    const locale = this.getCurrentLocale();
+    return formatDateFns(new Date(), 'EEEE, MMMM d', { locale });
   }
 
   // Format date based on user preference
-  static formatDate(date: Date | string | any, format?: DateFormat): string {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return 'Invalid date';
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return 'Invalid date';
-        }
-      } else {
-        console.warn('Unknown date object format:', date);
-        return 'Invalid date';
-      }
-    } else {
-      console.warn('Invalid date format:', date);
-      return 'Invalid date';
-    }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return 'Invalid date';
-    }
-    
-    const useFormat = format || this.dateFormat;
-    const locale = this.getCurrentLocale();
+  static formatDate(date: Date | string | unknown, format?: DateFormat): string {
+    if (!date) return '';
 
-    switch (useFormat) {
-      case 'european':
-        return formatDateFns(dateObj, 'dd/MM/yyyy', { locale });
-      case 'american':
-        return formatDateFns(dateObj, 'MM/dd/yyyy', { locale });
-      case 'iso':
-        return formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
-      default:
-        return formatDateFns(dateObj, 'dd/MM/yyyy', { locale });
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
+      } else {
+        return '';
+      }
+
+      if (isNaN(dateObj.getTime())) return '';
+
+      const locale = this.getCurrentLocale();
+      const useFormat = format || this.dateFormat;
+
+      switch (useFormat) {
+        case 'european':
+          return formatDateFns(dateObj, 'dd/MM/yyyy', { locale });
+        case 'american':
+          return formatDateFns(dateObj, 'MM/dd/yyyy', { locale });
+        case 'iso':
+        default:
+          return formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
+      }
+    } catch (error) {
+      return '';
     }
   }
 
   // Format time based on user preference
-  static formatTime(date: Date | string | any, format?: TimeFormat): string {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return 'Invalid time';
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return 'Invalid time';
-        }
-      } else {
-        console.warn('Unknown date object format:', date);
-        return 'Invalid time';
-      }
-    } else {
-      console.warn('Invalid date format:', date);
-      return 'Invalid time';
-    }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return 'Invalid time';
-    }
-    
-    const useFormat = format || this.timeFormat;
-    const locale = this.getCurrentLocale();
+  static formatTime(date: Date | string | unknown, format?: TimeFormat): string {
+    if (!date) return '';
 
-    switch (useFormat) {
-      case '12h':
-        return formatDateFns(dateObj, 'hh:mm a', { locale });
-      case '24h':
-        return formatDateFns(dateObj, 'HH:mm', { locale });
-      default:
-        return formatDateFns(dateObj, 'HH:mm', { locale });
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
+      } else {
+        return '';
+      }
+
+      if (isNaN(dateObj.getTime())) return '';
+
+      const useFormat = format || this.timeFormat;
+
+      switch (useFormat) {
+        case '12h':
+          return formatDateFns(dateObj, 'h:mm a', { locale: this.getCurrentLocale() });
+        case '24h':
+          return formatDateFns(dateObj, 'HH:mm', { locale: this.getCurrentLocale() });
+        default:
+          return formatDateFns(dateObj, 'HH:mm', { locale: this.getCurrentLocale() });
+      }
+    } catch (error) {
+      return '';
     }
   }
 
   // Format date and time together
-  static formatDateTime(date: Date | string | any, dateFormat?: DateFormat, timeFormat?: TimeFormat): string {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return 'Invalid date/time';
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return 'Invalid date/time';
-        }
+  static formatDateTime(date: Date | string | unknown, dateFormat?: DateFormat, timeFormat?: TimeFormat): string {
+    if (!date) return '';
+
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
       } else {
-        console.warn('Unknown date object format:', date);
-        return 'Invalid date/time';
+        return '';
       }
-    } else {
-      console.warn('Invalid date format:', date);
-      return 'Invalid date/time';
+
+      if (isNaN(dateObj.getTime())) return '';
+
+      const locale = this.getCurrentLocale();
+      const useDateFormat = dateFormat || this.dateFormat;
+      const useTimeFormat = timeFormat || this.timeFormat;
+
+      let dateStr: string;
+      let timeStr: string;
+
+      switch (useDateFormat) {
+        case 'european':
+          dateStr = formatDateFns(dateObj, 'dd/MM/yyyy', { locale });
+          break;
+        case 'american':
+          dateStr = formatDateFns(dateObj, 'MM/dd/yyyy', { locale });
+          break;
+        case 'iso':
+        default:
+          dateStr = formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
+          break;
+      }
+
+      switch (useTimeFormat) {
+        case '12h':
+          timeStr = formatDateFns(dateObj, 'h:mm a', { locale });
+          break;
+        case '24h':
+          timeStr = formatDateFns(dateObj, 'HH:mm', { locale });
+          break;
+        default:
+          timeStr = formatDateFns(dateObj, 'HH:mm', { locale });
+          break;
+      }
+
+      return `${dateStr} ${timeStr}`;
+    } catch (error) {
+      return '';
     }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return 'Invalid date/time';
-    }
-    
-    const dateStr = this.formatDate(dateObj, dateFormat);
-    const timeStr = this.formatTime(dateObj, timeFormat);
-    return `${dateStr} ${timeStr}`;
   }
 
   // Check if date is today
-  static isToday(date: Date | string | any): boolean {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return false;
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return false;
-        }
+  static isToday(date: Date | string | unknown): boolean {
+    if (!date) return false;
+
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
       } else {
-        console.warn('Unknown date object format:', date);
         return false;
       }
-    } else {
-      console.warn('Invalid date format:', date);
+
+      if (isNaN(dateObj.getTime())) return false;
+
+      const today = new Date();
+      const locale = this.getCurrentLocale();
+      
+      const todayStr = formatDateFns(today, 'yyyy-MM-dd', { locale });
+      const dateStr = formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
+      
+      return todayStr === dateStr;
+    } catch (error) {
       return false;
     }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return false;
-    }
-    
-    return isTodayFns(dateObj);
   }
 
   // Check if date is yesterday
-  static isYesterday(date: Date | string | any): boolean {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return false;
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return false;
-        }
+  static isYesterday(date: Date | string | unknown): boolean {
+    if (!date) return false;
+
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
       } else {
-        console.warn('Unknown date object format:', date);
         return false;
       }
-    } else {
-      console.warn('Invalid date format:', date);
+
+      if (isNaN(dateObj.getTime())) return false;
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const locale = this.getCurrentLocale();
+      
+      const yesterdayStr = formatDateFns(yesterday, 'yyyy-MM-dd', { locale });
+      const dateStr = formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
+      
+      return yesterdayStr === dateStr;
+    } catch (error) {
       return false;
     }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return false;
-    }
-    
-    return isYesterdayFns(dateObj);
   }
 
   // Get relative date string (Today, Yesterday, or formatted date)
-  static getRelativeDate(date: Date | string | any): string {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return 'Invalid date';
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return 'Invalid date';
-        }
-      } else {
-        console.warn('Unknown date object format:', date);
-        return 'Invalid date';
-      }
-    } else {
-      console.warn('Invalid date format:', date);
-      return 'Invalid date';
-    }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return 'Invalid date';
-    }
-    
-    const locale = this.getCurrentLocale();
+  static getRelativeDate(date: Date | string | unknown): string {
+    if (!date) return '';
 
-    if (isTodayFns(dateObj)) {
-      return 'Today';
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
+      } else {
+        return '';
+      }
+
+      if (isNaN(dateObj.getTime())) return '';
+
+      if (this.isToday(dateObj)) {
+        return 'Today';
+      }
+
+      if (this.isYesterday(dateObj)) {
+        return 'Yesterday';
+      }
+
+      const locale = this.getCurrentLocale();
+      return formatDateFns(dateObj, 'EEEE, MMMM d', { locale });
+    } catch (error) {
+      return '';
     }
-    if (isYesterdayFns(dateObj)) {
-      return 'Yesterday';
-    }
-    if (isThisWeek(dateObj)) {
-      return formatDateFns(dateObj, 'EEEE', { locale }); // Day name
-    }
-    if (isThisYear(dateObj)) {
-      return formatDateFns(dateObj, 'MMM dd', { locale }); // Month day
-    }
-    return this.formatDate(dateObj);
   }
 
   // Get day of week (0 = Sunday, 1 = Monday, etc.)
-  static getDayOfWeek(date: Date | string | any): number {
-    let dateObj: Date;
-    
-    if (date instanceof Date) {
-      dateObj = date;
-    } else if (typeof date === 'string') {
-      dateObj = parseISO(date);
-    } else if (date && typeof date === 'object') {
-      // Handle Firestore Timestamp objects
-      if ('toDate' in date && typeof date.toDate === 'function') {
-        try {
-          dateObj = date.toDate();
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp:', error);
-          return 0; // Default to Sunday
-        }
-      }
-      // Handle Firestore timestamp objects with seconds/nanoseconds
-      else if ('seconds' in date) {
-        try {
-          const seconds = date.seconds || 0;
-          const nanoseconds = date.nanoseconds || 0;
-          dateObj = new Date(seconds * 1000 + nanoseconds / 1000000);
-        } catch (error) {
-          console.warn('Error converting Firestore timestamp object:', error);
-          return 0; // Default to Sunday
-        }
+  static getDayOfWeek(date: Date | string | unknown): number {
+    if (!date) return 0;
+
+    try {
+      let dateObj: Date;
+
+      if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string') {
+        dateObj = new Date(date);
+      } else if (date && typeof date === 'object' && 'toDate' in date) {
+        // Handle Firestore Timestamp
+        dateObj = (date as { toDate(): Date }).toDate();
       } else {
-        console.warn('Unknown date object format:', date);
-        return 0; // Default to Sunday
+        return 0;
       }
-    } else {
-      console.warn('Invalid date format:', date);
-      return 0; // Default to Sunday
+
+      if (isNaN(dateObj.getTime())) return 0;
+
+      return dateObj.getDay();
+    } catch (error) {
+      return 0;
     }
-    
-    // Validate the date object
-    if (isNaN(dateObj.getTime())) {
-      console.warn('Invalid date after conversion:', date);
-      return 0; // Default to Sunday
-    }
-    
-    return getDay(dateObj);
   }
 
   // Get first day of month (0 = Sunday, 1 = Monday, etc.)
   static getFirstDayOfMonth(year: number, month: number): number {
-    return getDay(startOfMonth(new Date(year, month, 1)));
+    return new Date(year, month - 1, 1).getDay();
   }
 
   // Get days in month
   static getDaysInMonth(year: number, month: number): number {
-    return getDaysInMonthFns(new Date(year, month, 1));
+    return new Date(year, month, 0).getDate();
   }
 
   // Parse date string to Date object
   static parseDate(dateString: string): Date {
-    return parseISO(dateString);
+    return new Date(dateString);
   }
 
   // Validate date string
   static isValidDate(dateString: string): boolean {
-    try {
-      parseISO(dateString);
-      return true;
-    } catch {
-      return false;
-    }
+    const date = new Date(dateString);
+    return !isNaN(date.getTime()) && isValidDateFns(date);
   }
 
   // Get current timestamp
@@ -444,53 +346,14 @@ export class DateUtils {
 
   // Format for display in calendar
   static formatForCalendar(date: Date | string): string {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
     const locale = this.getCurrentLocale();
-    return formatDateFns(dateObj, 'd', { locale }); // Just the day number
+    return formatDateFns(new Date(date), 'yyyy-MM-dd', { locale });
   }
 
   // Format for activity feed
   static formatForActivity(date: Date | string): string {
-    try {
-      let dateObj: Date;
-      
-      if (typeof date === 'string') {
-        // Handle string dates more safely
-        if (!date || date.trim() === '') {
-          return 'Unknown time';
-        }
-        dateObj = parseISO(date);
-        // Check if the parsed date is valid
-        if (isNaN(dateObj.getTime())) {
-          console.warn('Invalid date string in formatForActivity:', date);
-          return 'Unknown time';
-        }
-      } else {
-        // Handle Date objects
-        if (!date || isNaN(date.getTime())) {
-          console.warn('Invalid Date object in formatForActivity:', date);
-          return 'Unknown time';
-        }
-        dateObj = date;
-      }
-
-      const locale = this.getCurrentLocale();
-      const currentLang = i18n.language;
-
-      if (isTodayFns(dateObj)) {
-        return `${i18n.t('activity.today')}, ${this.formatTime(dateObj)}`;
-      }
-      if (isYesterdayFns(dateObj)) {
-        return `${i18n.t('activity.yesterday')}, ${this.formatTime(dateObj)}`;
-      }
-      if (isThisYear(dateObj)) {
-        return `${formatDateFns(dateObj, 'MMM dd', { locale })}, ${this.formatTime(dateObj)}`;
-      }
-      return `${this.formatDate(dateObj)}, ${this.formatTime(dateObj)}`;
-    } catch (error) {
-      console.error('Error formatting activity date:', error, 'Date value:', date);
-      return 'Unknown time';
-    }
+    const locale = this.getCurrentLocale();
+    return formatDateFns(new Date(date), 'MMM d, yyyy', { locale });
   }
 
   // Get greeting based on time of day
@@ -502,7 +365,7 @@ export class DateUtils {
   }
 
   // Check if a reminder is overdue
-  static isOverdue(dueDate?: string, completed?: boolean, dueTime?: string, reminder?: any): boolean {
+  static isOverdue(dueDate?: string, completed?: boolean, dueTime?: string, reminder?: ReminderData): boolean {
     if (!dueDate || completed) {return false;}
     
     try {
@@ -527,7 +390,6 @@ export class DateUtils {
       // For non-recurring reminders, use simple comparison
       return dueDateTime < now;
     } catch (error) {
-      console.warn('Error checking if reminder is overdue:', error);
       // Fallback to date-only comparison
       const today = this.getTodayISO();
       return dueDate < today;
@@ -638,7 +500,6 @@ export class DateUtils {
         return this.formatTime(timeString, format);
       }
     } catch (error) {
-      console.warn('Error formatting time:', timeString, error);
       return timeString; // Return original if formatting fails
     }
   }
@@ -646,32 +507,23 @@ export class DateUtils {
 
 // Export convenience functions
 export const getTodayISO = () => DateUtils.getTodayISO();
-export const getTodayFormatted = () => DateUtils.getTodayFormatted();
 export const formatDate = (date: Date | string | any, format?: DateFormat) => DateUtils.formatDate(date, format);
 export const formatTime = (date: Date | string | any, format?: TimeFormat) => DateUtils.formatTime(date, format);
 export const formatTimeOnly = (timeString: string, format?: TimeFormat) => DateUtils.formatTimeOnly(timeString, format);
-export const formatDateTime = (date: Date | string | any, dateFormat?: DateFormat, timeFormat?: TimeFormat) =>
-  DateUtils.formatDateTime(date, dateFormat, timeFormat);
 export const isToday = (date: Date | string | any) => DateUtils.isToday(date);
-export const isYesterday = (date: Date | string | any) => DateUtils.isYesterday(date);
-export const getRelativeDate = (date: Date | string | any) => DateUtils.getRelativeDate(date);
 export const getDayOfWeek = (date: Date | string | any) => DateUtils.getDayOfWeek(date);
 export const getFirstDayOfMonth = (year: number, month: number) => DateUtils.getFirstDayOfMonth(year, month);
 export const getDaysInMonth = (year: number, month: number) => DateUtils.getDaysInMonth(year, month);
 export const parseDate = (dateString: string) => DateUtils.parseDate(dateString);
 export const isValidDate = (dateString: string) => DateUtils.isValidDate(dateString);
-export const getCurrentTimestamp = () => DateUtils.getCurrentTimestamp();
-export const formatForCalendar = (date: Date | string) => DateUtils.formatForCalendar(date);
 export const formatForActivity = (date: Date | string) => DateUtils.formatForActivity(date);
 export const getGreeting = () => DateUtils.getGreeting();
-export const isOverdue = (dueDate?: string, completed?: boolean, dueTime?: string, reminder?: any) => DateUtils.isOverdue(dueDate, completed, dueTime, reminder);
+export const isOverdue = (dueDate?: string, completed?: boolean, dueTime?: string, reminder?: ReminderData) => DateUtils.isOverdue(dueDate, completed, dueTime, reminder);
 export const parseDateWithTimezone = (dateString: string, timeString?: string) => DateUtils.parseDateWithTimezone(dateString, timeString);
 export const getCurrentDateInTimezone = () => DateUtils.getCurrentDateInTimezone();
 export const compareDates = (date1: Date | string, date2: Date | string) => DateUtils.compareDates(date1, date2);
 export const isDateInPast = (date: Date | string) => DateUtils.isDateInPast(date);
 export const isDateToday = (date: Date | string) => DateUtils.isDateToday(date);
-export const addDaysToDate = (days: number) => DateUtils.addDaysToDate(days);
-export const formatRelativeTime = (dateString: string) => DateUtils.formatRelativeTime(dateString);
 
 /**
  * Date and Timezone Utilities for Recurring Reminders
@@ -699,7 +551,6 @@ export const normalizeDate = (date: Date | string | undefined | null | any): Dat
         const converted = date.toDate();
         return isNaN(converted.getTime()) ? undefined : converted;
       } catch (error) {
-        console.warn('Error converting Firestore timestamp:', error);
         return undefined;
       }
     }
@@ -711,7 +562,6 @@ export const normalizeDate = (date: Date | string | undefined | null | any): Dat
         const converted = new Date(seconds * 1000 + nanoseconds / 1000000);
         return isNaN(converted.getTime()) ? undefined : converted;
       } catch (error) {
-        console.warn('Error converting Firestore timestamp object:', error);
         return undefined;
       }
     }
@@ -725,23 +575,6 @@ export const normalizeDate = (date: Date | string | undefined | null | any): Dat
  */
 export const getUserTimezoneOffset = (): number => {
   return new Date().getTimezoneOffset();
-};
-
-/**
- * Convert a date to UTC while preserving the intended local time
- * This is useful for storing dates that should fire at a specific local time
- */
-export const toUTCPreservingLocalTime = (date: Date, timeString?: string): Date => {
-  const result = new Date(date);
-  
-  if (timeString) {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    result.setHours(hours, minutes, 0, 0);
-  }
-  
-  // Convert to UTC while preserving the local time
-  const utcDate = new Date(result.getTime() - (result.getTimezoneOffset() * 60000));
-  return utcDate;
 };
 
 /**
@@ -904,18 +737,4 @@ export const formatDateForDisplay = (date: Date | undefined | null): string => {
   return normalized.toLocaleDateString();
 };
 
-/**
- * Format a time for display
- */
-export const formatTimeForDisplay = (timeString: string | undefined): string => {
-  if (!timeString) return '';
-  
-  try {
-    const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch {
-    return timeString;
-  }
-};
+

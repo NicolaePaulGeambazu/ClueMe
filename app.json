@@ -6,6 +6,9 @@
   "description": "A simple, private, and effective reminder app designed to help you stay organized without the clutter.",
   "author": "ClearCue Team",
   "license": "MIT",
+  "privacy": "https://clearcue.app/privacy",
+  "terms": "https://clearcue.app/terms",
+  "support": "https://clearcue.app/support",
   "repository": {
     "type": "git",
     "url": "https://github.com/NicolaePaulGeambazu/ClueMe.git"

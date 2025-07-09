@@ -29,6 +29,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Fonts } from '../../constants/Fonts';
 import { formatDateForDisplay } from '../../utils/dateUtils';
+import { DisabledFeature } from '../premium/DisabledFeature';
+import { isProUser } from '../../services/featureFlags';
+import { getRecurringDescription } from '../../design-system/reminders/utils/recurring-utils';
+
 
 interface RepeatOptionsProps {
   isRecurring: boolean;
@@ -46,6 +50,8 @@ interface RepeatOptionsProps {
   onRecurringStartDateChange: (date: Date | undefined) => void;
   recurringEndDate?: Date;
   onRecurringEndDateChange: (date: Date | undefined) => void;
+  recurringEndAfter?: number;
+  onRecurringEndAfterChange?: (count: number | undefined) => void;
   onDatePickerOpen: (mode: 'start' | 'end') => void;
   showCustomInterval?: boolean;
   onShowCustomIntervalChange?: (show: boolean) => void;
@@ -54,49 +60,51 @@ interface RepeatOptionsProps {
   visible: boolean;
 }
 
-// Tier-based feature flags - temporarily allowing all features for testing
-const TIER_FEATURES = {
+// Premium feature limits
+const PREMIUM_LIMITS = {
   free: {
-    maxInterval: 365,
-    maxOccurrences: 999,
-    advancedOptions: true,
-    aiOptimization: true,
-    biomarkerIntegration: true
+    maxInterval: 365, // Temporarily increased for testing
+    maxOccurrences: 999, // Temporarily increased for testing
+    maxRepeatDays: 7, // Temporarily increased for testing
+    customIntervals: true, // Temporarily enabled for testing
+    advancedEndConditions: true // Temporarily enabled for testing
   },
   ascend: {
-    maxInterval: 365,
-    maxOccurrences: 999,
-    advancedOptions: true,
-    aiOptimization: true,
-    biomarkerIntegration: true
+    maxInterval: 30,
+    maxOccurrences: 50,
+    maxRepeatDays: 3,
+    customIntervals: true,
+    advancedEndConditions: true
   },
   apex: {
     maxInterval: 365,
     maxOccurrences: 999,
-    advancedOptions: true,
-    aiOptimization: true,
-    biomarkerIntegration: true
+    maxRepeatDays: 7,
+    customIntervals: true,
+    advancedEndConditions: true
   },
   immortal: {
     maxInterval: 365,
     maxOccurrences: 999,
-    advancedOptions: true,
-    aiOptimization: true,
-    biomarkerIntegration: true
+    maxRepeatDays: 7,
+    customIntervals: true,
+    advancedEndConditions: true
   }
 };
 
 const FREQUENCY_OPTIONS = [
-  { id: 'daily', label: 'Daily', icon: CalendarDays, description: 'Every day' },
-  { id: 'weekly', label: 'Weekly', icon: CalendarRange, description: 'Every week' },
-  { id: 'monthly', label: 'Monthly', icon: CalendarIcon, description: 'Every month' },
-  { id: 'yearly', label: 'Yearly', icon: CalendarCheck, description: 'Every year' }
+  { id: 'daily', label: 'Daily', icon: CalendarDays, description: 'Every day', premium: false },
+  { id: 'weekly', label: 'Weekly', icon: CalendarRange, description: 'Every week', premium: false },
+  { id: 'monthly', label: 'Monthly', icon: CalendarIcon, description: 'Every month', premium: false },
+  { id: 'yearly', label: 'Yearly', icon: CalendarCheck, description: 'Every year', premium: false },
+  { id: 'weekdays', label: 'Weekdays', icon: Calendar, description: 'Mon-Fri only', premium: false },
+  { id: 'custom', label: 'Custom', icon: Settings, description: 'Advanced patterns', premium: true }
 ];
 
 const END_CONDITIONS = [
-  { id: 'never', label: 'No end date', description: 'Repeat indefinitely' },
-  { id: 'on_date', label: 'On date', description: 'End on specific date' },
-  { id: 'after_occurrences', label: 'After occurrences', description: 'End after X times' }
+  { id: 'never', label: 'No end date', description: 'Repeat indefinitely', premium: false },
+  { id: 'on_date', label: 'On date', description: 'End on specific date', premium: true },
+  { id: 'after_occurrences', label: 'After occurrences', description: 'End after X times', premium: true }
 ];
 
 const DAYS_OF_WEEK = [
@@ -130,6 +138,8 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   onRecurringStartDateChange,
   recurringEndDate,
   onRecurringEndDateChange,
+  recurringEndAfter,
+  onRecurringEndAfterChange,
   onDatePickerOpen,
   showCustomInterval = false,
   onShowCustomIntervalChange,
@@ -139,47 +149,88 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
 }) => {
   const { t } = useTranslation();
   const styles = createStyles(colors);
-  const tierFeatures = TIER_FEATURES[userTier];
+  const tierLimits = PREMIUM_LIMITS[userTier];
+  const isPremiumUser = isProUser();
 
   // State management
   const [selectedFrequency, setSelectedFrequency] = useState(repeatPattern || 'daily');
   const [interval, setInterval] = useState(customInterval || 1);
-  const [endCondition, setEndCondition] = useState<'never' | 'on_date' | 'after_occurrences'>('never');
+  const [endCondition, setEndCondition] = useState<'never' | 'on_date' | 'after_occurrences'>(
+    recurringEndAfter ? 'after_occurrences' : recurringEndDate ? 'on_date' : 'never'
+  );
   const [endDate, setEndDate] = useState<Date | undefined>(recurringEndDate);
-  const [occurrences, setOccurrences] = useState(5);
+  const [occurrences, setOccurrences] = useState(recurringEndAfter || 5);
   const [selectedDays, setSelectedDays] = useState<number[]>(repeatDays);
-  const [monthlyRepeatBy, setMonthlyRepeatBy] = useState<'day_of_month' | 'day_of_week_in_month'>('day_of_month');
-  const [aiOptimization, setAiOptimization] = useState(userTier === 'immortal');
-  const [biomarkerIntegration, setBiomarkerIntegration] = useState(userTier === 'immortal');
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [datePickerMode, setDatePickerMode] = useState<'start' | 'end'>('end');
+  const [showLocalDatePicker, setShowLocalDatePicker] = useState(false);
 
   const handleFrequencySelect = useCallback((frequency: string) => {
+    const option = FREQUENCY_OPTIONS.find(opt => opt.id === frequency);
+    
+    // Temporarily disable premium checks for testing
+    // if (option?.premium && !isPremiumUser) {
+    //   // Show premium upgrade prompt
+    //   return;
+    // }
+    
     setSelectedFrequency(frequency);
     onRepeatPatternChange(frequency);
-    // Also save the custom frequency type for custom patterns
-    if (onCustomFrequencyTypeChange && ['daily', 'weekly', 'monthly', 'yearly'].includes(frequency)) {
-      onCustomFrequencyTypeChange(frequency as 'daily' | 'weekly' | 'monthly' | 'yearly');
+    
+    // Reset custom settings when switching to non-custom patterns
+    if (frequency !== 'custom') {
+      setSelectedDays([]);
+      onRepeatDaysChange([]);
+      if (onCustomFrequencyTypeChange && ['daily', 'weekly', 'monthly', 'yearly'].includes(frequency)) {
+        onCustomFrequencyTypeChange(frequency as 'daily' | 'weekly' | 'monthly' | 'yearly');
+      }
     }
-  }, [onRepeatPatternChange, onCustomFrequencyTypeChange]);
+  }, [onRepeatPatternChange, onCustomFrequencyTypeChange, onRepeatDaysChange]);
 
   const handleIntervalChange = useCallback((value: string) => {
     const newInterval = parseInt(value);
-    if (!isNaN(newInterval) && newInterval > 0 && newInterval <= tierFeatures.maxInterval) {
+    if (!isNaN(newInterval) && newInterval > 0 && newInterval <= tierLimits.maxInterval) {
       setInterval(newInterval);
       onCustomIntervalChange(newInterval);
     }
-  }, [tierFeatures.maxInterval, onCustomIntervalChange]);
+  }, [tierLimits.maxInterval, onCustomIntervalChange]);
 
   const handleEndConditionSelect = useCallback((condition: typeof endCondition) => {
+    const option = END_CONDITIONS.find(opt => opt.id === condition);
+    
+    // Temporarily disable premium checks for testing
+    // if (option?.premium && !isPremiumUser) {
+    //   // Show premium upgrade prompt
+    //   return;
+    // }
+    
     setEndCondition(condition);
     if (condition === 'never') {
       onRecurringEndDateChange(undefined);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(undefined);
+      }
+    } else if (condition === 'after_occurrences') {
+      onRecurringEndDateChange(undefined);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(occurrences);
+      }
+    } else if (condition === 'on_date') {
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(undefined);
+      }
     }
-  }, [onRecurringEndDateChange]);
+  }, [onRecurringEndDateChange, onRecurringEndAfterChange, occurrences]);
 
   const handleDayToggle = useCallback((day: number) => {
+    // Temporarily disable premium checks for testing
+    // if (!tierLimits.customIntervals && selectedDays.length >= tierLimits.maxRepeatDays && !selectedDays.includes(day)) {
+    //   Alert.alert(
+    //     'Upgrade Required',
+    //     `Free users can select up to ${tierLimits.maxRepeatDays} days. Upgrade to select more days.`
+    //   );
+    //   return;
+    // }
+    
     if (selectedDays.includes(day)) {
       const newDays = selectedDays.filter(d => d !== day);
       setSelectedDays(newDays);
@@ -191,35 +242,49 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
     }
   }, [selectedDays, onRepeatDaysChange]);
 
+  const handleOccurrencesChange = useCallback((value: string) => {
+    const newOccurrences = parseInt(value);
+    if (!isNaN(newOccurrences) && newOccurrences > 0 && newOccurrences <= tierLimits.maxOccurrences) {
+      setOccurrences(newOccurrences);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(newOccurrences);
+      }
+    }
+  }, [tierLimits.maxOccurrences, onRecurringEndAfterChange]);
+
+  const handleDatePickerOpen = useCallback(() => {
+    setShowLocalDatePicker(true);
+  }, []);
+
+  const handleDatePickerClose = useCallback(() => {
+    setShowLocalDatePicker(false);
+  }, []);
+
+  const handleDatePickerSelect = useCallback((date: Date) => {
+    setEndDate(date);
+    onRecurringEndDateChange(date);
+    setShowLocalDatePicker(false);
+  }, [onRecurringEndDateChange]);
+
   const handleUpgradePress = useCallback(() => {
     Alert.alert(
-      'Upgrade to Unlock',
-      'This feature is available in higher tiers. Upgrade to access advanced repeat scheduling options.',
+      '🎉 Unlock Pro Features',
+      'Upgrade to ClearCue Pro to access advanced recurring patterns, custom intervals, and more powerful scheduling options.',
       [
-        { text: 'Learn More', onPress: () => console.log('Navigate to upgrade') },
-        { text: 'Cancel', style: 'cancel' }
+        { 
+          text: 'Upgrade to Pro', 
+          onPress: () => {
+            // For testing, upgrade the user
+            // In production, this would navigate to the upgrade flow
+          },
+          style: 'default'
+        },
+        { text: 'Maybe Later', style: 'cancel' }
       ]
     );
   }, []);
 
-  const handleDatePickerOpen = useCallback((mode: 'start' | 'end') => {
-    setDatePickerMode(mode);
-    setShowDatePicker(true);
-  }, []);
 
-  const handleDatePickerConfirm = useCallback((date: Date) => {
-    if (datePickerMode === 'end') {
-      setEndDate(date);
-      onRecurringEndDateChange(date);
-    } else {
-      onRecurringStartDateChange(date);
-    }
-    setShowDatePicker(false);
-  }, [datePickerMode, onRecurringEndDateChange, onRecurringStartDateChange]);
-
-  const handleDatePickerCancel = useCallback(() => {
-    setShowDatePicker(false);
-  }, []);
 
   const getSummaryText = useCallback(() => {
     const frequencyText = FREQUENCY_OPTIONS.find(f => f.id === selectedFrequency)?.label || 'Daily';
@@ -245,35 +310,49 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
 
   const renderFrequencySelection = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Frequency</Text>
-      <View style={styles.frequencyList}>
+      <Text style={styles.sectionTitle}>Repeat Pattern</Text>
+      <View style={styles.optionsGrid}>
         {FREQUENCY_OPTIONS.map((option) => {
-          const IconComponent = option.icon;
           const isSelected = selectedFrequency === option.id;
+          // Temporarily disable premium restrictions for testing
+          const isDisabled = false; // option.premium && !isPremiumUser;
+          
           return (
             <TouchableOpacity
               key={option.id}
-              style={[styles.frequencyOption, isSelected && styles.frequencyOptionSelected]}
+              style={[
+                styles.optionCard,
+                isSelected && styles.selectedOption,
+                isDisabled && styles.disabledOption
+              ]}
               onPress={() => handleFrequencySelect(option.id)}
+              disabled={isDisabled}
             >
-              <View style={styles.frequencyOptionContent}>
-                <IconComponent 
-                  size={24} 
-                  color={isSelected ? colors.primary : colors.textSecondary} 
-                  strokeWidth={2} 
+              <View style={styles.optionContent}>
+                <option.icon 
+                  size={20} 
+                  color={isSelected ? colors.primary : isDisabled ? colors.textSecondary : colors.text} 
                 />
-                <View style={styles.frequencyTextContainer}>
-                  <Text style={[styles.frequencyLabel, isSelected && styles.frequencyLabelSelected]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.frequencyDescription, isSelected && styles.frequencyDescriptionSelected]}>
-                    {option.description}
-                  </Text>
-                </View>
+                <Text style={[
+                  styles.optionLabel,
+                  isSelected && styles.selectedOptionText,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {option.label}
+                </Text>
+                <Text style={[
+                  styles.optionDescription,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {option.description}
+                </Text>
+                {option.premium && !isPremiumUser && (
+                  <View style={styles.premiumBadge}>
+                    <Crown size={12} color="#8B4513" fill="#8B4513" />
+                    <Text style={styles.premiumText}>Pro</Text>
+                  </View>
+                )}
               </View>
-              {isSelected && (
-                <View style={[styles.checkmark, { backgroundColor: colors.primary }]} />
-              )}
             </TouchableOpacity>
           );
         })}
@@ -283,208 +362,189 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
 
   const renderIntervalControl = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Repeat Every</Text>
+      <Text style={styles.sectionTitle}>Interval</Text>
       <View style={styles.intervalContainer}>
-        <View style={styles.intervalInputContainer}>
-          <TextInput
-            style={[styles.intervalInput, { color: colors.text }]}
-            value={interval.toString()}
-            onChangeText={handleIntervalChange}
-            keyboardType="numeric"
-            editable={true}
-          />
-          <Text style={styles.intervalUnit}>
-            {selectedFrequency === 'daily' ? 'day(s)' :
-             selectedFrequency === 'weekly' ? 'week(s)' :
-             selectedFrequency === 'monthly' ? 'month(s)' : 'year(s)'}
-          </Text>
-        </View>
+        <Text style={styles.intervalLabel}>Every</Text>
+        <TextInput
+          style={styles.intervalInput}
+          value={interval.toString()}
+          onChangeText={handleIntervalChange}
+          keyboardType="numeric"
+          maxLength={3}
+          editable={tierLimits.customIntervals}
+        />
+        <Text style={styles.intervalLabel}>
+          {selectedFrequency === 'daily' ? 'day(s)' :
+           selectedFrequency === 'weekly' ? 'week(s)' :
+           selectedFrequency === 'monthly' ? 'month(s)' :
+           selectedFrequency === 'yearly' ? 'year(s)' : 'time(s)'}
+        </Text>
+        {/* Temporarily disabled premium upgrade prompt for testing */}
+        {/* {!tierLimits.customIntervals && (
+          <TouchableOpacity onPress={handleUpgradePress}>
+            <View style={styles.premiumBadge}>
+              <Crown size={12} color="#8B4513" fill="#8B4513" />
+              <Text style={styles.premiumText}>Upgrade</Text>
+            </View>
+          </TouchableOpacity>
+        )} */}
       </View>
     </View>
   );
 
+  const renderCustomDaysSelection = () => {
+    if (selectedFrequency !== 'custom') return null;
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Repeat on Days</Text>
+        <View style={styles.daysGrid}>
+          {DAYS_OF_WEEK.map((day) => {
+            const isSelected = selectedDays.includes(day.id);
+            // Temporarily disable premium restrictions for testing
+            const isDisabled = false; // !tierLimits.customIntervals && 
+                              // selectedDays.length >= tierLimits.maxRepeatDays && 
+                              // !isSelected;
+            
+            return (
+              <TouchableOpacity
+                key={day.id}
+                style={[
+                  styles.dayButton,
+                  isSelected && styles.selectedDay,
+                  isDisabled && styles.disabledDay
+                ]}
+                onPress={() => handleDayToggle(day.id)}
+                disabled={isDisabled}
+              >
+                <Text style={[
+                  styles.dayButtonText,
+                  isSelected && styles.selectedDayText,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {day.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {selectedDays.length > 0 && (
+          <Text style={styles.selectedDaysText}>
+            Selected: {selectedDays.map(day => 
+              DAYS_OF_WEEK.find(d => d.id === day)?.fullLabel
+            ).join(', ')}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
   const renderEndCondition = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>End Condition</Text>
-      <View style={styles.endConditionContainer}>
-        {END_CONDITIONS.map((condition) => {
-          const isSelected = endCondition === condition.id;
+      <View style={styles.optionsGrid}>
+        {END_CONDITIONS.map((option) => {
+          const isSelected = endCondition === option.id;
+          // Temporarily disable premium restrictions for testing
+          const isDisabled = false; // option.premium && !isPremiumUser;
           
           return (
             <TouchableOpacity
-              key={condition.id}
-              style={[styles.endConditionOption, isSelected && styles.endConditionOptionSelected]}
-              onPress={() => handleEndConditionSelect(condition.id as typeof endCondition)}
+              key={option.id}
+              style={[
+                styles.optionCard,
+                isSelected && styles.selectedOption,
+                isDisabled && styles.disabledOption
+              ]}
+              onPress={() => handleEndConditionSelect(option.id as typeof endCondition)}
+              disabled={isDisabled}
             >
-              <View style={styles.endConditionContent}>
-                <Text style={[styles.endConditionLabel, isSelected && styles.endConditionLabelSelected]}>
-                  {condition.label}
+              <View style={styles.optionContent}>
+                <Text style={[
+                  styles.optionLabel,
+                  isSelected && styles.selectedOptionText,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {option.label}
                 </Text>
-                <Text style={[styles.endConditionDescription, isSelected && styles.endConditionDescriptionSelected]}>
-                  {condition.description}
+                <Text style={[
+                  styles.optionDescription,
+                  isDisabled && styles.disabledText
+                ]}>
+                  {option.description}
                 </Text>
+                {/* Temporarily hide premium badges for testing */}
+                {/* {option.premium && !isPremiumUser && (
+                  <View style={styles.premiumBadge}>
+                    <Crown size={12} color={colors.warning} />
+                    <Text style={styles.premiumText}>Premium</Text>
+                  </View>
+                )} */}
               </View>
-              {isSelected && (
-                <View style={[styles.checkmark, { backgroundColor: colors.primary }]} />
-              )}
             </TouchableOpacity>
           );
         })}
       </View>
       
       {endCondition === 'on_date' && (
-        <TouchableOpacity 
-          style={styles.datePickerButton}
-          onPress={() => handleDatePickerOpen('end')}
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => {
+            handleDatePickerOpen();
+          }}
         >
-          <Calendar size={20} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.datePickerText}>
+          <Calendar size={16} color={colors.primary} />
+          <Text style={styles.dateButtonText}>
             {endDate ? formatDateForDisplay(endDate) : 'Select end date'}
           </Text>
-          <ChevronRight size={20} color={colors.textSecondary} strokeWidth={2} />
+          <ChevronRight size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
       
       {endCondition === 'after_occurrences' && (
         <View style={styles.occurrencesContainer}>
-          <Text style={styles.occurrencesLabel}>Number of occurrences:</Text>
+          <Text style={styles.occurrencesLabel}>End after</Text>
           <TextInput
-            style={[styles.occurrencesInput, { color: colors.text }]}
+            style={styles.occurrencesInput}
             value={occurrences.toString()}
-            onChangeText={(value) => {
-              const num = parseInt(value);
-              if (!isNaN(num) && num > 0 && num <= tierFeatures.maxOccurrences) {
-                setOccurrences(num);
-              }
-            }}
+            onChangeText={handleOccurrencesChange}
             keyboardType="numeric"
             maxLength={3}
           />
+          <Text style={styles.occurrencesLabel}>occurrences</Text>
         </View>
       )}
     </View>
   );
 
-  const renderAdvancedOptions = () => {
-    if (!tierFeatures.advancedOptions) return null;
-
+  const renderPatternPreview = () => {
+    const mockReminder = {
+      id: 'preview',
+      userId: 'preview',
+      title: 'Preview',
+      type: 'task' as const,
+      priority: 'medium' as const,
+      status: 'pending' as const,
+      isRecurring: true,
+      repeatPattern: selectedFrequency,
+      customInterval: interval,
+      repeatDays: selectedDays,
+      recurringEndDate: endCondition === 'on_date' ? endDate : undefined,
+      recurringEndAfter: endCondition === 'after_occurrences' ? occurrences : undefined,
+      timezone: 'America/New_York', // Default for preview
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const description = getRecurringDescription(mockReminder as any);
+    
     return (
-      <View style={styles.section}>
-        <TouchableOpacity 
-          style={styles.advancedHeader}
-          onPress={() => setShowAdvancedOptions(!showAdvancedOptions)}
-        >
-          <Settings size={20} color={colors.textSecondary} strokeWidth={2} />
-          <Text style={styles.advancedTitle}>Advanced Options</Text>
-          <ChevronRight 
-            size={20} 
-            color={colors.textSecondary} 
-            strokeWidth={2}
-            style={[styles.chevron, showAdvancedOptions && styles.chevronRotated]}
-          />
-        </TouchableOpacity>
-        
-        {showAdvancedOptions && (
-          <View style={styles.advancedContent}>
-                                      {selectedFrequency === 'weekly' && (
-               <View>
-                 <Text style={styles.advancedSectionTitle}>Days of Week</Text>
-                 <View style={styles.daysGrid}>
-                   {DAYS_OF_WEEK.map((day) => (
-                     <TouchableOpacity
-                       key={day.id}
-                       style={[
-                         styles.dayOption,
-                         selectedDays.includes(day.id) && styles.dayOptionSelected
-                       ]}
-                       onPress={() => handleDayToggle(day.id)}
-                     >
-                       <Text style={[
-                         styles.dayLabel,
-                         selectedDays.includes(day.id) && styles.dayLabelSelected
-                       ]}>
-                         {day.label}
-                       </Text>
-                     </TouchableOpacity>
-                   ))}
-                 </View>
-               </View>
-             )}
-             
-             {selectedFrequency === 'monthly' && (
-               <View>
-                 <Text style={styles.advancedSectionTitle}>Monthly Repeat By</Text>
-                 {MONTHLY_REPEAT_OPTIONS.map((option) => (
-                   <TouchableOpacity
-                     key={option.id}
-                     style={[
-                       styles.monthlyOption,
-                       monthlyRepeatBy === option.id && styles.monthlyOptionSelected
-                     ]}
-                     onPress={() => setMonthlyRepeatBy(option.id as 'day_of_month' | 'day_of_week_in_month')}
-                   >
-                     <Text style={[
-                       styles.monthlyOptionLabel,
-                       monthlyRepeatBy === option.id && styles.monthlyOptionLabelSelected
-                     ]}>
-                       {option.label}
-                     </Text>
-                     <Text style={[
-                       styles.monthlyOptionDescription,
-                       monthlyRepeatBy === option.id && styles.monthlyOptionDescriptionSelected
-                     ]}>
-                       {option.description}
-                     </Text>
-                   </TouchableOpacity>
-                 ))}
-               </View>
-             )}
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  const renderAIOptions = () => {
-    if (!tierFeatures.aiOptimization) return null;
-
-    return (
-      <View style={styles.section}>
-        <View style={styles.aiHeader}>
-          <Sparkles size={20} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.aiTitle}>AI Optimization</Text>
-          {userTier === 'immortal' && (
-            <Crown size={16} color={colors.primary} strokeWidth={2} />
-          )}
+      <View style={styles.previewSection}>
+        <Text style={styles.previewTitle}>Pattern Preview</Text>
+        <View style={styles.previewCard}>
+          <Repeat size={16} color={colors.primary} />
+          <Text style={styles.previewText}>{description}</Text>
         </View>
-        
-        <TouchableOpacity
-          style={[styles.aiToggle, aiOptimization && styles.aiToggleActive]}
-          onPress={() => setAiOptimization(!aiOptimization)}
-        >
-          <View style={[styles.aiToggleDot, aiOptimization && styles.aiToggleDotActive]} />
-        </TouchableOpacity>
-        
-        <Text style={styles.aiDescription}>
-          {userTier === 'apex' 
-            ? 'AI will suggest optimal repeat patterns based on your progress and readiness.'
-            : 'AI will automatically adjust repeat frequency based on your biometrics and goals.'}
-        </Text>
-        
-        {userTier === 'immortal' && (
-          <TouchableOpacity
-            style={[styles.biomarkerToggle, biomarkerIntegration && styles.biomarkerToggleActive]}
-            onPress={() => setBiomarkerIntegration(!biomarkerIntegration)}
-          >
-            <View style={styles.biomarkerContent}>
-              <Text style={styles.biomarkerLabel}>Biomarker Integration</Text>
-              <Text style={styles.biomarkerDescription}>
-                Include blood panel and genomic data for ultra-precise scheduling
-              </Text>
-            </View>
-            <View style={[styles.biomarkerToggleDot, biomarkerIntegration && styles.biomarkerToggleDotActive]} />
-          </TouchableOpacity>
-        )}
       </View>
     );
   };
@@ -514,9 +574,9 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {renderFrequencySelection()}
           {renderIntervalControl()}
+          {renderCustomDaysSelection()}
           {renderEndCondition()}
-          {renderAdvancedOptions()}
-          {renderAIOptions()}
+          {renderPatternPreview()}
         </ScrollView>
 
         {/* Footer */}
@@ -536,12 +596,12 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
         </View>
       </View>
 
-      {/* Custom Date Picker Modal */}
+      {/* Local Date Picker */}
       <CustomDateTimePickerModal
-        visible={showDatePicker}
-        onClose={handleDatePickerCancel}
-        onConfirm={handleDatePickerConfirm}
-        initialDate={datePickerMode === 'end' ? (endDate || new Date()) : (recurringStartDate || new Date())}
+        visible={showLocalDatePicker}
+        onClose={handleDatePickerClose}
+        onConfirm={handleDatePickerSelect}
+        initialDate={endDate || new Date()}
         mode="date"
         colors={colors}
       />
@@ -601,64 +661,58 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.text,
     marginBottom: 12,
   },
-  frequencyList: {
+  optionsGrid: {
     gap: 8,
   },
-  frequencyOption: {
+  optionCard: {
     backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
-  frequencyOptionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  frequencyTextContainer: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  frequencyOptionSelected: {
+  selectedOption: {
     borderColor: colors.primary,
     backgroundColor: colors.primary + '10',
   },
-  frequencyLabel: {
+  disabledOption: {
+    borderColor: colors.textSecondary,
+    backgroundColor: colors.surface,
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  optionLabel: {
     fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.text,
-    marginTop: 8,
+    marginLeft: 12,
+    flex: 1,
   },
-  frequencyLabelSelected: {
-    color: colors.primary,
-  },
-  frequencyDescription: {
+  optionDescription: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 4,
-    textAlign: 'center',
+    marginLeft: 12,
+    marginTop: 2,
   },
-  frequencyDescriptionSelected: {
-    color: colors.primary + '80',
+  selectedOptionText: {
+    color: colors.primary,
+  },
+  disabledText: {
+    color: colors.textSecondary,
   },
   intervalContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  intervalInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    flex: 1,
+  intervalLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   intervalInput: {
     fontFamily: Fonts.text.semibold,
@@ -666,69 +720,67 @@ const createStyles = (colors: any) => StyleSheet.create({
     minWidth: 40,
     textAlign: 'center',
   },
-  intervalUnit: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 16,
-    color: colors.textSecondary,
+  premiumBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
     marginLeft: 8,
-  },
-  upgradeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary + '15',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    gap: 4,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  upgradeText: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 12,
-    color: colors.primary,
-    marginLeft: 4,
+  premiumText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 11,
+    color: '#8B4513',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  endConditionContainer: {
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
-  endConditionOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  dayButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  endConditionOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
-  },
-  endConditionContent: {
-    flex: 1,
-  },
-  endConditionLabel: {
+  dayButtonText: {
     fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.text,
+    fontSize: 12,
+    color: colors.textSecondary,
   },
-  endConditionLabelSelected: {
-    color: colors.primary,
+  selectedDay: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
-  endConditionDescription: {
+  selectedDayText: {
+    color: colors.surface,
+  },
+  disabledDay: {
+    backgroundColor: colors.surface,
+    borderColor: colors.textSecondary,
+  },
+  selectedDaysText: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 8,
+    fontStyle: 'italic',
   },
-  endConditionDescriptionSelected: {
-    color: colors.primary + '80',
-  },
-  checkmark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-  },
-  datePickerButton: {
+  dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surface,
@@ -736,7 +788,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
   },
-  datePickerText: {
+  dateButtonText: {
     fontFamily: Fonts.text.medium,
     fontSize: 14,
     color: colors.text,
@@ -767,164 +819,26 @@ const createStyles = (colors: any) => StyleSheet.create({
     minWidth: 60,
     textAlign: 'center',
   },
-  advancedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
+  previewSection: {
+    marginTop: 24,
   },
-  advancedTitle: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.text,
-    marginLeft: 12,
-    flex: 1,
-  },
-  chevron: {
-    transform: [{ rotate: '0deg' }],
-  },
-  chevronRotated: {
-    transform: [{ rotate: '90deg' }],
-  },
-  advancedContent: {
-    marginTop: 12,
-    gap: 16,
-  },
-  advancedSectionTitle: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.text,
-    marginBottom: 8,
-  },
-  daysGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  dayOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  dayOptionSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  dayLabel: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  dayLabelSelected: {
-    color: colors.surface,
-  },
-  monthlyOptions: {
-    gap: 8,
-  },
-  monthlyOption: {
-    backgroundColor: colors.surface,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  monthlyOptionSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '10',
-  },
-  monthlyOptionLabel: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.text,
-  },
-  monthlyOptionLabelSelected: {
-    color: colors.primary,
-  },
-  monthlyOptionDescription: {
-    fontFamily: Fonts.text.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  monthlyOptionDescriptionSelected: {
-    color: colors.primary + '80',
-  },
-  aiHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  aiTitle: {
+  previewTitle: {
     fontFamily: Fonts.text.semibold,
     fontSize: 16,
     color: colors.text,
-    marginLeft: 12,
-    flex: 1,
+    marginBottom: 12,
   },
-  aiToggle: {
-    width: 50,
-    height: 28,
-    backgroundColor: colors.textTertiary,
-    borderRadius: 14,
-    padding: 2,
-    marginBottom: 8,
-  },
-  aiToggleActive: {
-    backgroundColor: colors.primary,
-  },
-  aiToggleDot: {
-    width: 24,
-    height: 24,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-  },
-  aiToggleDotActive: {
-    transform: [{ translateX: 22 }],
-  },
-  aiDescription: {
-    fontFamily: Fonts.text.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: 16,
-  },
-  biomarkerToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  previewCard: {
     backgroundColor: colors.surface,
     padding: 16,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  biomarkerToggleActive: {
-    backgroundColor: colors.primary + '10',
-  },
-  biomarkerContent: {
-    flex: 1,
-  },
-  biomarkerLabel: {
-    fontFamily: Fonts.text.medium,
+  previewText: {
+    fontFamily: Fonts.text.regular,
     fontSize: 14,
     color: colors.text,
-  },
-  biomarkerDescription: {
-    fontFamily: Fonts.text.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  biomarkerToggleDot: {
-    width: 20,
-    height: 20,
-    backgroundColor: colors.textTertiary,
-    borderRadius: 10,
-  },
-  biomarkerToggleDotActive: {
-    backgroundColor: colors.primary,
   },
   footer: {
     flexDirection: 'row',

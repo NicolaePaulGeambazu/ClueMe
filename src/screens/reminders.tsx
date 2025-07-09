@@ -5,11 +5,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Star, CheckCircle, AlertCircle, Timer, List, Trash2, Edit, ChevronDown, SortAsc, SortDesc, Repeat, Clock, Calendar, Tag, Bell, Plus } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
-import { useReminders } from '../hooks/useReminders';
+import { useReminderContext } from '../contexts/ReminderContext';
+import { useModal } from '../contexts/ModalContext';
 import { Colors } from '../constants/Colors';
-import { filterReminders, sortReminders, showRecurringDeleteConfirmation, isRecurringReminder, getRecurringPatternDescription } from '../utils/reminderUtils';
+import { filterReminders, sortReminders, getRecurringDeleteConfirmationProps, isRecurringReminder, getRecurringPatternDescription } from '../utils/reminderUtils';
 import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
+import { TextStyles, DeviceInfo } from '../utils/textScaling';
 import { formatDate, formatTimeOnly, isOverdue as isOverdueUtil } from '../utils/dateUtils';
+import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
+import BannerAdComponent from '../components/ads/BannerAdComponent';
+import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
+import { ChunkedTaskProgress } from '../components/reminders/ChunkedTaskProgress';
+import { usePremium } from '../hooks/usePremium';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,9 +29,15 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const { reminders, isLoading, error, loadReminders, deleteReminder } = useReminders();
+  const { reminders, isLoading, isInitialized, error, loadReminders, deleteReminder } = useReminderContext();
+  const { isPremium } = usePremium();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState(route.params?.initialTab || 'total');
+  
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteModalProps, setDeleteModalProps] = useState<any>(null);
   
   // Sorting state
   const [sortOption, setSortOption] = useState<'chronological' | 'name' | 'priority' | 'created' | 'dueDate'>('chronological');
@@ -53,7 +66,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   // Debug log only when relevant data changes
   useEffect(() => {
     if (__DEV__) {
-      console.log('📋 RemindersScreen rendering:', {
+      console.log({
         isLoading,
         remindersCount: reminders?.length || 0,
         activeTab,
@@ -65,10 +78,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
     }
   }, [isLoading, reminders, activeTab, sortOption, sortDirection, error]);
 
-  // Load reminders on mount
-  useEffect(() => {
-    loadReminders();
-  }, []);
+  // Load reminders on mount - removed since useReminders handles this automatically
 
   const tabs = useMemo(() => [
     { key: 'total', label: t('home.stats.total'), icon: List },
@@ -87,8 +97,16 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await loadReminders();
-    setIsRefreshing(false);
+    setIsSyncing(true);
+    try {
+      // Use a more gentle refresh that doesn't cause visual jarring
+      await loadReminders(0, false);
+    } catch (error) {
+    } finally {
+      setIsRefreshing(false);
+      // Hide sync indicator after a short delay
+      setTimeout(() => setIsSyncing(false), 800);
+    }
   }, [loadReminders]);
 
   const handleBack = useCallback(() => {
@@ -96,30 +114,67 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   }, [navigation]);
 
   const handleDeleteReminder = useCallback(async (reminderId: string) => {
-    Alert.alert(
-      t('reminders.deleteReminder'),
-      t('reminders.deleteConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('reminders.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteReminder(reminderId);
-            } catch (error) {
-              console.error('Error deleting reminder:', error);
-              Alert.alert(t('common.error'), t('reminders.deleteError'));
-            }
-          },
-        },
-      ]
-    );
-  }, [t, deleteReminder]);
+    const reminder = reminders?.find(r => r.id === reminderId);
+    if (!reminder) return;
+
+    if (isRecurringReminder(reminder)) {
+      // Show recurring delete modal
+      const props = getRecurringDeleteConfirmationProps(
+        reminder,
+        () => handleDeleteSingle(reminderId),
+        () => handleDeleteAll(reminderId)
+      );
+      setDeleteModalProps({
+        ...props,
+        onClose: () => setShowDeleteModal(false),
+      });
+      setShowDeleteModal(true);
+    } else {
+      // Show regular delete modal
+      setDeleteModalProps({
+        visible: true,
+        onClose: () => setShowDeleteModal(false),
+        onConfirm: () => handleDeleteSingle(reminderId),
+        title: t('reminders.deleteReminder'),
+        message: t('reminders.deleteConfirm'),
+        itemName: reminder.title,
+        isRecurring: false,
+        type: 'reminder',
+        destructive: true,
+      });
+      setShowDeleteModal(true);
+    }
+  }, [t, reminders, deleteReminder]);
+
+  const handleDeleteSingle = useCallback(async (reminderId: string) => {
+    try {
+      setIsSyncing(true);
+      await deleteReminder(reminderId);
+      setShowDeleteModal(false);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('reminders.deleteError'));
+    } finally {
+      setTimeout(() => setIsSyncing(false), 1000);
+    }
+  }, [deleteReminder, t]);
+
+  const handleDeleteAll = useCallback(async (reminderId: string) => {
+    try {
+      setIsSyncing(true);
+      await deleteReminder(reminderId);
+      setShowDeleteModal(false);
+    } catch (error) {
+      Alert.alert(t('common.error'), t('reminders.deleteError'));
+    } finally {
+      setTimeout(() => setIsSyncing(false), 1000);
+    }
+  }, [deleteReminder, t]);
+
+  const { showEditReminderModal } = useModal();
 
   const handleEditReminder = useCallback((reminderId: string) => {
-    navigation.navigate('EditReminder', { reminderId });
-  }, [navigation]);
+    showEditReminderModal(reminderId);
+  }, [showEditReminderModal]);
 
   const getSortedReminders = useCallback((remindersToSort: any[]) => {
     switch (sortOption) {
@@ -139,8 +194,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   }, [sortOption, sortDirection]);
 
   const filteredReminders = useMemo(() => {
-    if (!reminders || reminders.length === 0) {
-      console.log('No reminders available');
+    if (!reminders || !isInitialized || reminders.length === 0) {
       return [];
     }
     
@@ -163,7 +217,6 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
     }
     
     const sorted = getSortedReminders(filtered || []);
-    console.log(`Filtered reminders for ${activeTab}:`, sorted?.length || 0);
     return sorted;
   }, [reminders, activeTab, getSortedReminders]);
 
@@ -202,9 +255,6 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
         <Text style={[styles.emptyText, { color: colors.text }]}> 
           {emptyMessage}
         </Text>
-        <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-          {t('reminders.tapPlusToAdd')}
-        </Text>
       </Animated.View>
     );
   };
@@ -221,9 +271,16 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
               <ArrowLeft size={22} color={colors.text} strokeWidth={2} />
             </View>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {t('reminders.title')}
-          </Text>
+          <View style={styles.headerTitleContainer}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>
+              {t('reminders.title')}
+            </Text>
+            {isSyncing && (
+              <View style={[styles.syncIndicator, { backgroundColor: colors.primary }]}>
+                <Text style={styles.syncText}>🔄</Text>
+              </View>
+            )}
+          </View>
           <TouchableOpacity 
             onPress={() => setShowSortModal(true)} 
             style={styles.sortButton}
@@ -313,7 +370,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
       ) : (
         <RemindersList
           reminders={filteredReminders}
-          isLoading={isLoading}
+          isLoading={isLoading && !isInitialized}
           emptyMessage={emptyMessage}
           colors={colors}
           onDeleteReminder={handleDeleteReminder}
@@ -321,6 +378,17 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
           EmptyState={EmptyState}
         />
       )}
+
+      {/* Banner Ad - Bottom of Reminders Screen (only for free users) */}
+      {!isPremium && (
+        <BannerAdComponent style={{ marginBottom: 20 }} />
+      )}
+
+      {/* Interstitial Ad Trigger - Show after user deletes 2 reminders */}
+      <InterstitialAdTrigger
+        triggerOnAction={true}
+        actionCompleted={reminders?.filter(r => r.deletedAt).length >= 2}
+      />
 
       {/* Floating Action Button */}
       <TouchableOpacity 
@@ -443,6 +511,15 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
           </Animated.View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deleteModalProps && (
+        <DeleteConfirmationModal
+          {...deleteModalProps}
+          visible={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -459,7 +536,8 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
   const { t } = useTranslation();
   const translateX = useRef(new Animated.Value(0)).current;
   const deleteOpacity = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const deleteScale = useRef(new Animated.Value(0.8)).current;
+  const cardScale = useRef(new Animated.Value(1)).current;
   const [isOpen, setIsOpen] = useState(false);
 
   const onGestureEvent = Animated.event(
@@ -472,23 +550,44 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
       const { translationX } = event.nativeEvent;
 
       if (translationX < -60) {
-        // Swipe left - open delete
+        // Swipe left - open delete with smooth animation and bounce effect
         Animated.parallel([
           Animated.spring(translateX, {
             toValue: -100,
             useNativeDriver: true,
-            tension: 100,
-            friction: 8,
+            tension: 80,
+            friction: 9,
+            restDisplacementThreshold: 0.01,
+            restSpeedThreshold: 0.01,
           }),
           Animated.timing(deleteOpacity, {
             toValue: 1,
-            duration: 200,
+            duration: 300,
             useNativeDriver: true,
           }),
+          Animated.spring(deleteScale, {
+            toValue: 1,
+            useNativeDriver: true,
+            tension: 120,
+            friction: 8,
+          }),
+          Animated.sequence([
+            Animated.timing(cardScale, {
+              toValue: 0.95,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.spring(cardScale, {
+              toValue: 0.98,
+              useNativeDriver: true,
+              tension: 150,
+              friction: 10,
+            }),
+          ]),
         ]).start();
         setIsOpen(true);
       } else {
-        // Swipe right or not enough - close
+        // Swipe right or not enough - close with smooth animation
         closeSwipe();
       }
     }
@@ -499,43 +598,94 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
       Animated.spring(translateX, {
         toValue: 0,
         useNativeDriver: true,
-        tension: 100,
-        friction: 8,
+        tension: 80,
+        friction: 9,
+        restDisplacementThreshold: 0.01,
+        restSpeedThreshold: 0.01,
       }),
       Animated.timing(deleteOpacity, {
         toValue: 0,
-        duration: 150,
+        duration: 200,
         useNativeDriver: true,
+      }),
+      Animated.spring(deleteScale, {
+        toValue: 0.8,
+        useNativeDriver: true,
+        tension: 120,
+        friction: 8,
+      }),
+      Animated.spring(cardScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        tension: 150,
+        friction: 10,
       }),
     ]).start();
     setIsOpen(false);
   };
 
   const handleDelete = () => {
+    // Enhanced delete animation with better feedback
     Animated.sequence([
-      Animated.timing(scaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scaleAnim, {
+      Animated.parallel([
+        Animated.timing(deleteScale, {
+          toValue: 0.9,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardScale, {
+          toValue: 0.95,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(deleteScale, {
+          toValue: 1.1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardScale, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.timing(deleteScale, {
         toValue: 1,
         duration: 100,
         useNativeDriver: true,
       }),
     ]).start(() => {
       closeSwipe();
-      if (isRecurringReminder(reminder)) {
-        showRecurringDeleteConfirmation(
-          reminder,
-          () => onDelete(reminder.id),
-          () => onDelete(reminder.id)
-        );
-      } else {
-        onDelete(reminder.id);
-      }
+      onDelete(reminder.id);
     });
   };
+
+  // Progressive opacity during swipe gesture
+  const deleteButtonOpacity = translateX.interpolate({
+    inputRange: [-100, -60, 0],
+    outputRange: [1, 0.3, 0],
+    extrapolate: 'clamp',
+  });
+
+  const deleteButtonScale = translateX.interpolate({
+    inputRange: [-100, -60, 0],
+    outputRange: [1, 0.9, 0.8],
+    extrapolate: 'clamp',
+  });
+
+  const deleteButtonRotation = translateX.interpolate({
+    inputRange: [-100, -60, 0],
+    outputRange: ['0deg', '5deg', '0deg'],
+    extrapolate: 'clamp',
+  });
+
+  const cardOpacity = translateX.interpolate({
+    inputRange: [-100, 0],
+    outputRange: [0.95, 1],
+    extrapolate: 'clamp',
+  });
 
   const handleEdit = () => {
     onEdit(reminder.id);
@@ -567,7 +717,6 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
     try {
       return isOverdueUtil(reminder.dueDate, reminder.completed, reminder.dueTime, reminder);
     } catch (error) {
-      console.warn('Error checking if reminder is overdue:', error);
       const dueDate = new Date(reminder.dueDate);
       const now = new Date();
       return dueDate < now;
@@ -584,8 +733,8 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
           styles.deleteButton,
           {
             backgroundColor: colors.error,
-            opacity: deleteOpacity,
-            transform: [{ scale: scaleAnim }],
+            opacity: deleteButtonOpacity,
+            transform: [{ scale: deleteButtonScale }, { rotate: deleteButtonRotation }],
           },
         ]}
       >
@@ -607,17 +756,18 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
         onHandlerStateChange={onHandlerStateChange}
       >
         <Animated.View
-          style={[
-            styles.reminderCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: isOverdue() ? colors.error + '30' : colors.border,
-              borderWidth: 1,
-              transform: [{ translateX }],
-              shadowColor: colors.shadow,
-            },
-            isOverdue() && styles.overdueCard,
-          ]}
+                      style={[
+              styles.reminderCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: isOverdue() ? colors.error + '30' : colors.border,
+                borderWidth: 1,
+                transform: [{ translateX }, { scale: cardScale }],
+                shadowColor: colors.shadow,
+                opacity: cardOpacity,
+              },
+              isOverdue() && styles.overdueCard,
+            ]}
         >
           <View style={styles.reminderContent}>
             <View style={styles.reminderLeft}>
@@ -659,6 +809,15 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
                     </View>
                   )}
                 </View>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={handleEdit}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <View style={[styles.editIconContainer, { backgroundColor: colors.background }]}>
+                    <Edit size={16} color={colors.textSecondary} strokeWidth={2} />
+                  </View>
+                </TouchableOpacity>
               </View>
 
               {reminder.description ? (
@@ -700,17 +859,17 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
                   </Text>
                 </View>
               )}
-            </View>
 
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={handleEdit}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <View style={[styles.editIconContainer, { backgroundColor: colors.background }]}>
-                <Edit size={16} color={colors.textSecondary} strokeWidth={2} />
-              </View>
-            </TouchableOpacity>
+              {/* Task Chunking Progress */}
+              {reminder.isChunked && reminder.subTasks && reminder.subTasks.length > 0 && (
+                <ChunkedTaskProgress
+                  subTasks={reminder.subTasks}
+                  taskTitle={reminder.title}
+                  onPress={handleEdit}
+                  compact={true}
+                />
+              )}
+            </View>
           </View>
 
           {isOverdue() && (
@@ -747,7 +906,8 @@ function RemindersList({ reminders, isLoading, emptyMessage, colors, onDeleteRem
     );
   };
 
-  if (isLoading) {
+  // Show loading only if we haven't initialized yet
+  if (isLoading && reminders.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <View style={[styles.loadingContainer, { backgroundColor: colors.primary + '10' }]}>
@@ -812,11 +972,26 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  headerTitle: {
+  headerTitleContainer: {
     flex: 1,
-    fontSize: FontSizes.title2,
-    fontFamily: Fonts.text.bold,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  headerTitle: {
+    ...TextStyles.title2,
     textAlign: 'center',
+  },
+  syncIndicator: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  syncText: {
+    fontSize: 12,
   },
   sortButton: {
     marginLeft: 16,
@@ -849,8 +1024,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   tabLabel: {
-    fontSize: FontSizes.callout,
-    fontFamily: Fonts.text.medium,
+    ...TextStyles.callout,
     textAlign: 'center',
   },
   centerContainer: {
@@ -984,10 +1158,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 16,
+    backgroundColor: 'transparent',
   },
   deleteButtonContent: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   deleteIconContainer: {
     width: 48,
@@ -996,6 +1173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
   },
   deleteButtonText: {
     fontSize: FontSizes.caption1,
@@ -1016,7 +1194,7 @@ const styles = StyleSheet.create({
   },
   reminderContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   reminderLeft: {
     marginRight: 12,
@@ -1038,15 +1216,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    justifyContent: 'space-between',
   },
   reminderTitle: {
     fontSize: FontSizes.body,
     fontFamily: Fonts.text.semibold,
     flex: 1,
+    marginRight: 8,
   },
   reminderBadges: {
     flexDirection: 'row',
     gap: 6,
+    marginTop: 2,
   },
   badge: {
     width: 28,

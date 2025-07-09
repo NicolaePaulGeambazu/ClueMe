@@ -53,12 +53,9 @@ export const DateTimePickerWrapper: React.FC<DateTimePickerWrapperProps> = ({
       mode={mode}
       display={getDisplayMode()}
       onChange={onChange}
-      locale={locale}
       is24Hour={is24Hour}
       minimumDate={minimumDate}
       maximumDate={maximumDate}
-      textColor={getTextColor()}
-      accentColor={getAccentColor()}
       style={[
         styles.picker,
         Platform.OS === 'ios' && styles.iosPicker,

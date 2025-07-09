@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CalendarEvent } from './CalendarContainer';
+import type { CalendarEvent } from '../../utils/calendarUtils';
 
 interface MonthViewProps {
   selectedDate: Date;
@@ -40,7 +40,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, setSelected
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
         {matrix.flat().map((date, i) => {
-          const dayEvents = events.filter(e => isSameDay(e.start, date));
+          const dayEvents = events.filter(e => isSameDay(e.date, date));
           return (
             <div
               key={i}
@@ -62,7 +62,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, setSelected
             >
               <div style={{ fontWeight: 600, color: isSameDay(date, today) ? '#4F8CFF' : '#222', marginBottom: 2 }}>{date.getDate()}</div>
               {dayEvents.slice(0,2).map(ev => (
-                <div key={ev.id} style={{ fontSize: 12, color: ev.color || '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{ev.title}</div>
+                <div key={ev.id} style={{ fontSize: 12, color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>{ev.title}</div>
               ))}
               {dayEvents.length > 2 && (
                 <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>+{dayEvents.length - 2} more</div>

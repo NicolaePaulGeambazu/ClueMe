@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import QuickAddModal from './QuickAddModal';
-import ReminderWizard from './ReminderWizard';
+
 import { useReminders } from '../../hooks/useReminders';
 import { useAuth } from '../../contexts/AuthContext';
 import { reminderService } from '../../services/firebaseService';
 import { DateTime } from 'luxon';
+import { SubTask } from '../../design-system/reminders/types';
 
 interface EditReminderModalProps {
   visible: boolean;
@@ -25,9 +26,7 @@ export default function EditReminderModal({
   
   // Modal state
   const [showQuickAdd, setShowQuickAdd] = useState(true);
-  const [showWizard, setShowWizard] = useState(false);
   const [wizardInitialData, setWizardInitialData] = useState<any>(null);
-  const [wizardInitialStep, setWizardInitialStep] = useState(1);
   const [originalReminder, setOriginalReminder] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,13 +42,11 @@ export default function EditReminderModal({
 
     setIsLoading(true);
     try {
-      console.log('🔄 EditReminderModal: Loading reminder data...', { reminderId });
       
       // Get reminder directly by ID
       const reminder = await reminderService.getReminderById(reminderId);
       
       if (!reminder) {
-        console.error('❌ EditReminderModal: Reminder not found');
         onClose();
         return;
       }
@@ -57,7 +54,9 @@ export default function EditReminderModal({
       setOriginalReminder(reminder);
       
       // Convert reminder data to form format
-      const dueDateTime = reminder.dueDate ? DateTime.fromJSDate(reminder.dueDate) : DateTime.now();
+      const dueDate = reminder.dueDate instanceof Date ? reminder.dueDate : 
+                     typeof reminder.dueDate === 'string' ? new Date(reminder.dueDate) : new Date();
+      const dueDateTime = DateTime.fromJSDate(dueDate);
       if (reminder.dueTime) {
         const [hours, minutes] = reminder.dueTime.split(':').map(Number);
         dueDateTime.set({ hour: hours, minute: minutes });
@@ -67,7 +66,7 @@ export default function EditReminderModal({
       const initialData = {
         title: reminder.title,
         description: reminder.description || '',
-        dueDate: reminder.dueDate || new Date(),
+        dueDate: reminder.dueDate instanceof Date ? reminder.dueDate : new Date(),
         dueTime: reminder.dueTime || '15:00',
         isRecurring: reminder.isRecurring || false,
         repeatPattern: reminder.repeatPattern || 'none',
@@ -77,13 +76,15 @@ export default function EditReminderModal({
         notificationTimings: reminder.notificationTimings || [
           { type: 'before', value: 15, label: '15 minutes before' }
         ],
+        // Task chunking data
+        isChunked: reminder.isChunked || false,
+        subTasks: reminder.subTasks || [],
+        chunkedProgress: reminder.chunkedProgress || 0,
       };
 
       setWizardInitialData(initialData);
-      console.log('✅ EditReminderModal: Reminder data loaded successfully', initialData);
 
     } catch (error) {
-      console.error('❌ EditReminderModal: Error loading reminder:', error);
       onClose();
     } finally {
       setIsLoading(false);
@@ -92,81 +93,57 @@ export default function EditReminderModal({
 
   const handleQuickAddSave = async (reminderData: any) => {
     try {
-      console.log('🔄 EditReminderModal: Starting reminder update...', { title: reminderData.title });
       
       if (!originalReminder) {
         throw new Error('No original reminder data available');
       }
 
-      // Merge the new data with the original reminder
-      const updatedReminder = {
-        ...originalReminder,
-        ...reminderData,
+      // Only update the fields that should be changed, not the entire reminder object
+      const updates = {
+        title: reminderData.title,
+        location: reminderData.location,
+        dueDate: reminderData.dueDate,
+        dueTime: reminderData.dueTime,
+        isRecurring: reminderData.isRecurring,
+        recurringPattern: reminderData.recurringPattern,
+        repeatPattern: reminderData.repeatPattern,
+        recurringEndDate: reminderData.recurringEndDate,
+        recurringEndAfter: reminderData.recurringEndAfter,
+        customInterval: reminderData.customInterval,
+        repeatDays: reminderData.repeatDays,
+        occurrences: reminderData.occurrences,
+        timezone: reminderData.timezone,
+        assignedTo: reminderData.assignedTo,
+        hasNotification: reminderData.hasNotification,
+        notificationTimings: reminderData.notificationTimings,
+        // Task chunking fields
+        isChunked: reminderData.isChunked,
+        subTasks: reminderData.subTasks,
+        chunkedProgress: reminderData.chunkedProgress,
         updatedAt: new Date(),
       };
       
-      await updateReminder(reminderId, updatedReminder);
+      await updateReminder(reminderId, updates);
       
-      console.log('✅ EditReminderModal: Reminder updated successfully, closing modal...');
       handleClose();
     } catch (error) {
-      console.error('❌ EditReminderModal: Error updating reminder:', error);
       throw error; // Re-throw to let QuickAddModal handle it
     }
   };
 
-  const handleWizardSave = async (reminderData: any) => {
-    try {
-      console.log('🔄 EditReminderModal: Starting wizard reminder update...', { title: reminderData.title });
-      
-      if (!originalReminder) {
-        throw new Error('No original reminder data available');
-      }
 
-      // Merge the new data with the original reminder
-      const updatedReminder = {
-        ...originalReminder,
-        ...reminderData,
-        updatedAt: new Date(),
-      };
-      
-      await updateReminder(reminderId, updatedReminder);
-      
-      console.log('✅ EditReminderModal: Wizard reminder updated successfully, closing modal...');
-      handleClose();
-    } catch (error) {
-      console.error('❌ EditReminderModal: Error updating wizard reminder:', error);
-      throw error;
-    }
-  };
 
   const handleClose = () => {
-    console.log('🔄 EditReminderModal: handleClose called...');
     setShowQuickAdd(true);
-    setShowWizard(false);
     setWizardInitialData(null);
-    setWizardInitialStep(1);
     setOriginalReminder(null);
     onClose();
-    console.log('✅ EditReminderModal: handleClose completed');
-  };
-
-  const handleWizardClose = () => {
-    console.log('🔄 EditReminderModal: Wizard close called...');
-    setShowWizard(false);
-    setShowQuickAdd(true);
-    setWizardInitialData(null);
-    setWizardInitialStep(1);
   };
 
   const handleAdvanced = (data: any) => {
-    console.log('🔄 EditReminderModal: Advanced options requested...', data);
-    setShowQuickAdd(false);
-    setShowWizard(true);
-    // Merge the new data with the existing wizard data
+    // For now, just merge the data with existing wizard data
     const mergedData = { ...wizardInitialData, ...data };
     setWizardInitialData(mergedData);
-    setWizardInitialStep(data && data.title ? 2 : 1);
   };
 
   // If not visible, render nothing
@@ -180,26 +157,39 @@ export default function EditReminderModal({
   }
 
   return (
-    <>
-      {/* Quick Add Modal with prefilled data */}
-      <QuickAddModal
-        visible={showQuickAdd}
-        onClose={handleClose}
-        onSave={handleQuickAddSave}
-        onAdvanced={handleAdvanced}
-        prefillData={wizardInitialData}
-      />
+    <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.overlay}
+        onPress={handleClose}
+        activeOpacity={1}
+      >
+        {/* Quick Add Modal with prefilled data */}
+        <QuickAddModal
+          visible={showQuickAdd}
+          onClose={handleClose}
+          onSave={handleQuickAddSave}
+          onAdvanced={handleAdvanced}
+          prefillData={wizardInitialData}
+        />
 
-      {/* Reminder Wizard with prefilled data */}
-      <ReminderWizard
-        visible={showWizard}
-        onClose={handleWizardClose}
-        onSave={handleWizardSave}
-        initialData={wizardInitialData}
-        initialStep={wizardInitialStep}
-      />
-    </>
+
+      </TouchableOpacity>
+    </View>
   );
 }
 
-// No styles needed since we're not rendering any visible container 
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
+  },
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+  },
+}); 

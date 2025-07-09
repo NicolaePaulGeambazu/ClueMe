@@ -402,9 +402,6 @@ export const checkDataConsistency = (reminder: Reminder): string[] => {
     issues.push('Completed reminder has future due date');
   }
 
-  if (__DEV__) {
-    console.warn('Data consistency issue:', issues.join(', '));
-  }
   analyticsService.trackCustomEvent('data_consistency_issue', { details: issues.join(', ') });
 
   return issues;

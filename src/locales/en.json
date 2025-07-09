@@ -18,7 +18,49 @@
     "pickTime": "Pick Time...",
     "needMoreOptions": "Need more options?",
     "createReminder": "Create Reminder",
-    "updateReminder": "Update Reminder"
+    "updateReminder": "Update Reminder",
+    "doesNotRepeat": "Does not repeat",
+    "timezone": "Timezone",
+    "selectTimezone": "Select timezone",
+    "assignToMe": "👤 Me"
+  },
+  "taskChunking": {
+    "sectionTitle": "Break Down Task",
+    "breakDownTask": "Break down into smaller steps",
+    "editSubTasks": "Edit {{count}} sub-tasks",
+    "subTasksCreated": "Task broken down into manageable steps",
+    "title": "Break Down Task",
+    "emptyTitleError": "Sub-task title cannot be empty",
+    "deleteConfirm": "Are you sure you want to delete this sub-task?",
+    "noSubTasksError": "Please add at least one sub-task",
+    "completed": "completed",
+    "addSubTaskPlaceholder": "Add a sub-task...",
+    "emptyState": "No sub-tasks yet",
+    "emptyStateSubtext": "Break your task into smaller, manageable steps to make it easier to complete",
+    "descriptionPlaceholder": "Add description (optional)"
+  },
+  "focusMode": {
+    "title": "Focus Mode",
+    "active": "Focus Mode Active",
+    "subtitle": "Distractions minimized • {{count}} tasks visible",
+    "enable": "Enable Focus Mode",
+    "disable": "Disable Focus Mode",
+    "description": "Minimize distractions and focus on your most important tasks",
+    "settings": {
+      "title": "Focus Mode Settings",
+      "maxVisibleTasks": "Maximum visible tasks",
+      "hideAds": "Hide advertisements",
+      "simplifyUI": "Simplify interface",
+      "showFocusBanner": "Show focus banner",
+      "autoEnable": "Auto-enable for long tasks"
+    },
+    "stats": {
+      "title": "Focus Statistics",
+      "totalFocusTime": "Total focus time",
+      "sessionsCompleted": "Sessions completed",
+      "averageSessionLength": "Average session length",
+      "longestSession": "Longest session"
+    }
   },
   "wizard": {
     "createReminder": "Create Reminder",
@@ -32,6 +74,7 @@
     "descriptionPlaceholder": "Review Q4 reports and prepare slides",
     "date": "Date",
     "time": "Time",
+    "timezone": "Timezone",
     "allDayEvent": "This is an all-day event",
     "repeat": "Repeat",
     "doesNotRepeat": "Does not repeat",
@@ -55,7 +98,34 @@
     "selectDate": "Select Date",
     "selectTime": "Select Time",
     "selectRepeat": "Select Repeat Pattern",
-    "selectCategory": "Select Category"
+    "selectCategory": "Select Category",
+    "makeRecurring": "Make recurring",
+    "repeatPattern": "Repeat pattern",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "weekdays": "Weekdays",
+    "custom": "Custom",
+    "interval": "Interval",
+    "every": "Every",
+    "days": "days",
+    "weeks": "weeks",
+    "months": "months",
+    "years": "years",
+    "times": "times",
+    "customInterval": "Custom interval",
+    "configureCustom": "Configure custom pattern",
+    "endCondition": "End condition",
+    "neverEnd": "Never end",
+    "endOnDate": "End on date",
+    "endAfterTimes": "End after X times",
+    "patternPreview": "Pattern preview",
+    "endDate": "End date",
+    "selectEndDate": "Select end date",
+    "endAfterOccurrences": "End after occurrences",
+    "endAfter": "End after",
+    "occurrences": "occurrences"
   },
   "add": {
     "selectedDate": "Selected Date",
@@ -99,6 +169,54 @@
     "clearFormMessage": "Are you sure you want to clear all form data? This action cannot be undone.",
     "anonymousBanner": "You're using the app anonymously. Sign in to sync your reminders across devices.",
     "signIn": "Sign In",
+    "repeatOptions": {
+      "title": "Repeat Options",
+      "pattern": "Repeat Pattern",
+      "customInterval": "Custom Interval",
+      "intervalPlaceholder": "Enter number of days",
+      "days": "days",
+      "quickOptions": "Quick options:",
+      "smartNudge": "Smart Nudge",
+      "patterns": {
+        "daily": "Daily",
+        "dailyDescription": "Every day",
+        "weekdays": "Weekdays", 
+        "weekdaysDescription": "Monday to Friday",
+        "weekly": "Weekly",
+        "weeklyDescription": "Every week",
+        "monthly": "Monthly",
+        "monthlyDescription": "Every month",
+        "yearly": "Yearly",
+        "yearlyDescription": "Every year",
+        "firstMonday": "First Monday",
+        "firstMondayDescription": "First Monday of each month",
+        "lastFriday": "Last Friday",
+        "lastFridayDescription": "Last Friday of each month",
+        "custom": "Custom",
+        "customDescription": "Set custom interval"
+      },
+      "intervals": {
+        "1day": "1 day",
+        "2days": "2 days", 
+        "3days": "3 days",
+        "1week": "1 week",
+        "2weeks": "2 weeks",
+        "1month": "1 month",
+        "3months": "3 months",
+        "1year": "1 year"
+      },
+      "smartNudges": {
+        "daily": "If missed today, suggest tomorrow",
+        "weekdays": "If missed on Friday, suggest next Monday",
+        "weekly": "If missed this week, suggest next week",
+        "monthly": "If missed this month, suggest next month",
+        "custom": "Smart nudges enabled for custom patterns"
+      },
+      "dateRange": "Date Range",
+      "selectStartDate": "Select start date",
+      "selectEndDate": "Select end date (optional)",
+      "dateRangeInfo": "Set when recurring reminders should start and optionally when they should stop. Leave end date empty for unlimited recurrence."
+    },
     "recurringOptions": {
       "title": "Repeat Options",
       "pattern": "Repeat Pattern",
@@ -152,6 +270,30 @@
       "authRequired": "Please sign in to create reminders",
       "createFailed": "Failed to create reminder. Please try again.",
       "success": "Reminder created successfully!"
+    },
+    "repeatOptions": {
+      "upgradeRequired": "Upgrade Required",
+      "upgradeMessage": "Free users can select up to {{maxDays}} days. Upgrade to select more days.",
+      "upgradeToUnlock": "Upgrade to Unlock",
+      "upgradeFeatureMessage": "This feature is available in higher tiers. Upgrade to access advanced repeat scheduling options.",
+      "learnMore": "Learn More",
+      "cancel": "Cancel",
+      "repeatPattern": "Repeat Pattern",
+      "interval": "Interval",
+      "every": "Every",
+      "days": "day(s)",
+      "weeks": "week(s)",
+      "months": "month(s)",
+      "years": "year(s)",
+      "times": "time(s)",
+      "upgrade": "Upgrade",
+      "premium": "Premium",
+      "repeatOnDays": "Repeat on Days",
+      "endCondition": "End Condition",
+      "noEndDate": "No end date",
+      "onDate": "On date",
+      "afterOccurrences": "After occurrences",
+      "patternPreview": "Pattern Preview"
     }
   },
   "edit": {
@@ -479,6 +621,7 @@
     "testTaskUpdated": "Test Task Updated",
     "testTaskCompleted": "Test Task Completed",
     "testTaskReminder": "Test Task Reminder",
+    "testFamilyAssignment": "Test Family Assignment",
     "requesting": "Requesting...",
     "sending": "Sending...",
     "permissionsGranted": "Notification permissions granted! 🎉",
@@ -653,6 +796,12 @@
     "deleteReminder": "Delete Reminder",
     "deleteConfirm": "Are you sure you want to delete this reminder?",
     "deleteError": "Failed to delete reminder",
+    "deleteThisOnly": "This Occurrence Only",
+    "deleteAllFuture": "Delete All Future",
+    "deleteConfirmation": {
+      "title": "Delete Reminder",
+      "message": "Are you sure you want to delete this reminder? This action cannot be undone."
+    },
     "edit": "Edit",
     "editReminder": "Edit Reminder",
     "completed": "Completed",
@@ -816,40 +965,72 @@
       "3Months": "3 months",
       "6Months": "6 months",
       "1Year": "1 year"
+    },
+    "notificationTiming": {
+      "15minBefore": "15 minutes before",
+      "30minBefore": "30 minutes before",
+      "1hrBefore": "1 hour before",
+      "1dayBefore": "1 day before",
+      "atDueTime": "At due time",
+      "15minAfter": "15 minutes after",
+      "30minAfter": "30 minutes after",
+      "1hrAfter": "1 hour after"
+    },
+    "escalating": {
+      "gentle": "30 minutes before (Gentle)",
+      "medium": "15 minutes before (Medium)",
+      "urgent": "5 minutes before (Urgent)",
+      "description": "Get progressively more urgent reminders"
     }
   },
   "auth": {
     "login": {
       "title": "Welcome Back",
-      "subtitle": "Sign in to continue to ClearCue",
-      "emailPlaceholder": "Email address",
-      "passwordPlaceholder": "Password",
+      "subtitle": "Sign in to access your reminders",
+      "emailPlaceholder": "Enter your email",
+      "passwordPlaceholder": "Enter your password",
       "forgotPassword": "Forgot Password?",
       "signIn": "Sign In",
-      "signingIn": "Signing In...",
-      "noAccount": "Don't have an account? ",
+      "signingIn": "Signing in...",
+      "noAccount": "Don't have an account?",
       "signUp": "Sign Up"
     },
     "signup": {
       "title": "Create Account",
-      "subtitle": "Join ClearCue to get started",
-      "fullNamePlaceholder": "Full name",
-      "emailPlaceholder": "Email address",
-      "passwordPlaceholder": "Password",
-      "confirmPasswordPlaceholder": "Confirm password",
-      "signUp": "Sign Up",
-      "signingUp": "Creating Account...",
-      "hasAccount": "Already have an account? ",
+      "subtitle": "Join ClearCue to organize your life",
+      "fullNamePlaceholder": "Enter your full name",
+      "emailPlaceholder": "Enter your email",
+      "passwordPlaceholder": "Create a password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "signUp": "Create Account",
+      "signingUp": "Creating account...",
+      "hasAccount": "Already have an account?",
       "signIn": "Sign In"
     },
-    "forgotPassword": {
-      "title": "Reset Password",
-      "subtitle": "Enter your email to receive reset instructions",
-      "emailPlaceholder": "Email address",
-      "sendReset": "Send Reset Link",
-      "sending": "Sending...",
-      "backToLogin": "Back to Login"
-    }
+    "validation": {
+      "title": "Sign In Required",
+      "requiredFields": "Please fill in all required fields."
+    },
+    "error": {
+      "generic": "An error occurred. Please try again.",
+      "title": "Authentication Error"
+    },
+    "loginPrompt": {
+      "title": "Sign In Required",
+      "message": "Please sign in to continue."
+    },
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "fields": {
+      "fullName": "Full Name",
+      "email": "Email",
+      "password": "Password"
+    },
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "createAccount": "Create Account",
+    "anonymousDataPreserved": "Your anonymous data will be preserved after sign in.",
+    "termsAgreement": "By signing up, you agree to our Terms of Service."
   },
   "forms": {
     "placeholders": {
@@ -914,7 +1095,13 @@
     "itemTitle": "Item Title",
     "itemDescription": "Item Description (Optional)",
     "completed": "completed",
-    "of": "of"
+    "of": "of",
+    "noSharedLists": "No lists shared with family.",
+    "listsTab": "Lists",
+    "myLists": "My Lists",
+    "sharedLists": "Shared Lists",
+    "noMyLists": "You have no lists yet.",
+    "noSharedLists": "No lists have been shared with you."
   },
   "activity": {
     "day": "day",
@@ -950,7 +1137,8 @@
     "noRepeatDays": "At least one day must be selected",
     "titleTruncated": "Title was too long and has been truncated",
     "recurringNeedsPattern": "Recurring reminder needs a pattern - set to daily",
-    "notificationsNeedTimings": "Notifications enabled but no timings set - using default"
+    "notificationsNeedTimings": "Notifications enabled but no timings set - using default",
+    "itemTitleRequired": "Please enter an item title"
   },
   "repeat": {
     "title": "Repeat",
@@ -1008,6 +1196,9 @@
     "recurring": "Failed to create recurring reminder. Please try again.",
     "dataCorruption": "Data corruption detected",
     "contactSupport": "Contact support if the problem persists",
+    "addItem": "Failed to add item: {{error}}",
+    "updateItem": "Failed to update item: {{error}}",
+    "deleteItem": "Failed to delete item: {{error}}",
     "userFriendly": {
       "network": "Connection problem. Please check your internet and try again.",
       "permission": "Permission denied. Please check your settings.",
@@ -1038,7 +1229,8 @@
       "checkRequiredFields": "Check all required fields",
       "ensureValidDates": "Ensure dates and times are valid",
       "dataCorrupted": "Data is corrupted and cannot be recovered"
-    }
+    },
+    "unknown": "An unknown error occurred. Please try again."
   },
   "warnings": {
     "pastDueDate": "Due date is in the past",
@@ -1057,7 +1249,10 @@
     "reminderCompleted": "Reminder marked as completed",
     "reminderCancelled": "Reminder cancelled successfully",
     "notificationsScheduled": "Notifications scheduled successfully",
-    "recurringCreated": "Recurring reminder created successfully"
+    "recurringCreated": "Recurring reminder created successfully",
+    "itemAdded": "Item \"{{title}}\" added successfully!",
+    "itemUpdated": "Item \"{{title}}\" updated successfully!",
+    "itemDeleted": "Item \"{{title}}\" deleted successfully!"
   },
   "behavior": {
     "suggestions": {
@@ -1096,5 +1291,29 @@
       "notificationsWithoutTimings": "Reminders with notifications but no timings",
       "invalidDates": "Reminders with invalid dates"
     }
+  },
+  "pro": {
+    "unlockFeature": "Unlock {{feature}}",
+    "unlockEverything": "Unlock the full power of ClearCue",
+    "whatYouGet": "What you'll get with Pro",
+    "multipleNotifications": "Multiple Notifications",
+    "multipleNotificationsDesc": "Set up to 5 notifications per reminder",
+    "advancedRecurring": "Advanced Recurring",
+    "advancedRecurringDesc": "Custom intervals and complex patterns",
+    "familySharing": "Family Sharing",
+    "familySharingDesc": "Share lists and reminders with family",
+    "prioritySupport": "Priority Support",
+    "prioritySupportDesc": "Get help when you need it most",
+    "customThemes": "Custom Themes",
+    "customThemesDesc": "Personalize your experience",
+    "advancedAnalytics": "Advanced Analytics",
+    "advancedAnalyticsDesc": "Track your productivity patterns",
+    "monthly": "Monthly",
+    "perMonth": "per month",
+    "allFeatures": "All Pro features included",
+    "cancelAnytime": "Cancel anytime",
+    "freeTrial": "7-day free trial",
+    "upgradeToPro": "Upgrade to Pro",
+    "maybeLater": "Maybe Later"
   }
 } 

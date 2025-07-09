@@ -33,7 +33,6 @@ export default function LoginScreen({ navigation }: any) {
 
       navigation.replace('MainTabs');
     } catch (error: any) {
-      console.error('Login error:', error);
 
       let errorMessage = 'An unexpected error occurred. Please try again.';
       let errorTitle = 'Login Failed';

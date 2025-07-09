@@ -7,67 +7,61 @@
 import { Reminder, NotificationTiming, NotificationType } from '../types';
 import { 
   normalizeDate, 
-  parseTimeString, 
-  toUTCWithLocalTime,
-  fromUTCToLocal,
-  addDays,
-  addHours,
-  addMinutes,
-  isPast,
   isFuture,
-  getStartOfDay,
-  getEndOfDay,
 } from './date-utils';
 import { generateOccurrences } from './recurring-utils';
 
 /**
  * Calculate notification time based on reminder and timing
  */
-export const calculateNotificationTime = (
+export function calculateNotificationTime(
   reminder: Reminder,
-  timing: NotificationTiming
-): Date | null => {
-  if (!reminder.dueDate) {
-    return null;
-  }
+  timing: NotificationTiming,
+  timezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone
+): Date {
+  try {
+    let baseTime: Date;
 
-  const dueDate = normalizeDate(reminder.dueDate);
-  if (!dueDate) {
-    return null;
-  }
-
-  // Create the base notification time
-  let notificationTime = new Date(dueDate);
-
-  // Apply the due time if specified
-  if (reminder.dueTime) {
-    const timeParts = parseTimeString(reminder.dueTime);
-    if (timeParts) {
-      notificationTime.setHours(timeParts.hours, timeParts.minutes, 0, 0);
+    if (reminder.dueTime) {
+      const timeParts = reminder.dueTime.split(':');
+      if (timeParts.length >= 2) {
+        const hours = parseInt(timeParts[0], 10);
+        const minutes = parseInt(timeParts[1], 10);
+        
+        if (reminder.dueDate) {
+          const baseDate = new Date(reminder.dueDate);
+          baseTime = new Date(baseDate);
+          baseTime.setHours(hours, minutes, 0, 0);
+        } else {
+          baseTime = new Date();
+          baseTime.setHours(hours, minutes, 0, 0);
+        }
+      } else {
+        baseTime = new Date(reminder.dueDate || Date.now());
+      }
+    } else {
+      baseTime = new Date(reminder.dueDate || Date.now());
     }
+
+    const notificationTime = new Date(baseTime);
+    
+    switch (timing.type) {
+      case 'before':
+        notificationTime.setMinutes(notificationTime.getMinutes() - timing.value);
+        break;
+      case 'after':
+        notificationTime.setMinutes(notificationTime.getMinutes() + timing.value);
+        break;
+      case 'exact':
+      default:
+        break;
+    }
+
+    return notificationTime;
+  } catch (error) {
+    return new Date();
   }
-
-  // Apply the timing offset
-  switch (timing.type) {
-    case NotificationType.EXACT:
-      // No adjustment needed
-      break;
-
-    case NotificationType.BEFORE:
-      notificationTime = addMinutes(notificationTime, -timing.value);
-      break;
-
-    case NotificationType.AFTER:
-      notificationTime = addMinutes(notificationTime, timing.value);
-      break;
-
-    default:
-      console.error('❌ Unknown notification timing type:', timing.type);
-      return null;
-  }
-
-  return notificationTime;
-};
+}
 
 /**
  * Generate notification times for all occurrences of a recurring reminder

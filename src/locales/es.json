@@ -1,6 +1,7 @@
 {
   "quickAdd": {
     "newReminder": "Nuevo Recordatorio",
+    "editReminder": "Editar Recordatorio",
     "whatToRemember": "¿Qué necesitas recordar?",
     "placeholder": "Comprar leche",
     "when": "¿Cuándo?",
@@ -16,7 +17,50 @@
     "night": "Noche (9 PM)",
     "pickTime": "Elegir Hora...",
     "needMoreOptions": "¿Necesitas más opciones?",
-    "createReminder": "Crear Recordatorio"
+    "createReminder": "Crear Recordatorio",
+    "updateReminder": "Actualizar Recordatorio",
+    "doesNotRepeat": "No se repite",
+    "timezone": "Zona Horaria",
+    "selectTimezone": "Seleccionar zona horaria",
+    "assignToMe": "👤 Yo"
+  },
+  "taskChunking": {
+    "sectionTitle": "Dividir Tarea",
+    "breakDownTask": "Dividir en pasos más pequeños",
+    "editSubTasks": "Editar {{count}} sub-tareas",
+    "subTasksCreated": "Tarea dividida en pasos manejables",
+    "title": "Dividir Tarea",
+    "emptyTitleError": "El título de la sub-tarea no puede estar vacío",
+    "deleteConfirm": "¿Estás seguro de que quieres eliminar esta sub-tarea?",
+    "noSubTasksError": "Por favor agrega al menos una sub-tarea",
+    "completed": "completadas",
+    "addSubTaskPlaceholder": "Agregar una sub-tarea...",
+    "emptyState": "Aún no hay sub-tareas",
+    "emptyStateSubtext": "Divide tu tarea en pasos más pequeños y manejables para facilitar su completado",
+    "descriptionPlaceholder": "Agregar descripción (opcional)"
+  },
+  "focusMode": {
+    "title": "Modo Enfoque",
+    "active": "Modo Enfoque Activo",
+    "subtitle": "Distracciones minimizadas • {{count}} tareas visibles",
+    "enable": "Activar Modo Enfoque",
+    "disable": "Desactivar Modo Enfoque",
+    "description": "Minimiza las distracciones y enfócate en tus tareas más importantes",
+    "settings": {
+      "title": "Configuración del Modo Enfoque",
+      "maxVisibleTasks": "Tareas visibles máximas",
+      "hideAds": "Ocultar anuncios",
+      "simplifyUI": "Simplificar interfaz",
+      "showFocusBanner": "Mostrar banner de enfoque",
+      "autoEnable": "Activar automáticamente para tareas largas"
+    },
+    "stats": {
+      "title": "Estadísticas de Enfoque",
+      "totalFocusTime": "Tiempo total de enfoque",
+      "sessionsCompleted": "Sesiones completadas",
+      "averageSessionLength": "Duración promedio de sesión",
+      "longestSession": "Sesión más larga"
+    }
   },
   "wizard": {
     "createReminder": "Crear Recordatorio",
@@ -30,6 +74,7 @@
     "descriptionPlaceholder": "Revisar reportes del Q4 y preparar diapositivas",
     "date": "Fecha",
     "time": "Hora",
+    "timezone": "Zona Horaria",
     "allDayEvent": "Este es un evento de todo el día",
     "repeat": "Repetir",
     "doesNotRepeat": "No se repite",
@@ -49,7 +94,38 @@
     "day1": "1 día antes",
     "back": "Atrás",
     "next": "Siguiente",
-    "create": "Crear"
+    "create": "Crear",
+    "selectDate": "Seleccionar Fecha",
+    "selectTime": "Seleccionar Hora",
+    "selectRepeat": "Seleccionar Patrón de Repetición",
+    "selectCategory": "Seleccionar Categoría",
+    "makeRecurring": "Hacer recurrente",
+    "repeatPattern": "Patrón de repetición",
+    "daily": "Diario",
+    "weekly": "Semanal",
+    "monthly": "Mensual",
+    "yearly": "Anual",
+    "weekdays": "Días laborables",
+    "custom": "Personalizado",
+    "interval": "Intervalo",
+    "every": "Cada",
+    "days": "días",
+    "weeks": "semanas",
+    "months": "meses",
+    "years": "años",
+    "times": "veces",
+    "customInterval": "Intervalo personalizado",
+    "configureCustom": "Configurar patrón personalizado",
+    "endCondition": "Condición de fin",
+    "neverEnd": "Nunca termina",
+    "endOnDate": "Terminar en fecha",
+    "endAfterTimes": "Terminar después de X veces",
+    "patternPreview": "Vista previa del patrón",
+    "endDate": "Fecha de fin",
+    "selectEndDate": "Seleccionar fecha de fin",
+    "endAfterOccurrences": "Terminar después de ocurrencias",
+    "endAfter": "Terminar después de",
+    "occurrences": "ocurrencias"
   },
   "add": {
     "selectedDate": "Fecha Seleccionada",
@@ -160,13 +236,37 @@
       "createFailed": "Error al crear el recordatorio. Por favor inténtalo de nuevo.",
       "success": "¡Recordatorio creado exitosamente!"
     },
-    "notificationTiming": "Notification Timing",
-    "notificationTimingHelp": "Tap + to add when you want to be notified"
+    "notificationTiming": "Tiempo de Notificación",
+    "notificationTimingHelp": "Toca + para agregar cuándo quieres ser notificado",
+    "repeatOptions": {
+      "upgradeRequired": "Actualización Requerida",
+      "upgradeMessage": "Los usuarios gratuitos pueden seleccionar hasta {{maxDays}} días. Actualiza para seleccionar más días.",
+      "upgradeToUnlock": "Actualizar para Desbloquear",
+      "upgradeFeatureMessage": "Esta función está disponible en niveles superiores. Actualiza para acceder a opciones avanzadas de programación de repetición.",
+      "learnMore": "Saber Más",
+      "cancel": "Cancelar",
+      "repeatPattern": "Patrón de Repetición",
+      "interval": "Intervalo",
+      "every": "Cada",
+      "days": "día(s)",
+      "weeks": "semana(s)",
+      "months": "mes(es)",
+      "years": "año(s)",
+      "times": "vez(ces)",
+      "upgrade": "Actualizar",
+      "premium": "Prémium",
+      "repeatOnDays": "Repetir en Días",
+      "endCondition": "Condición de Fin",
+      "noEndDate": "Sin fecha de fin",
+      "onDate": "En fecha",
+      "afterOccurrences": "Después de ocurrencias",
+      "patternPreview": "Vista Previa del Patrón"
+    }
   },
   "calendar": {
     "title": "Calendario",
     "month": "Mes",
-    "agenda": "Agenda",
+    "agenda": "Orden del Día",
     "import": "Importar",
     "importing": "Importando...",
     "reminders": "Recordatorios",
@@ -201,10 +301,10 @@
       "november": "Noviembre",
       "december": "Diciembre"
     },
-    "monthView": "Month",
-    "dayView": "Day",
-    "event": "event",
-    "events": "events"
+    "monthView": "Mes",
+    "dayView": "Día",
+    "event": "evento",
+    "events": "eventos"
   },
   "home": {
     "welcomeAnonymous": "Bienvenido a ClearCue",
@@ -325,7 +425,7 @@
     "nameUpdatedMessage": "Tu nombre ha sido actualizado exitosamente",
     "nameUpdateError": "Error al actualizar nombre. Por favor inténtalo de nuevo.",
     "accountInfo": "Información de la Cuenta",
-    "email": "Email",
+    "email": "Correo electrónico",
     "memberSince": "Miembro Desde",
     "appearance": "Apariencia",
     "darkMode": "Modo Oscuro",
@@ -395,7 +495,7 @@
       "complete": "Completar",
       "close": "Cerrar",
       "retry": "Reintentar",
-      "ok": "OK",
+      "ok": "Aceptar",
       "yes": "Sí",
       "no": "No",
       "add": "Agregar"
@@ -406,7 +506,7 @@
       "success": "Éxito",
       "warning": "Advertencia"
     },
-    "add": "Add"
+    "add": "Agregar"
   },
   "taskTypes": {
     "task": "Tarea",
@@ -495,29 +595,30 @@
     "testReminderTitle": "Tarea de Recordatorio de Prueba",
     "testReminderDescription": "Esta es una tarea de recordatorio de prueba para probar notificaciones",
     "testUser": "Usuario de Prueba",
-    "notificationPreferences": "Notification Preferences",
-    "notificationPreferencesDescription": "Customize how and when you receive notifications",
-    "familyNotifications": "Family Notifications",
-    "familyNotificationsDescription": "Get notified about family activities and task updates",
-    "taskReminders": "Task Reminders",
-    "taskRemindersDescription": "Receive reminders for upcoming and overdue tasks",
-    "quietHours": "Quiet Hours",
-    "quietHoursDescription": "Set times when you don't want to receive notifications",
-    "quietHoursStart": "Start Time",
-    "quietHoursEnd": "End Time",
-    "quietHoursEnabled": "Enable Quiet Hours",
-    "notificationSound": "Notification Sound",
-    "notificationSoundDescription": "Choose your preferred notification sound",
-    "vibrationEnabled": "Vibration",
-    "vibrationEnabledDescription": "Vibrate when receiving notifications",
-    "ledEnabled": "LED Light",
-    "ledEnabledDescription": "Flash LED light for notifications",
-    "priorityNotifications": "Priority Notifications",
-    "priorityNotificationsDescription": "Always show notifications for high-priority tasks",
-    "batchNotifications": "Batch Notifications",
-    "batchNotificationsDescription": "Group multiple notifications together",
-    "locationBasedReminders": "Location-Based Reminders",
-    "locationBasedRemindersDescription": "Get reminded when you're near a specific location"
+    "notificationPreferences": "Preferencias de Notificaciones",
+    "notificationPreferencesDescription": "Personaliza cómo y cuándo recibes notificaciones",
+    "familyNotifications": "Notificaciones Familiares",
+    "familyNotificationsDescription": "Recibe notificaciones sobre actividades familiares y actualizaciones de tareas",
+    "taskReminders": "Recordatorios de Tareas",
+    "taskRemindersDescription": "Recibe recordatorios para tareas próximas y vencidas",
+    "quietHours": "Horas Silenciosas",
+    "quietHoursDescription": "Establece horarios cuando no quieres recibir notificaciones",
+    "quietHoursStart": "Hora de Inicio",
+    "quietHoursEnd": "Hora de Fin",
+    "quietHoursEnabled": "Habilitar Horas Silenciosas",
+    "notificationSound": "Sonido de Notificación",
+    "notificationSoundDescription": "Elige tu sonido de notificación preferido",
+    "vibrationEnabled": "Vibración",
+    "vibrationEnabledDescription": "Vibrar al recibir notificaciones",
+    "ledEnabled": "Luz LED",
+    "ledEnabledDescription": "Parpadear luz LED para notificaciones",
+    "priorityNotifications": "Notificaciones Prioritarias",
+    "priorityNotificationsDescription": "Siempre mostrar notificaciones para tareas de alta prioridad",
+    "batchNotifications": "Notificaciones en Lote",
+    "batchNotificationsDescription": "Agrupar múltiples notificaciones juntas",
+    "locationBasedReminders": "Recordatorios Basados en Ubicación",
+    "locationBasedRemindersDescription": "Recibe recordatorios cuando estés cerca de una ubicación específica",
+    "testFamilyAssignment": "Probar Asignación Familiar"
   },
   "language": {
     "title": "Idioma",
@@ -635,6 +736,12 @@
     "deleteReminder": "Eliminar Recordatorio",
     "deleteConfirm": "¿Estás seguro de que quieres eliminar este recordatorio?",
     "deleteError": "Error al eliminar recordatorio",
+    "deleteThisOnly": "Solo esta ocurrencia",
+    "deleteAllFuture": "Eliminar todo el futuro",
+    "deleteConfirmation": {
+      "title": "Eliminar recordatorio",
+      "message": "¿Estás seguro de que quieres eliminar este recordatorio? Esta acción no se puede deshacer."
+    },
     "edit": "Editar",
     "editReminder": "Editar Recordatorio",
     "completed": "Completado",
@@ -665,139 +772,155 @@
       "descending": "Descendente"
     },
     "types": {
-      "task": {
-        "label": "Task",
-        "description": "Something to do"
+              "task": {
+          "label": "Tarea",
+        "description": "Algo que hacer"
       },
-      "event": {
-        "label": "Event",
-        "description": "Something happening"
+              "event": {
+          "label": "Evento",
+        "description": "Algo que está sucediendo"
       },
-      "note": {
-        "label": "Note",
-        "description": "Information to remember"
+              "note": {
+          "label": "Nota",
+        "description": "Información para recordar"
       },
-      "reminder": {
-        "label": "Reminder",
-        "description": "General reminder"
+              "reminder": {
+          "label": "Recordatorio",
+        "description": "Recordatorio general"
       },
-      "bill": {
-        "label": "Bill",
-        "description": "Payment due"
+              "bill": {
+          "label": "Factura",
+        "description": "Pago vencido"
       },
-      "medication": {
-        "label": "Medication",
-        "description": "Medicine reminder"
+              "medication": {
+          "label": "Medicamento",
+        "description": "Recordatorio de medicina"
       }
     },
     "priority": {
-      "low": {
-        "label": "Low",
-        "description": "Not urgent, can be done later"
+              "low": {
+          "label": "Baja",
+                  "description": "No urgente, se puede hacer más tarde"
       },
-      "medium": {
-        "label": "Medium",
-        "description": "Normal priority"
+              "medium": {
+          "label": "Media",
+        "description": "Prioridad normal"
       },
-      "high": {
-        "label": "High",
-        "description": "Urgent, needs attention soon"
+              "high": {
+          "label": "Alta",
+                  "description": "Urgente, necesita atención pronto"
       }
     },
     "recurring": {
-      "daily": {
-        "label": "Daily",
-        "description": "Every day",
-        "smartNudge": "Perfect for daily habits and routines"
+              "daily": {
+          "label": "Diario",
+        "description": "Todos los días",
+                  "smartNudge": "Perfecto para hábitos y rutinas diarias"
       },
-      "weekdays": {
-        "label": "Weekdays",
-        "description": "Monday to Friday",
-        "smartNudge": "Great for work-related tasks"
+              "weekdays": {
+          "label": "Días Laborables",
+        "description": "Lunes a Viernes",
+                  "smartNudge": "Excelente para tareas relacionadas con el trabajo"
       },
-      "weekly": {
-        "label": "Weekly",
-        "description": "Same day each week",
-        "smartNudge": "Ideal for weekly meetings and activities"
+              "weekly": {
+          "label": "Semanal",
+          "description": "Mismo día cada semana",
+                  "smartNudge": "Ideal para reuniones y actividades semanales"
       },
-      "monthly": {
-        "label": "Monthly",
-        "description": "Same date each month",
-        "smartNudge": "Perfect for monthly bills and reports"
+              "monthly": {
+          "label": "Mensual",
+          "description": "Misma fecha cada mes",
+                  "smartNudge": "Perfecto para facturas y reportes mensuales"
       },
-      "yearly": {
-        "label": "Yearly",
-        "description": "Same date each year",
-        "smartNudge": "Great for birthdays and anniversaries"
+              "yearly": {
+          "label": "Anual",
+          "description": "Misma fecha cada año",
+                  "smartNudge": "Excelente para cumpleaños y aniversarios"
       },
       "firstMonday": {
-        "label": "First Monday",
-        "description": "First Monday of each month",
-        "smartNudge": "Ideal for monthly planning sessions"
+        "label": "Primer Lunes",
+          "description": "Primer lunes de cada mes",
+                  "smartNudge": "Ideal para sesiones de planificación mensual"
       },
       "lastFriday": {
-        "label": "Last Friday",
-        "description": "Last Friday of each month",
-        "smartNudge": "Perfect for monthly reviews and wrap-ups"
+        "label": "Último Viernes",
+          "description": "Último viernes de cada mes",
+                  "smartNudge": "Perfecto para revisiones y cierres mensuales"
       },
-      "custom": {
-        "label": "Custom",
-        "description": "Custom interval and days",
-        "smartNudge": "Flexible scheduling for unique needs"
+              "custom": {
+          "label": "Personalizado",
+          "description": "Intervalo y días personalizados",
+                  "smartNudge": "Programación flexible para necesidades únicas"
       }
     },
     "notifications": {
-      "exactlyOnTime": "Exactly on time",
-      "15MinutesBefore": "15 minutes before",
-      "1HourBefore": "1 hour before",
-      "1DayBefore": "1 day before",
+      "exactlyOnTime": "Exactamente a tiempo",
+      "15MinutesBefore": "15 minutos antes",
+      "1HourBefore": "1 hora antes",
+      "1DayBefore": "1 día antes",
       "presets": {
         "justInTime": {
-          "label": "Just in time",
-          "description": "Notify exactly when due"
+          "label": "Justo a tiempo",
+          "description": "Notificar exactamente cuando vence"
         },
         "earlyWarning": {
-          "label": "Early warning",
-          "description": "15 minutes before"
+          "label": "Advertencia temprana",
+          "description": "15 minutos antes"
         },
         "wellPrepared": {
-          "label": "Well prepared",
-          "description": "1 hour and 15 minutes before"
+          "label": "Bien preparado",
+          "description": "1 hora y 15 minutos antes"
         },
         "dayAhead": {
-          "label": "Day ahead",
-          "description": "1 day and 1 hour before"
+          "label": "Un día antes",
+          "description": "1 día y 1 hora antes"
         },
         "custom": {
-          "label": "Custom",
-          "description": "Set your own timings"
+          "label": "Personalizado",
+          "description": "Establece tus propios horarios"
         }
       },
-      "intervals": {
-        "1Minute": "1 minute",
-        "5Minutes": "5 minutes",
-        "15Minutes": "15 minutes",
-        "30Minutes": "30 minutes",
-        "1Hour": "1 hour",
-        "2Hours": "2 hours",
-        "4Hours": "4 hours",
-        "8Hours": "8 hours",
-        "1Day": "1 day",
-        "2Days": "2 days",
-        "1Week": "1 week"
+              "intervals": {
+          "1Minute": "1 minuto",
+          "5Minutes": "5 minutos",
+          "15Minutes": "15 minutos",
+          "30Minutes": "30 minutos",
+          "1Hour": "1 hora",
+          "2Hours": "2 horas",
+          "4Hours": "4 horas",
+          "8Hours": "8 horas",
+          "1Day": "1 día",
+          "2Days": "2 días",
+          "1Week": "1 semana"
       }
     },
     "intervals": {
-      "1Day": "1 day",
-      "2Days": "2 days",
-      "3Days": "3 days",
-      "1Week": "1 week",
-      "2Weeks": "2 weeks",
-      "1Month": "1 month",
-      "2Months": "2 months",
-      "3Months": "3 months",
-      "6Months": "6 months",
-      "1Year": "1 year"
+      "1Day": "1 día",
+      "2Days": "2 días",
+      "3Days": "3 días",
+      "1Week": "1 semana",
+      "2Weeks": "2 semanas",
+      "1Month": "1 mes",
+      "2Months": "2 meses",
+      "3Months": "3 meses",
+      "6Months": "6 meses",
+      "1Year": "1 año"
+    },
+    "notificationTiming": {
+      "15minBefore": "15 minutos antes",
+      "30minBefore": "30 minutos antes",
+      "1hrBefore": "1 hora antes",
+      "1dayBefore": "1 día antes",
+      "atDueTime": "En el momento de vencimiento",
+      "15minAfter": "15 minutos después",
+      "30minAfter": "30 minutos después",
+      "1hrAfter": "1 hora después"
+    },
+    "escalating": {
+      "gentle": "30 minutos antes (Suave)",
+      "medium": "15 minutos antes (Medio)",
+      "urgent": "5 minutos antes (Urgente)",
+      "description": "Recibe recordatorios progresivamente más urgentes"
     }
   },
   "auth": {
@@ -831,7 +954,31 @@
       "sendReset": "Enviar Enlace de Restablecimiento",
       "sending": "Enviando...",
       "backToLogin": "Volver al Inicio de Sesión"
-    }
+    },
+    "validation": {
+      "title": "Inicio de Sesión Requerido",
+      "requiredFields": "Por favor complete todos los campos requeridos."
+    },
+    "error": {
+      "generic": "Ocurrió un error. Por favor inténtelo de nuevo.",
+      "title": "Error de Autenticación"
+    },
+    "loginPrompt": {
+      "title": "Inicio de Sesión Requerido",
+      "message": "Por favor inicie sesión para continuar."
+    },
+    "signIn": "Iniciar Sesión",
+    "signUp": "Registrarse",
+    "fields": {
+      "fullName": "Nombre Completo",
+      "email": "Correo Electrónico",
+      "password": "Contraseña"
+    },
+    "signingIn": "Iniciando sesión...",
+    "creatingAccount": "Creando cuenta...",
+    "createAccount": "Crear Cuenta",
+    "anonymousDataPreserved": "Sus datos anónimos se conservarán después del inicio de sesión.",
+    "termsAgreement": "Al registrarse, acepta nuestros Términos de Servicio."
   },
   "forms": {
     "placeholders": {
@@ -896,7 +1043,12 @@
     "itemTitle": "Título del Elemento",
     "itemDescription": "Descripción del Elemento (Opcional)",
     "completed": "completado",
-    "of": "de"
+    "of": "de",
+    "noSharedLists": "No hay listas compartidas con la familia.",
+    "listsTab": "Listas",
+    "myLists": "Mis Listas",
+    "sharedLists": "Listas Compartidas",
+    "noMyLists": "Aún no tienes listas."
   },
   "activity": {
     "day": "día",
@@ -928,7 +1080,8 @@
       "reminderNotFound": "Recordatorio no encontrado",
       "loadFailed": "Error al cargar datos del recordatorio",
       "updateFailed": "Error al actualizar recordatorio. Por favor inténtalo de nuevo.",
-      "permissionDenied": "No tienes permiso para editar este recordatorio"
+      "permissionDenied": "No tienes permiso para editar este recordatorio",
+      "noReminderId": "No se proporcionó ID de recordatorio"
     }
   },
   "repeat": {
@@ -980,128 +1133,153 @@
     "endDateAfterStart": "La fecha de fin debe ser después de la fecha de inicio"
   },
   "upgrade": {
-    "title": "Upgrade to Pro",
+    "title": "Actualizar a Pro",
     "pro": "PRO",
-    "month": "month",
-    "year": "year",
-    "or": "or",
-    "save": "Save 40%",
-    "features": "Pro Features",
-    "maybeLater": "Maybe Later",
-    "terms": "Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period. You can manage subscriptions in your App Store settings."
+    "month": "mes",
+    "year": "año",
+    "or": "o",
+    "save": "Ahorra 40%",
+          "features": "Funciones Pro",
+      "maybeLater": "Quizás después",
+          "terms": "La suscripción se renueva automáticamente a menos que la renovación automática se desactive al menos 24 horas antes del final del período actual. Puedes gestionar las suscripciones en la configuración de tu App Store."
   },
   "validation": {
-    "required": "This field is required",
-    "invalidDate": "Please enter a valid date",
-    "invalidTime": "Please enter a valid time (HH:MM)",
-    "invalidDateRange": "End date must be after start date",
-    "invalidDueDate": "Due date cannot be before start date",
-    "pastDate": "Date is in the past",
-    "duplicateTimings": "Duplicate notification timings are not allowed",
-    "tooManyAssignments": "Cannot assign to more than 10 people",
-    "tooManyTags": "Cannot add more than 10 tags",
-    "tooManyNotifications": "Cannot add more than 5 notification timings",
-    "invalidInterval": "Interval must be between 1 and 365 days",
-    "noRepeatDays": "At least one day must be selected",
-    "titleTruncated": "Title was too long and has been truncated",
-    "recurringNeedsPattern": "Recurring reminder needs a pattern - set to daily",
-    "notificationsNeedTimings": "Notifications enabled but no timings set - using default"
+    "required": "Este campo es obligatorio",
+    "invalidDate": "Por favor, introduce una fecha válida",
+    "invalidTime": "Por favor, introduce una hora válida (HH:MM)",
+    "invalidDateRange": "La fecha de fin debe ser posterior a la fecha de inicio",
+    "invalidDueDate": "La fecha de vencimiento no puede ser anterior a la fecha de inicio",
+    "pastDate": "La fecha está en el pasado",
+    "duplicateTimings": "No se permiten horarios de notificación duplicados",
+    "tooManyAssignments": "No se puede asignar a más de 10 personas",
+    "tooManyTags": "No se pueden agregar más de 10 etiquetas",
+    "tooManyNotifications": "No se pueden agregar más de 5 horarios de notificación",
+    "invalidInterval": "El intervalo debe estar entre 1 y 365 días",
+    "noRepeatDays": "Debes seleccionar al menos un día",
+    "titleTruncated": "El título era demasiado largo y ha sido recortado",
+    "recurringNeedsPattern": "El recordatorio recurrente necesita un patrón - se ha establecido como diario",
+    "notificationsNeedTimings": "Notificaciones activadas pero sin horarios - usando el valor predeterminado"
   },
   "errors": {
-    "network": "Network error. Please try again.",
-    "save": "Failed to save reminder. Please try again.",
-    "delete": "Failed to delete reminder. Please try again.",
-    "notification": "Failed to schedule notification. Please try again.",
-    "recurring": "Failed to create recurring reminder. Please try again.",
-    "dataCorruption": "Data corruption detected",
-    "contactSupport": "Contact support if the problem persists",
+    "network": "Error de red. Por favor, inténtalo de nuevo.",
+    "save": "No se pudo guardar el recordatorio. Por favor, inténtalo de nuevo.",
+    "delete": "No se pudo eliminar el recordatorio. Por favor, inténtalo de nuevo.",
+    "notification": "No se pudo programar la notificación. Por favor, inténtalo de nuevo.",
+    "recurring": "No se pudo crear el recordatorio recurrente. Por favor, inténtalo de nuevo.",
+    "dataCorruption": "Corrupción de datos detectada",
+    "contactSupport": "Contacta con soporte si el problema persiste",
     "userFriendly": {
-      "network": "Connection problem. Please check your internet and try again.",
-      "permission": "Permission denied. Please check your settings.",
-      "dataCorruption": "Data issue detected. We're trying to fix it automatically.",
-      "notification": "Notification problem. We'll try to reschedule them.",
-      "recurring": "Recurring reminder issue. We're regenerating the schedule.",
-      "timeout": "Operation timed out. Please try again.",
-      "unknown": "Something went wrong. Please try again."
+      "network": "Problema de conexión. Por favor, revisa tu internet e inténtalo de nuevo.",
+      "permission": "Permiso denegado. Por favor, revisa tu configuración.",
+      "dataCorruption": "Se detectó un problema de datos. Intentamos solucionarlo automáticamente.",
+      "notification": "Problema de notificación. Intentaremos reprogramarlas.",
+      "recurring": "Problema con el recordatorio recurrente. Estamos regenerando la programación.",
+      "timeout": "La operación ha expirado. Por favor, inténtalo de nuevo.",
+      "unknown": "Algo salió mal. Por favor, inténtalo de nuevo."
     },
     "recovery": {
-      "checkingNetwork": "Checking network connection...",
-      "retrying": "Retrying operation...",
-      "attempt1Of3": "Attempt 1 of 3",
-      "attempt2Of3": "Attempt 2 of 3",
-      "attempt3Of3": "Attempt 3 of 3",
-      "checkInternet": "Check your internet connection",
-      "tryAgainLater": "Try again in a few moments",
-      "fixingInconsistencies": "Attempting to fix data inconsistencies...",
-      "validatingData": "Validating reminder data...",
-      "applyingCorrections": "Applying automatic corrections...",
-      "checkingRecurringConfig": "Checking recurring reminder configuration...",
-      "regeneratingOccurrences": "Attempting to regenerate occurrences...",
-      "validatingPattern": "Validating recurring pattern...",
-      "checkingNotificationSettings": "Checking notification settings...",
-      "reschedulingNotifications": "Attempting to reschedule notifications...",
-      "validatingTimings": "Validating notification timings...",
-      "correctValidationErrors": "Please correct the validation errors",
-      "checkRequiredFields": "Check all required fields",
-      "ensureValidDates": "Ensure dates and times are valid",
-      "dataCorrupted": "Data is corrupted and cannot be recovered"
-    }
+      "checkingNetwork": "Comprobando la conexión de red...",
+      "retrying": "Reintentando la operación...",
+      "attempt1Of3": "Intento 1 de 3",
+      "attempt2Of3": "Intento 2 de 3",
+      "attempt3Of3": "Intento 3 de 3",
+      "checkInternet": "Revisa tu conexión a internet",
+      "tryAgainLater": "Inténtalo de nuevo en unos momentos",
+      "fixingInconsistencies": "Intentando corregir inconsistencias de datos...",
+      "validatingData": "Validando los datos del recordatorio...",
+      "applyingCorrections": "Aplicando correcciones automáticas...",
+      "checkingRecurringConfig": "Comprobando la configuración del recordatorio recurrente...",
+      "regeneratingOccurrences": "Intentando regenerar las ocurrencias...",
+      "validatingPattern": "Validando el patrón recurrente...",
+      "checkingNotificationSettings": "Comprobando la configuración de notificaciones...",
+      "reschedulingNotifications": "Intentando reprogramar las notificaciones...",
+      "validatingTimings": "Validando los horarios de notificación...",
+      "correctValidationErrors": "Por favor, corrige los errores de validación",
+      "checkRequiredFields": "Revisa todos los campos obligatorios",
+      "ensureValidDates": "Asegúrate de que las fechas y horas sean válidas",
+      "dataCorrupted": "Los datos están dañados y no se pueden recuperar"
+    },
+    "unknown": "Ocurrió un error desconocido. Por favor inténtelo de nuevo."
   },
-  "warnings": {
-    "pastDueDate": "Due date is in the past",
-    "longInterval": "This is a very long interval - consider using a different pattern",
-    "manyNotifications": "You have many notification timings - this might be overwhelming",
-    "longNotification": "Notification timing is very long - consider a shorter time",
-    "completedReminder": "This reminder is already completed",
-    "cancelledReminder": "This reminder is cancelled",
-    "deletingCompleted": "You are deleting a completed reminder",
-    "updatingCompleted": "You cannot update a completed reminder"
+      "warnings": {
+      "pastDueDate": "La fecha de vencimiento está en el pasado",
+      "longInterval": "Este es un intervalo muy largo - considera usar un patrón diferente",
+      "manyNotifications": "Tienes muchos horarios de notificación - esto puede ser abrumador",
+      "longNotification": "El horario de notificación es muy largo - considera un tiempo más corto",
+      "completedReminder": "Este recordatorio ya está completado",
+      "cancelledReminder": "Este recordatorio está cancelado",
+      "deletingCompleted": "Estás eliminando un recordatorio completado",
+      "updatingCompleted": "No puedes actualizar un recordatorio completado"
   },
   "success": {
-    "reminderCreated": "Reminder created successfully",
-    "reminderUpdated": "Reminder updated successfully",
-    "reminderDeleted": "Reminder deleted successfully",
-    "reminderCompleted": "Reminder marked as completed",
-    "reminderCancelled": "Reminder cancelled successfully",
-    "notificationsScheduled": "Notifications scheduled successfully",
-    "recurringCreated": "Recurring reminder created successfully"
+    "reminderCreated": "Recordatorio creado exitosamente",
+    "reminderUpdated": "Recordatorio actualizado exitosamente",
+    "reminderDeleted": "Recordatorio eliminado exitosamente",
+    "reminderCompleted": "Recordatorio marcado como completado",
+    "reminderCancelled": "Recordatorio cancelado exitosamente",
+          "notificationsScheduled": "Notificaciones programadas exitosamente",
+      "recurringCreated": "Recordatorio recurrente creado exitosamente"
   },
   "behavior": {
     "suggestions": {
-      "useTemplates": "Consider using templates for similar reminders",
-      "batchCreation": "Try batch creation for multiple related reminders",
-      "quickAdd": "Use quick add for simple reminders",
-      "reviewPastDue": "Review and reschedule past due reminders",
-      "defaultTimes": "Consider setting default reminder times",
-      "calendarView": "Use the calendar view to plan ahead",
-      "shorterIntervals": "Consider shorter intervals for better tracking",
-      "useMonthlyYearly": "Use monthly or yearly patterns instead of custom long intervals",
-      "intermediateCheckins": "Set intermediate check-ins for long-term reminders",
-      "reduceNotifications": "Consider reducing notification frequency",
-      "usePresets": "Use notification presets for common patterns",
-      "groupNotifications": "Group related notifications together",
-      "saveDrafts": "Save drafts to complete later",
-      "reviewTimes": "Review reminder times after timezone changes",
-      "useUTC": "Consider using UTC times for travel reminders",
-      "checkNotifications": "Check notification schedules",
-      "adjustedToTomorrow": "Due date adjusted to tomorrow",
-      "adjustedEndTime": "End date adjusted to 1 hour after start",
-      "differentTypes": "Consider using different reminder types for better organization",
-      "reviewPriorities": "Many high-priority reminders - consider if all are truly urgent",
-      "useRecurring": "Consider using recurring reminders for regular tasks",
-      "enableNotifications": "Enable notifications to never miss important reminders"
+      "useTemplates": "Considera usar plantillas para recordatorios similares",
+      "batchCreation": "Prueba la creación por lotes para recordatorios relacionados",
+      "quickAdd": "Usa el agregado rápido para recordatorios simples",
+      "reviewPastDue": "Revisa y reprograma los recordatorios vencidos",
+      "defaultTimes": "Considera establecer horarios predeterminados para recordatorios",
+      "calendarView": "Usa la vista de calendario para planificar con anticipación",
+      "shorterIntervals": "Considera intervalos más cortos para un mejor seguimiento",
+      "useMonthlyYearly": "Usa patrones mensuales o anuales en lugar de intervalos largos personalizados",
+      "intermediateCheckins": "Establece revisiones intermedias para recordatorios a largo plazo",
+      "reduceNotifications": "Considera reducir la frecuencia de notificaciones",
+      "usePresets": "Usa preajustes de notificación para patrones comunes",
+      "groupNotifications": "Agrupa notificaciones relacionadas",
+      "saveDrafts": "Guarda borradores para completar después",
+      "reviewTimes": "Revisa los horarios de recordatorio después de cambios de zona horaria",
+      "useUTC": "Considera usar horarios UTC para recordatorios de viaje",
+      "checkNotifications": "Verificar programaciones de notificaciones",
+      "adjustedToTomorrow": "La fecha de vencimiento se ajustó a mañana",
+      "adjustedEndTime": "La fecha de fin se ajustó a 1 hora después del inicio",
+      "differentTypes": "Considera usar diferentes tipos de recordatorio para mejor organización",
+      "reviewPriorities": "Muchos recordatorios de alta prioridad - considera si todos son realmente urgentes",
+      "useRecurring": "Considera usar recordatorios recurrentes para tareas regulares",
+      "enableNotifications": "Activa las notificaciones para no perder recordatorios importantes"
     },
     "warnings": {
-      "pastDueDates": "Some reminders have past due dates",
-      "timezoneChanges": "Timezone changes detected - check reminder times"
+      "pastDueDates": "Algunos recordatorios tienen fechas de vencimiento pasadas",
+      "timezoneChanges": "Se detectaron cambios de zona horaria - revisa los horarios de los recordatorios"
     }
   },
   "dataQuality": {
     "issues": {
-      "noTitles": "Reminders without titles",
-      "orphanedRecurring": "Recurring reminders without patterns",
-      "notificationsWithoutTimings": "Reminders with notifications but no timings",
-      "invalidDates": "Reminders with invalid dates"
+      "noTitles": "Recordatorios sin títulos",
+      "orphanedRecurring": "Recordatorios recurrentes sin patrón",
+      "notificationsWithoutTimings": "Recordatorios con notificaciones pero sin horarios",
+      "invalidDates": "Recordatorios con fechas inválidas"
     }
+  },
+  "pro": {
+    "unlockFeature": "Desbloquear {{feature}}",
+    "unlockEverything": "Desbloquear todo el poder de ClearCue",
+    "whatYouGet": "Lo que obtienes con Pro",
+    "multipleNotifications": "Múltiples Notificaciones",
+    "multipleNotificationsDesc": "Configura hasta 5 notificaciones por recordatorio",
+    "advancedRecurring": "Recurrencia Avanzada",
+    "advancedRecurringDesc": "Intervalos personalizados y patrones complejos",
+    "familySharing": "Compartir con Familia",
+    "familySharingDesc": "Comparte listas y recordatorios con la familia",
+    "prioritySupport": "Soporte Prioritario",
+    "prioritySupportDesc": "Obtén ayuda cuando más la necesites",
+    "customThemes": "Temas Personalizados",
+    "customThemesDesc": "Personaliza tu experiencia",
+    "advancedAnalytics": "Analíticas Avanzadas",
+    "advancedAnalyticsDesc": "Rastrea tus patrones de productividad",
+    "monthly": "Mensual",
+    "perMonth": "por mes",
+    "allFeatures": "Todas las funciones Pro incluidas",
+    "cancelAnytime": "Cancelar en cualquier momento",
+    "freeTrial": "Prueba gratuita de 7 días",
+    "upgradeToPro": "Actualizar a Pro",
+    "maybeLater": "Quizás Más Tarde"
   }
 }

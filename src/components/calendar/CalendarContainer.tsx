@@ -4,45 +4,37 @@ import MonthView from './MonthView';
 import WeekView from './WeekView';
 import DayView from './DayView';
 import AgendaView from './AgendaView';
+import { CalendarEvent } from '../../utils/calendarUtils';
 
 export type CalendarView = 'month' | 'week' | 'day' | 'agenda';
-
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  type: 'reminder' | 'event' | 'family' | 'recurring';
-  color?: string;
-  allDay?: boolean;
-  description?: string;
-  participants?: string[];
-}
 
 const mockEvents: CalendarEvent[] = [
   {
     id: '1',
     title: 'Team Standup',
-    start: new Date(),
-    end: new Date(new Date().getTime() + 30 * 60 * 1000),
+    date: new Date(),
+    dateString: new Date().toISOString().split('T')[0],
+    time: '09:00',
     type: 'event',
-    color: '#4F8CFF',
+    isRecurring: false,
   },
   {
     id: '2',
     title: 'Lunch with Alex',
-    start: new Date(new Date().setHours(12, 0, 0, 0)),
-    end: new Date(new Date().setHours(13, 0, 0, 0)),
+    date: new Date(),
+    dateString: new Date().toISOString().split('T')[0],
+    time: '12:00',
     type: 'reminder',
-    color: '#FFB347',
+    isRecurring: false,
   },
   {
     id: '3',
     title: 'Doctor Appointment',
-    start: new Date(new Date().setHours(15, 0, 0, 0)),
-    end: new Date(new Date().setHours(16, 0, 0, 0)),
+    date: new Date(),
+    dateString: new Date().toISOString().split('T')[0],
+    time: '15:00',
     type: 'event',
-    color: '#FF6B6B',
+    isRecurring: false,
   },
 ];
 
@@ -60,7 +52,7 @@ const CalendarContainer: React.FC = () => {
         setSelectedDate={setSelectedDate}
       />
       {view === 'month' && <MonthView selectedDate={selectedDate} events={events} setSelectedDate={setSelectedDate} />}
-      {view === 'week' && <WeekView selectedDate={selectedDate} events={events} setSelectedDate={setSelectedDate} />}
+      {view === 'week' && <WeekView selectedDate={selectedDate.toISOString().split('T')[0]} events={events} onDatePress={(dateString) => setSelectedDate(new Date(dateString))} onEventPress={() => {}} />}
       {view === 'day' && <DayView selectedDate={selectedDate} events={events} />}
       {view === 'agenda' && <AgendaView selectedDate={selectedDate} events={events} />}
     </div>

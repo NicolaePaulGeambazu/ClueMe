@@ -1,0 +1,38 @@
+{
+  "notifications": {
+    "reminderDue": "Rappel Échu",
+    "reminderIn15Minutes": "Rappel dans 15 minutes",
+    "reminderIn30Minutes": "Rappel dans 30 minutes",
+    "reminderIn1Hour": "Rappel dans 1 heure",
+    "reminderIn1Day": "Rappel dans 1 jour",
+    "reminderOverdue": "Rappel En Retard",
+    "taskAssigned": "Nouvelle Tâche Assignée",
+    "taskAssignedBy": "{{assignedBy}} vous a assigné : {{title}}",
+    "taskCompleted": "Tâche Terminée",
+    "taskCompletedBy": "{{completedBy}} a terminé : {{title}}",
+    "taskUpdated": "Tâche Mise à Jour",
+    "taskUpdatedBy": "{{updatedBy}} a mis à jour : {{title}}",
+    "familyInvitation": "Invitation Familiale",
+    "familyInvitationFrom": "{{inviterName}} vous a invité à rejoindre sa famille",
+    "general": "Rappel",
+    "generalWithDescription": "{{title}} - {{description}}",
+    "dueNow": "{{title}} est échu maintenant !",
+    "dueIn15Minutes": "{{title}} est échu dans 15 minutes",
+    "dueIn30Minutes": "{{title}} est échu dans 30 minutes",
+    "dueIn1Hour": "{{title}} est échu dans 1 heure",
+    "dueIn1Day": "{{title}} est échu dans 1 jour",
+    "overdueBy": "{{title}} est en retard de {{days}} jours",
+    "overdueBy1Day": "{{title}} est en retard de 1 jour",
+    "minutesLeft": "{{minutes}} minutes restantes",
+    "hoursLeft": "{{hours}} heures restantes",
+    "daysLeft": "{{days}} jours restants"
+  },
+  "time": {
+    "minutes": "minutes",
+    "minute": "minute",
+    "hours": "heures",
+    "hour": "heure",
+    "days": "jours",
+    "day": "jour"
+  }
+} 

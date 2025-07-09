@@ -10,7 +10,15 @@ import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
 import FamilyInvitationModal from '../components/FamilyInvitationModal';
 import { formatForActivity } from '../utils/dateUtils';
 // Analytics service removed to fix Firebase issues
-import { addFamilyNotification, getFirestoreInstance } from '../services/firebaseService';
+import { addFamilyNotification, getFirestoreInstance, listService, UserList } from '../services/firebaseService';
+
+// Mock analytics service to prevent crashes
+const analyticsService = {
+  trackScreen: (screen: string, component: string, params: any) => {
+  },
+  trackAction: (action: string, params: any) => {
+  }
+};
 
 // Mock types
 interface FamilyMember {
@@ -69,29 +77,100 @@ export default function FamilyScreen() {
 
   // State management
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'members' | 'activity' | 'notifications'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'activity' | 'notifications' | 'lists'>('members');
   const [showInvitationModal, setShowInvitationModal] = useState(false);
   const [familyNotifications, setFamilyNotifications] = useState<any[]>([]);
+  const [sharedLists, setSharedLists] = useState<UserList[]>([]);
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [listsError, setListsError] = useState<string | null>(null);
 
   // Real-time listener for family notifications
   useEffect(() => {
     if (!family?.id) return;
-    const firestoreInstance = getFirestoreInstance();
-    const unsubscribe = firestoreInstance
-      .collection('familyNotifications')
-      .where('familyId', '==', family.id)
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(snapshot => {
-        const notifications = snapshot.docs.map(doc => {
-          const data = doc.data();
-          return {
-            ...data,
-            createdAt: data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : data.createdAt,
-          };
-        });
-        setFamilyNotifications(notifications);
-      });
-    return () => unsubscribe();
+    
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const unsubscribe = firestoreInstance
+        .collection('familyNotifications')
+        .where('familyId', '==', family.id)
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(
+          snapshot => {
+            if (snapshot && snapshot.docs) {
+              const notifications = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                  ...data,
+                  createdAt: data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : data.createdAt,
+                };
+              });
+              setFamilyNotifications(notifications);
+            } else {
+              setFamilyNotifications([]);
+            }
+          },
+          error => {
+            console.error('Error listening to family notifications:', error);
+            setFamilyNotifications([]);
+          }
+        );
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error setting up family notifications listener:', error);
+      setFamilyNotifications([]);
+    }
+  }, [family?.id]);
+
+  // Fetch shared lists when family changes
+  useEffect(() => {
+    if (!family?.id) {
+      setSharedLists([]);
+      setListsError(null);
+      return;
+    }
+    setIsLoadingLists(true);
+    setListsError(null);
+    const fetchLists = async () => {
+      try {
+        const firestoreInstance = getFirestoreInstance();
+        const snapshot = await firestoreInstance
+          .collection('lists')
+          .where('familyId', '==', family.id)
+          .where('isPrivate', '==', false)
+          .orderBy('updatedAt', 'desc')
+          .get();
+        
+        if (snapshot && snapshot.docs) {
+          const lists: UserList[] = [];
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            lists.push({
+              id: doc.id,
+              name: data.name,
+              description: data.description,
+              items: data.items || [],
+              format: data.format || 'checkmark',
+              isFavorite: data.isFavorite || false,
+              isPrivate: data.isPrivate || false,
+              familyId: data.familyId,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+              updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+              createdBy: data.createdBy,
+            });
+          });
+          setSharedLists(lists);
+        } else {
+          setSharedLists([]);
+        }
+      } catch (e: any) {
+        console.error('Error fetching shared lists:', e);
+        setListsError(e.message || 'Error fetching shared lists');
+        setSharedLists([]);
+      } finally {
+        setIsLoadingLists(false);
+      }
+    };
+    fetchLists();
   }, [family?.id]);
 
   const handleRefresh = useCallback(async () => {
@@ -113,7 +192,6 @@ export default function FamilyScreen() {
       member_name: member.name 
     });
     // Navigate to member details
-    console.log('Member pressed:', member.name);
   };
 
   const handleMemberMenu = (member: any) => {
@@ -127,7 +205,6 @@ export default function FamilyScreen() {
       member.name,
       t('family.memberActions'),
       [
-        { text: t('family.edit'), onPress: () => console.log('Edit member:', member.id) },
         {
           text: t('family.remove'),
           style: 'destructive',
@@ -149,7 +226,6 @@ export default function FamilyScreen() {
       await removeMember(member.id);
       Alert.alert(t('common.success'), t('family.removeSuccess'));
     } catch (error) {
-      console.error('Error removing member:', error);
       Alert.alert(t('common.error'), t('family.removeError'));
     }
   };
@@ -161,7 +237,6 @@ export default function FamilyScreen() {
       activity_type: activity.type 
     });
     // Navigate to activity details or related screen
-    console.log('Activity pressed:', activity.type);
   };
 
   const handleInvitations = () => {
@@ -191,7 +266,6 @@ export default function FamilyScreen() {
               await leaveFamily();
               Alert.alert(t('common.success'), t('family.leaveFamilySuccess'));
             } catch (error) {
-              console.error('Error leaving family:', error);
               Alert.alert(t('common.error'), t('family.leaveFamilyError'));
             }
           },
@@ -366,6 +440,30 @@ export default function FamilyScreen() {
                     </View>
                   );
                 })}
+              </ScrollView>
+            )}
+          </View>
+        );
+
+      case 'lists':
+        return (
+          <View style={styles.tabContent}>
+            {listsError ? (
+              <Text style={styles.emptyText}>{listsError}</Text>
+            ) : isLoadingLists ? (
+              <Text style={styles.loadingText}>{t('common.loading')}</Text>
+            ) : sharedLists.length === 0 ? (
+              <Text style={styles.emptyText}>{t('family.noSharedLists') || 'No lists shared with family.'}</Text>
+            ) : (
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                {sharedLists.map(list => (
+                  <View key={list.id} style={styles.activityCard}>
+                    <Text style={styles.activityTitle}>{list.name}</Text>
+                    {list.description ? (
+                      <Text style={styles.activityDescription}>{list.description}</Text>
+                    ) : null}
+                  </View>
+                ))}
               </ScrollView>
             )}
           </View>

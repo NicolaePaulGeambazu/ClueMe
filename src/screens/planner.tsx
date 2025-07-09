@@ -5,7 +5,7 @@ import { Calendar, ChevronLeft, ChevronRight, Plus, Clock, User, Filter } from '
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useAuthGuard } from '../hooks/useAuthGuard';
-import { useReminders } from '../hooks/useReminders';
+import { useReminderContext } from '../contexts/ReminderContext';
 import { LoginPrompt } from '../components/auth/LoginPrompt';
 import { Colors } from '../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
@@ -21,7 +21,7 @@ export default function PlannerScreen({ navigation }: any) {
   const colors = Colors[theme];
   const { user, isAnonymous } = useAuth();
   const { showLoginPrompt, setShowLoginPrompt, guardAction, executeAfterAuth } = useAuthGuard();
-  const { reminders, isLoading, loadReminders, useFirebase } = useReminders();
+  const { reminders, isLoading, loadReminders } = useReminderContext();
   const { t } = useTranslation();
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -66,7 +66,6 @@ export default function PlannerScreen({ navigation }: any) {
   const handleReminderPress = (reminder: any) => {
     const viewReminderAction = () => {
       // Navigate to reminder detail/edit screen
-      console.log('View reminder:', reminder.id);
     };
 
     guardAction(viewReminderAction);
@@ -240,7 +239,6 @@ export default function PlannerScreen({ navigation }: any) {
       <LoginPrompt
         visible={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
-        onSuccess={() => executeAfterAuth(() => console.log('Planner access granted'))}
         title={t('navigation.access.plannerAccess')}
         message={t('add.anonymousBanner')}
       />

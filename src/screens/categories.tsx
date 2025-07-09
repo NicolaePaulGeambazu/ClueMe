@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SquareCheck as CheckSquare, CreditCard, Pill, Calendar, FileText, ChevronRight, Plus, Edit, Trash2, Filter, Search, Star, Clock, CheckCircle, AlertCircle } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { useReminders } from '../hooks/useReminders';
+import { useReminderContext } from '../contexts/ReminderContext';
 import { useTaskTypes } from '../hooks/useTaskTypes';
 import { Colors } from '../constants/Colors';
 import { Fonts } from '../constants/Fonts';
@@ -14,7 +14,7 @@ export default function CategoriesScreen({ navigation }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { user } = useAuth();
-  const { reminders, loadReminders } = useReminders();
+  const { reminders, loadReminders } = useReminderContext();
   const { taskTypes, isLoading: taskTypesLoading, seedDefaultTaskTypes } = useTaskTypes();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,8 +24,6 @@ export default function CategoriesScreen({ navigation }: any) {
   // Seed default task types if none exist
   useEffect(() => {
     if (taskTypes.length === 0 && !taskTypesLoading && user?.uid) {
-      console.log('🌱 No task types found, seeding defaults...');
-      seedDefaultTaskTypes().catch(console.error);
     }
   }, [taskTypes.length, taskTypesLoading, user?.uid, seedDefaultTaskTypes]);
 
@@ -40,7 +38,6 @@ export default function CategoriesScreen({ navigation }: any) {
         // Add any other refresh operations here
       ]);
     } catch (error) {
-      console.error('Error refreshing:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -130,7 +127,7 @@ export default function CategoriesScreen({ navigation }: any) {
             const categoryId = 'name' in category ? category.name : category.id;
             // Ensure unique key by combining categoryId with index
             const uniqueKey = `${categoryId}-${index}`;
-            const stats = getTypeStats(categoryId);
+            const stats = getTypeStats(categoryId as string);
             const IconComponent = getTypeIcon('icon' in category ? category.icon : 'CheckSquare');
 
             return (

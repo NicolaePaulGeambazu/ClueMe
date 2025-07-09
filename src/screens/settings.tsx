@@ -38,6 +38,15 @@ import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
 import InfoModal from '../components/InfoModal';
 import { LanguageSelector } from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
+import PrivacySettings from '../components/PrivacySettings';
+import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
+import { usePremium } from '../hooks/usePremium';
+import FullScreenPaywall from '../components/premium/FullScreenPaywall';
+import { useSettings } from '../contexts/SettingsContext';
+import notificationService from '../services/notificationService';
+import { getFirestoreInstance } from '../services/firebaseService';
+import auth from '@react-native-firebase/auth';
+
 
 const { width } = Dimensions.get('window');
 
@@ -805,9 +814,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  settingText: {
+    flex: 1,
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.body,
+    color: colors.text,
+  },
+
 });
 
-export default function SettingsScreen() {
+export default function SettingsScreen({ navigation }: any) {
   const { t, i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { signOut, user, isAnonymous, updateUserProfile } = useAuth();
@@ -818,6 +834,8 @@ export default function SettingsScreen() {
     error: notificationError,
   } = useNotifications();
   const subscription = useSubscription();
+  const { isPremium } = usePremium();
+  const { fabPosition, setFabPosition } = useSettings();
   const colors = Colors[theme];
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -837,6 +855,9 @@ export default function SettingsScreen() {
 
   // Upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  
+  // Privacy settings modal state
+  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
 
   const styles = React.useMemo(() => createStyles(colors), [colors]);
 
@@ -871,7 +892,6 @@ export default function SettingsScreen() {
             try {
               await signOut();
             } catch (error) {
-              console.error('Error signing out:', error);
               Alert.alert(t('common.error'), t('settings.signOutError'));
             }
           },
@@ -896,7 +916,6 @@ export default function SettingsScreen() {
       setShowNameEditModal(false);
       Alert.alert(t('settings.nameUpdated'), t('settings.nameUpdatedMessage'));
     } catch (error) {
-      console.error('Error updating name:', error);
       Alert.alert(t('common.error'), t('settings.nameUpdateError'));
     } finally {
       setIsUpdatingName(false);
@@ -927,12 +946,7 @@ export default function SettingsScreen() {
   };
 
   const handleDataPrivacy = () => {
-    setModalConfig({
-      title: t('settings.dataPrivacy'),
-      content: t('settings.privacyContent'),
-      type: 'privacy',
-    });
-    setModalVisible(true);
+    setShowPrivacySettings(true);
   };
 
   const handleLanguageChange = (languageCode: string) => {
@@ -940,7 +954,9 @@ export default function SettingsScreen() {
   };
 
   const handleUpgrade = () => {
-    setShowUpgradeModal(true);
+    // This will be called when user successfully upgrades
+    console.log('User upgraded to premium');
+    // You can add any post-upgrade logic here
   };
 
   const renderProfileSection = () => (
@@ -987,7 +1003,7 @@ export default function SettingsScreen() {
 
         {/* Subscription Status */}
         {!subscription.isPro && (
-          <TouchableOpacity style={styles.upgradeCard} onPress={handleUpgrade}>
+          <TouchableOpacity style={styles.upgradeCard} onPress={() => setShowUpgradeModal(true)}>
             <View style={styles.upgradeContent}>
               <View style={styles.upgradeIcon}>
                 <Sparkles size={24} color={colors.primary} strokeWidth={2} />
@@ -1119,6 +1135,8 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+
+
       {/* Language */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{t('language.title')}</Text>
@@ -1170,6 +1188,25 @@ export default function SettingsScreen() {
             disabled={notificationsLoading}
           />
         </View>
+
+        {/* Notification Test Section - Only in development */}
+        {__DEV__ && (
+          <TouchableOpacity 
+            style={styles.settingItem} 
+            onPress={() => navigation.navigate('NotificationTest')}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
+                <Bell size={20} color={colors.warning} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Test Notifications</Text>
+                <Text style={styles.settingDescription}>Test assignment notifications on simulator</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Privacy & Security */}
@@ -1221,6 +1258,86 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Debug Section */}
+      {__DEV__ && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔧 Debug (Development Only)</Text>
+          
+          <TouchableOpacity 
+            style={styles.settingItem} 
+                         onPress={async () => {
+               try {
+                 const token = await notificationService.getFCMToken();
+                 console.log('Current FCM Token:', token);
+                 Alert.alert('FCM Token', token ? `Token: ${token.substring(0, 50)}...` : 'No token available');
+               } catch (error) {
+                 Alert.alert('Error', `Failed to get FCM token: ${error instanceof Error ? error.message : 'Unknown error'}`);
+               }
+             }}
+           >
+             <Text style={styles.settingText}>Get FCM Token</Text>
+             <Text style={styles.settingText}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.settingItem} 
+            onPress={async () => {
+              try {
+                const token = await notificationService.forceRefreshFCMToken();
+                console.log('Refreshed FCM Token:', token);
+                Alert.alert('FCM Token Refreshed', token ? `New token: ${token.substring(0, 50)}...` : 'No token available');
+              } catch (error) {
+                Alert.alert('Error', `Failed to refresh FCM token: ${error.message}`);
+              }
+            }}
+          >
+            <Text style={styles.settingText}>Refresh FCM Token</Text>
+            <Icon name="chevron-right" size={20} color={colors.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.settingItem} 
+            onPress={async () => {
+              try {
+                const currentUser = auth().currentUser;
+                if (!currentUser) {
+                  Alert.alert('Error', 'No user logged in');
+                  return;
+                }
+                
+                const firestoreInstance = getFirestoreInstance();
+                const userDoc = await firestoreInstance.collection('users').doc(currentUser.uid).get();
+                const userData = userDoc.data();
+                const fcmTokens = userData?.fcmTokens || [];
+                
+                Alert.alert('FCM Tokens', `User has ${fcmTokens.length} FCM tokens stored`);
+                console.log('Stored FCM Tokens:', fcmTokens);
+              } catch (error) {
+                Alert.alert('Error', `Failed to check FCM tokens: ${error.message}`);
+              }
+            }}
+          >
+            <Text style={styles.settingText}>Check Stored FCM Tokens</Text>
+            <Icon name="chevron-right" size={20} color={colors.text} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.settingItem} 
+            onPress={async () => {
+              try {
+                await notificationService.sendTestNotification(true);
+                Alert.alert('Success', 'Test notification sent!');
+              } catch (error) {
+                Alert.alert('Error', `Failed to send test notification: ${error.message}`);
+              }
+            }}
+          >
+            <Text style={styles.settingText}>Send Test Notification</Text>
+            <Icon name="chevron-right" size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.footer}>
         <Text style={styles.footerText}>
           {t('settings.footerText')}
@@ -1261,7 +1378,7 @@ export default function SettingsScreen() {
           </View>
           
           {!subscription.isPro && (
-            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={() => setShowUpgradeModal(true)}>
               <Zap size={16} color="white" strokeWidth={2} />
               <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
             </TouchableOpacity>
@@ -1279,7 +1396,7 @@ export default function SettingsScreen() {
           
           <TouchableOpacity
             style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && handleUpgrade()}
+            onPress={() => !subscription.isPro && setShowUpgradeModal(true)}
           >
             <View style={styles.featureLeft}>
               <View style={[styles.featureIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -1299,11 +1416,11 @@ export default function SettingsScreen() {
 
           <TouchableOpacity
             style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && handleUpgrade()}
+            onPress={() => !subscription.isPro && setShowUpgradeModal(true)}
           >
             <View style={styles.featureLeft}>
               <View style={[styles.featureIcon, { backgroundColor: colors.secondary + '15' }]}>
-                <MapPin size={20} color={colors.secondary} strokeWidth={2} />
+                <MapPin size={20} color={colors.primary} strokeWidth={2} />
               </View>
               <View style={styles.featureContent}>
                 <Text style={styles.featureLabel}>Location-based Reminders</Text>
@@ -1414,7 +1531,7 @@ export default function SettingsScreen() {
         <View style={styles.pricingSection}>
           <Text style={styles.pricingTitle}>Choose Your Plan</Text>
           
-          <TouchableOpacity style={styles.pricingCard} onPress={handleUpgrade}>
+          <TouchableOpacity style={styles.pricingCard} onPress={() => setShowUpgradeModal(true)}>
             <View style={styles.pricingHeader}>
               <Text style={styles.pricingPlan}>Monthly</Text>
               <Text style={styles.pricingAmount}>$4.99</Text>
@@ -1422,7 +1539,7 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
           
-          <TouchableOpacity style={[styles.pricingCard, styles.pricingCardPopular]} onPress={handleUpgrade}>
+          <TouchableOpacity style={[styles.pricingCard, styles.pricingCardPopular]} onPress={() => setShowUpgradeModal(true)}>
             <View style={styles.popularBadge}>
               <Text style={styles.popularText}>SAVE 17%</Text>
             </View>
@@ -1588,88 +1705,33 @@ export default function SettingsScreen() {
         </View>
       </Modal>
 
-      {/* Upgrade Modal */}
-      <Modal
+      {/* Full Screen Paywall */}
+      <FullScreenPaywall
         visible={showUpgradeModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowUpgradeModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, styles.upgradeModalContent]}>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowUpgradeModal(false)}
-            >
-              <X size={24} color={colors.textSecondary} strokeWidth={2} />
-            </TouchableOpacity>
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleUpgrade}
+        triggerFeature="Premium Features"
+      />
 
-            <View style={styles.upgradeModalHeader}>
-              <View style={styles.upgradeModalIcon}>
-                <Crown size={32} color="#FFD700" strokeWidth={2} />
-              </View>
-              <Text style={styles.upgradeModalTitle}>Upgrade to ClearCue Pro</Text>
-              <Text style={styles.upgradeModalSubtitle}>
-                Unlock all features and remove limits
-              </Text>
-            </View>
+      {/* Banner Ad - Bottom of Settings Screen (only for free users) */}
+      {!isPremium && (
+        <BannerAdComponent 
+          style={{ marginBottom: 20 }} 
+          backgroundType="transparent"
+        />
+      )}
 
-            <View style={styles.upgradeFeatures}>
-              <View style={styles.upgradeFeatureItem}>
-                <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-                <Text style={styles.upgradeFeatureText}>Unlimited reminders</Text>
-              </View>
-              <View style={styles.upgradeFeatureItem}>
-                <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-                <Text style={styles.upgradeFeatureText}>Unlimited family members</Text>
-              </View>
-              <View style={styles.upgradeFeatureItem}>
-                <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-                <Text style={styles.upgradeFeatureText}>Advanced recurring patterns</Text>
-              </View>
-              <View style={styles.upgradeFeatureItem}>
-                <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-                <Text style={styles.upgradeFeatureText}>Location-based reminders</Text>
-              </View>
-              <View style={styles.upgradeFeatureItem}>
-                <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-                <Text style={styles.upgradeFeatureText}>Family analytics & insights</Text>
-              </View>
-            </View>
+      {/* Interstitial Ad Trigger - Show after user changes settings */}
+      <InterstitialAdTrigger
+        triggerOnAction={true}
+        actionCompleted={showNameEditModal || showUpgradeModal}
+      />
 
-            <View style={styles.upgradePricing}>
-              <TouchableOpacity style={styles.pricingOption}>
-                <View style={styles.pricingOptionHeader}>
-                  <Text style={styles.pricingOptionTitle}>Monthly</Text>
-                  <Text style={styles.pricingOptionPrice}>$4.99</Text>
-                </View>
-                <Text style={styles.pricingOptionDescription}>Billed monthly</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.pricingOption, styles.pricingOptionRecommended]}>
-                <View style={styles.recommendedBadge}>
-                  <Text style={styles.recommendedText}>BEST VALUE</Text>
-                </View>
-                <View style={styles.pricingOptionHeader}>
-                  <Text style={styles.pricingOptionTitle}>Annual</Text>
-                  <Text style={styles.pricingOptionPrice}>$49.99</Text>
-                </View>
-                <Text style={styles.pricingOptionDescription}>
-                  Billed yearly (save $10)
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.upgradeCTA}>
-              <Text style={styles.upgradeCTAText}>Start Free Trial</Text>
-            </TouchableOpacity>
-
-            <Text style={styles.trialText}>
-              7-day free trial • Cancel anytime
-            </Text>
-          </View>
-        </View>
-      </Modal>
+      {/* Privacy Settings Modal */}
+      <PrivacySettings
+        visible={showPrivacySettings}
+        onClose={() => setShowPrivacySettings(false)}
+      />
     </SafeAreaView>
   );
 }

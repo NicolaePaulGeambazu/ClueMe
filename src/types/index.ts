@@ -1,21 +1,3 @@
-export interface Item {
-  id?: string;
-  title: string;
-  description?: string;
-  completed: boolean;
-  isFavorite: boolean;
-  category: string;
-  priority: 'low' | 'medium' | 'high';
-  dueDate?: string;
-  dueTime?: string;
-  location?: string;
-  tags: string[];
-  userId: string;
-  assignedTo?: string[];
-  createdAt: any;
-  updatedAt: any;
-}
-
 export interface User {
   uid: string;
   email: string | null;
@@ -25,15 +7,19 @@ export interface User {
   isAnonymous: boolean;
 }
 
-export interface AppSettings {
-  theme: 'light' | 'dark';
-  notifications: boolean;
-  analytics: boolean;
-}
-
-export interface Reminder {
-  repeatDays?: number[]; // Days of week for custom weekly patterns (0=Sunday, 1=Monday, ...)
-  recurringStartDate?: Date; // When recurring reminders should start
-  recurringEndDate?: Date; // When recurring reminders should stop (optional)
-  recurringEndAfter?: number; // Number of occurrences before ending (optional)
-}
+export type RootStackParamList = {
+  Home: undefined;
+  Reminders: undefined;
+  Calendar: undefined;
+  Lists: undefined;
+  Settings: undefined;
+  AddReminder: undefined;
+  EditReminder: { reminderId: string };
+  ListDetail: { listId: string };
+  Family: undefined;
+  Search: undefined;
+  Trash: undefined;
+  Login: undefined;
+  Signup: undefined;
+  ForgotPassword: undefined;
+};

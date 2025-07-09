@@ -34,7 +34,6 @@ const RewardedAdComponent: React.FC<RewardedAdComponentProps> = ({
       await adMobService.loadRewardedAd();
       setIsAdLoaded(true);
     } catch (error) {
-      console.error('Error loading rewarded ad:', error);
     } finally {
       setIsLoading(false);
     }
@@ -62,7 +61,6 @@ const RewardedAdComponent: React.FC<RewardedAdComponentProps> = ({
         Alert.alert('Reward Earned!', 'You\'ve unlocked bonus features!');
       }
     } catch (error) {
-      console.error('Error showing rewarded ad:', error);
       Alert.alert('Error', 'Failed to show ad. Please try again.');
     } finally {
       setIsLoading(false);
