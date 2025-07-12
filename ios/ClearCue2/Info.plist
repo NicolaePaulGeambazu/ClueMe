@@ -35,6 +35,8 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ClearCue uses your location to provide regional pricing and improve your experience.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>ClearCue uses your location to provide regional pricing, location-based reminders, and improve your experience. Location access is needed for background reminder processing and regional content.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>ClearCue uses notifications to remind you about important tasks and family updates.</string>
 	<key>NSCameraUsageDescription</key>
@@ -47,6 +49,8 @@
 	<string>ClearCue may access your calendar to sync reminders and events.</string>
 	<key>NSContactsUsageDescription</key>
 	<string>ClearCue may access contacts to help you share reminders with family members.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>ClearCue uses Face ID to securely access your stored API keys and provide enhanced security for your account.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

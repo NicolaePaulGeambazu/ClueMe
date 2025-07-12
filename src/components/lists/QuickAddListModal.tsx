@@ -12,6 +12,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import {
   X,
@@ -27,11 +28,15 @@ import {
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useFamily } from '../../hooks/useFamily';
+import { useMonetization } from '../../hooks/useMonetization';
+import { useUserUsage } from '../../hooks/useUserUsage';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserList } from '../../services/firebaseService';
+import SmallPaywallModal from '../premium/SmallPaywallModal';
+import FullScreenPaywall from '../premium/FullScreenPaywall';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -52,6 +57,16 @@ export default function QuickAddListModal({
   const { theme } = useTheme();
   const { user } = useAuth();
   const { family } = useFamily();
+  const { 
+    showFullScreenPaywall, 
+    showSmallPaywall, 
+    paywallMessage, 
+    paywallTrigger,
+    checkListCreation,
+    hidePaywall,
+    isLoading: monetizationLoading 
+  } = useMonetization();
+  const { canCreateList, incrementListCount } = useUserUsage();
   const colors = Colors[theme];
   const styles = createStyles(colors);
   const insets = useSafeAreaInsets();
@@ -108,6 +123,31 @@ export default function QuickAddListModal({
   const handleSave = async () => {
     if (!name.trim()) return;
 
+    console.log('QuickAddListModal - Selected format:', selectedFormat);
+    console.log('QuickAddListModal - Format options:', formatOptions.map(opt => ({ value: opt.value, label: opt.label })));
+
+    // Check usage limits before saving
+    if (!canCreateList) {
+      // Show paywall or error message
+      Alert.alert(
+        'List Limit Reached',
+        'You\'ve reached your limit of 2 lists. Upgrade to Pro for unlimited lists.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Upgrade', onPress: () => showFullScreenPaywall }
+        ]
+      );
+      return;
+    }
+
+    // Check monetization limits before saving
+    const monetizationResult = await checkListCreation();
+    
+    if (monetizationResult.isBlocking) {
+      // Don't proceed with saving if blocked
+      return;
+    }
+
     const listData = {
       name: name.trim(),
       description: description.trim() || undefined,
@@ -117,11 +157,17 @@ export default function QuickAddListModal({
       createdBy: user?.uid,
       familyId: family?.id || null,
     };
+    
+    console.log('QuickAddListModal - List data being saved:', listData);
+    console.log('QuickAddListModal - Format being saved:', listData.format);
 
     try {
       setIsSaving(true);
       
       await onSave(listData);
+      
+      // Increment usage count after successful creation
+      await incrementListCount();
       
       handleClose();
     } catch (error) {
@@ -164,13 +210,21 @@ export default function QuickAddListModal({
       description: 'Numbered list items',
       icon: Hash 
     },
-    { 
-      value: 'plain', 
-      label: 'Plain Text', 
-      description: 'Simple text notes',
-      icon: FileText 
-    },
   ];
+
+  // Get the format option for the selected format, with fallback for legacy formats
+  const getFormatOption = (format: string) => {
+    const option = formatOptions.find(opt => opt.value === format);
+    if (option) return option;
+    
+    // Fallback for legacy formats or unknown formats
+    return {
+      value: format,
+      label: format.charAt(0).toUpperCase() + format.slice(1),
+      description: 'List format',
+      icon: CheckSquare
+    };
+  };
 
   const privacyOptions = [
     {
@@ -204,19 +258,32 @@ export default function QuickAddListModal({
       </Text>
       <View style={styles.selectorContainer}>
         <TouchableOpacity
-          style={[styles.selector, { borderColor: colors.borderLight }]}
-          onPress={() => setShowFormatSheet(true)}
+          style={[
+            styles.selector, 
+            { 
+              borderColor: colors.borderLight,
+              opacity: editingList ? 0.5 : 1,
+            }
+          ]}
+          onPress={() => !editingList && setShowFormatSheet(true)}
+          disabled={!!editingList}
         >
           {(() => {
-            const FormatIcon = formatOptions.find(opt => opt.value === selectedFormat)?.icon || CheckSquare;
+            const formatOption = getFormatOption(selectedFormat);
+            const FormatIcon = formatOption.icon;
             return <FormatIcon size={20} color={colors.textSecondary} />;
           })()}
           <Text style={[styles.selectorText, { color: colors.text }]}>
-            {formatOptions.find(opt => opt.value === selectedFormat)?.label}
+            {getFormatOption(selectedFormat).label}
           </Text>
-          <ChevronRight size={16} color={colors.textTertiary} />
+          {!editingList && <ChevronRight size={16} color={colors.textTertiary} />}
         </TouchableOpacity>
       </View>
+      {editingList && (
+        <Text style={[styles.disabledText, { color: colors.textTertiary }]}>
+          Format cannot be changed after creation
+        </Text>
+      )}
     </View>
   );
 
@@ -313,7 +380,7 @@ export default function QuickAddListModal({
               {/* Description Input */}
               <View style={styles.section}>
                 <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                  {t('lists.description')} ({t('common.optional')})
+                  {t('lists.description')}
                 </Text>
                 <TextInput
                   style={[styles.descriptionInput, { 
@@ -457,6 +524,29 @@ export default function QuickAddListModal({
           </View>
         )}
       </TouchableOpacity>
+
+      {/* Small Paywall Modal */}
+      <SmallPaywallModal
+        visible={showSmallPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        message={paywallMessage}
+        triggerFeature={paywallTrigger || undefined}
+      />
+
+      {/* Full Screen Paywall */}
+      <FullScreenPaywall
+        visible={showFullScreenPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        triggerFeature={paywallTrigger || undefined}
+      />
     </Modal>
   );
 }
@@ -642,5 +732,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     fontWeight: 'bold',
+  },
+  disabledText: {
+    fontSize: 12,
+    fontFamily: Fonts.text?.regular,
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 }); 

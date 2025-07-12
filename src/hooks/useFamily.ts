@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { reminderService, Family, FamilyMember, FamilyActivity, FamilyInvitation, getValidFamilyMembers } from '../services/firebaseService';
+import { reminderService, Family, FamilyMember, FamilyActivity, FamilyInvitation, getValidFamilyMembers, clearFamilyMembersCache } from '../services/firebaseService';
 
 export const useFamily = () => {
   const { user } = useAuth();
@@ -14,6 +14,7 @@ export const useFamily = () => {
   // Load user's family
   const loadFamily = useCallback(async () => {
     if (!user?.uid) {
+      console.log('[useFamily] No user UID available');
       setFamily(null);
       setMembers([]);
       setActivities([]);
@@ -24,34 +25,43 @@ export const useFamily = () => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('[useFamily] Loading family for user:', user.uid);
 
       let userFamily = await reminderService.getUserFamily(user.uid);
+      console.log('[useFamily] User family result:', userFamily ? 'found' : 'not found');
 
       // If no family exists, create a default one
       if (!userFamily) {
-    
+        console.log('[useFamily] Creating default family for user:', user.uid);
         userFamily = await reminderService.createDefaultFamilyIfNeeded(
           user.uid,
           user.displayName || user.email?.split('@')[0] || 'User',
           user.email || ''
         );
+        console.log('[useFamily] Default family created:', userFamily ? 'success' : 'failed');
       }
 
       setFamily(userFamily);
 
       if (userFamily) {
+        console.log('[useFamily] Loading family members for family:', userFamily.id);
+        // Clear cache to force fresh fetch
+        clearFamilyMembersCache(userFamily.id);
         // Load family members
         const familyMembers = await getValidFamilyMembers(userFamily.id);
+        console.log('[useFamily] Family members loaded:', familyMembers.length);
         setMembers(familyMembers);
 
         // Load family activities
         const familyActivities = await reminderService.getFamilyActivities(userFamily.id);
         setActivities(familyActivities);
       } else {
+        console.log('[useFamily] No family available, setting empty arrays');
         setMembers([]);
         setActivities([]);
       }
     } catch (err) {
+      console.error('[useFamily] Error loading family:', err);
       setError(err instanceof Error ? err.message : 'Failed to load family');
       setFamily(null);
       setMembers([]);

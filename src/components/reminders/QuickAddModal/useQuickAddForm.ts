@@ -5,6 +5,8 @@ import { formatDate } from '../../../utils/dateUtils';
 import { generateOccurrences, getRecurringDescription } from '../../../design-system/reminders/utils/recurring-utils';
 import { NotificationType } from '../../../design-system/reminders/types';
 import { cleanReminderForFirestore } from '../../../utils/reminderUtils';
+import { usePremium } from '../../../hooks/usePremium';
+import monetizationService from '../../../services/monetizationService';
 
 export interface ReminderData {
   id?: string;
@@ -44,6 +46,7 @@ export interface ReminderData {
 
 export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string, prefillTime?: string) => {
   const { t } = useTranslation();
+  const { isPremium } = usePremium();
 
   // Form state
   const [title, setTitle] = useState(prefillData?.title || '');
@@ -65,9 +68,23 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
   });
   const [timezone, setTimezone] = useState(getCurrentTimezone());
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
-  const [notificationTimings, setNotificationTimings] = useState([
-    { type: NotificationType.BEFORE, value: 15, label: '15 minutes before', description: '15 minutes before' }
-  ]);
+  // Initialize notification timings based on user's premium status
+  const getDefaultNotificationTimings = () => {
+    if (isPremium) {
+      // Premium users get 15 minutes before by default
+      return [{ type: NotificationType.BEFORE, value: 15, label: '15 minutes before', description: '15 minutes before' }];
+    } else {
+      // Free users get "just in time" (exact timing)
+      return [{ type: NotificationType.EXACT, value: 0, label: 'Just in time', description: 'Right when the reminder is due' }];
+    }
+  };
+
+  const [notificationTimings, setNotificationTimings] = useState(getDefaultNotificationTimings());
+
+  // Update notification timings when premium status changes
+  useEffect(() => {
+    setNotificationTimings(getDefaultNotificationTimings());
+  }, [isPremium]);
 
   // Sheet visibility state
   const [showDateSheet, setShowDateSheet] = useState(false);

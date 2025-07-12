@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, FlatList, Animated, Alert, Modal, Dimensions, Platform } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Star, CheckCircle, AlertCircle, Timer, List, Trash2, Edit, ChevronDown, SortAsc, SortDesc, Repeat, Clock, Calendar, Tag, Bell, Plus } from 'lucide-react-native';
+import { ArrowLeft, Star, CheckCircle, AlertCircle, Timer, List, Trash2, Edit, ChevronDown, SortAsc, SortDesc, Repeat, Clock, Calendar, Tag, Bell, Plus, MapPin } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { useReminderContext } from '../contexts/ReminderContext';
@@ -15,7 +15,6 @@ import { formatDate, formatTimeOnly, isOverdue as isOverdueUtil } from '../utils
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
 import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
-import { ChunkedTaskProgress } from '../components/reminders/ChunkedTaskProgress';
 import { usePremium } from '../hooks/usePremium';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -860,15 +859,16 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
                 </View>
               )}
 
-              {/* Task Chunking Progress */}
-              {reminder.isChunked && reminder.subTasks && reminder.subTasks.length > 0 && (
-                <ChunkedTaskProgress
-                  subTasks={reminder.subTasks}
-                  taskTitle={reminder.title}
-                  onPress={handleEdit}
-                  compact={true}
-                />
+              {reminder.location && (
+                <View style={styles.locationRow}>
+                  <MapPin size={12} color={colors.textTertiary} strokeWidth={2} />
+                  <Text style={[styles.locationText, { color: colors.textTertiary }]} numberOfLines={1}>
+                    {reminder.location}
+                  </Text>
+                </View>
               )}
+
+              {/* Task Chunking Progress */}
             </View>
           </View>
 
@@ -1271,6 +1271,17 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   tagsText: {
+    fontSize: FontSizes.caption1,
+    fontFamily: Fonts.text.regular,
+    flex: 1,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+  },
+  locationText: {
     fontSize: FontSizes.caption1,
     fontFamily: Fonts.text.regular,
     flex: 1,

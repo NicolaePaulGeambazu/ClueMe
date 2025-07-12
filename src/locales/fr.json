@@ -22,7 +22,37 @@
     "doesNotRepeat": "Ne se répète pas",
     "timezone": "Fuseau Horaire",
     "selectTimezone": "Sélectionner le fuseau horaire",
-    "assignToMe": "👤 Moi"
+    "assignToMe": "👤 Moi",
+    "notificationTiming": "Timing de Notification",
+    "notifications": "{{count}} notifications",
+    "singleNotification": "{{label}}",
+    "pickTime": "Choisir une Heure...",
+    "assignToFamily": "Assigner à la Famille",
+    "noAssignments": "Personne assigné",
+    "assignedTo": "Assigné à {{count}} membres",
+    "assignedToSingle": "Assigné à {{name}}",
+    "assignedToMultiple": "Attribué à {count} personnes",
+    "assignedTo1": "Assigné à {{name}}",
+    "location": "Emplacement",
+    "locationPlaceholder": "Ajouter un emplacement",
+    "nextWeekDesc": "Semaine prochaine",
+    "custom": "Personnalisé",
+    "customDesc": "Choisir une date spécifique",
+    "in1Hour": "Dans 1 heure",
+    "in1HourDesc": "1 heure à partir de maintenant",
+    "in2Hours": "Dans 2 heures",
+    "in2HoursDesc": "2 heures à partir de maintenant",
+    "in4Hours": "Dans 4 heures",
+    "in4HoursDesc": "4 heures à partir de maintenant",
+    "tomorrowDesc": "Demain matin",
+    "noRepeat": "Ne se répète pas",
+    "noAssignment": "Personne assigné",
+    "whenShouldThisHappen": "Quand cela devrait-il se produire ?",
+    "cancel": "Annuler",
+    "done": "Terminé",
+    "assignToFamilyMembers": "Assigner aux membres de la famille",
+    "assigned": "Assigné",
+    "notAssigned": "Non assigné"
   },
   "taskChunking": {
     "sectionTitle": "Diviser la Tâche",
@@ -454,7 +484,67 @@
     "footerSubtext": "Pas de publicités, pas de suivi, juste des rappels clairs quand vous en avez besoin.",
     "helpContent": "Besoin d'aide avec ClearCue ?\n\n📧 Email : support@clearcue.app\n🌐 Site web : clearcue.app\n📱 Commentaires disponibles dans l'application\n\nNous sommes là pour vous aider à tirer le meilleur parti de vos rappels !",
     "aboutContent": "ClearCue v1.0.0\n\nUne application de rappels simple, privée et efficace conçue pour vous aider à rester organisé sans encombrement.\n\n✨ Fonctionnalités :\n• Notifications intelligentes\n• Intégration calendrier\n• Gestion des priorités\n• Partage familial\n• Pas de publicités ni de suivi\n\nFait avec ❤️ pour la productivité",
-    "privacyContent": "🔒 Votre Confidentialité Compte\n\nClearCue est construit avec des principes de confidentialité en premier :\n\n📱 Stockage Local :\n• Rappels stockés localement sur votre appareil\n• Pas de synchronisation cloud sauf si vous choisissez Firebase\n• Vos données restent privées\n\n☁️ Synchronisation Firebase (Optionnel) :\n• Chiffrement de bout en bout quand activé\n• Seul vous pouvez accéder à vos données\n• Pas d'exploitation de données ni de suivi\n\n🚫 Pas de Suivi :\n• Pas d'analyse ni de profilage d'utilisateurs\n• Pas de partage de données avec des tiers\n• Pas de publicité ciblée\n\n📋 Contrôle des Données :\n• Exportez vos données à tout moment\n• Supprimez toutes les données définitivement\n• Contrôle complet de vos informations\n\nVos rappels, votre confidentialité, votre contrôle."
+    "privacyContent": "🔒 Votre Confidentialité Compte\n\nClearCue est construit avec des principes de confidentialité en premier :\n\n📱 Stockage Local :\n• Rappels stockés localement sur votre appareil\n• Pas de synchronisation cloud sauf si vous choisissez Firebase\n• Vos données restent privées\n\n☁️ Synchronisation Firebase (Optionnel) :\n• Chiffrement de bout en bout quand activé\n• Seul vous pouvez accéder à vos données\n• Pas d'exploitation de données ni de suivi\n\n🚫 Pas de Suivi :\n• Pas d'analyse ni de profilage d'utilisateurs\n• Pas de partage de données avec des tiers\n• Pas de publicité ciblée\n\n📋 Contrôle des Données :\n• Exportez vos données à tout moment\n• Supprimez toutes les données définitivement\n• Contrôle complet de vos informations\n\nVos rappels, votre confidentialité, votre contrôle.",
+    "subscriptionManagement": "Gestion de l'Abonnement",
+    "manageSubscription": "Gérer l'Abonnement",
+    "activeSubscription": "Abonnement actif",
+    "inactiveSubscription": "Abonnement inactif",
+    "subscriptionManagementError": "Impossible d'ouvrir la gestion des abonnements. Veuillez aller dans les paramètres de votre appareil pour gérer votre abonnement.",
+    "premiumBenefits": "Avantages Premium",
+    "premiumBenefitsDescription": "Vous avez un accès illimité à toutes les fonctionnalités",
+    "unlimitedReminders": "Rappels illimités",
+    "advancedRecurring": "Options de récurrence avancées",
+    "familySharing": "Partage familial (jusqu'à 5 membres)",
+    "noAds": "Sans publicités",
+    "prioritySupport": "Support prioritaire",
+    "changePlan": "Changer de Plan",
+    "changePlanDescription": "Passer à un plan d'abonnement différent",
+    "cancelSubscription": "Annuler l'Abonnement",
+    "cancelSubscriptionDescription": "Annuler votre abonnement et arrêter la facturation",
+    "cancelSubscriptionConfirm": "Êtes-vous sûr de vouloir annuler votre abonnement ? Vous perdrez l'accès aux fonctionnalités premium à la fin de votre période de facturation actuelle.",
+    "cancelSubscriptionError": "Impossible d'annuler l'abonnement. Veuillez réessayer ou contacter le support.",
+    "nextBilling": "Prochaine Facturation",
+    "trialDaysLeft": "Jours d'Essai Restants",
+    "autoRenew": "Renouvellement Automatique",
+    "days": "jours",
+    "important": "Important",
+    "subscriptionManagementInfo": "Vous pouvez gérer les détails de votre abonnement, changer de plan ou annuler votre abonnement. Les modifications prendront effet à la fin de votre période de facturation actuelle.",
+    "selectPlan": "Sélectionner le Plan",
+    "chooseYourPlan": "Choisissez Votre Plan",
+    "current": "Actuel",
+    "select": "Sélectionner",
+    "selectThisPlan": "Sélectionner Ce Plan",
+    "currentPlanSelected": "Plan Actuel Sélectionné",
+    "confirmPlanChange": "Confirmer le Changement de Plan",
+    "confirmPlanChangeDescription": "Êtes-vous sûr de vouloir changer votre plan d'abonnement ? Cela mettra à jour votre facturation et vos fonctionnalités.",
+    "planChanged": "Plan Changé",
+    "planChangedDescription": "Votre plan d'abonnement a été mis à jour avec succès.",
+    "planChangeError": "Échec du changement de plan. Veuillez réessayer.",
+    "planChangeInfo": "Les changements de plan prendront effet immédiatement. Vous serez facturé au nouveau tarif lors de votre prochain cycle de facturation.",
+    "month": "mois",
+    "year": "année",
+    "week": "semaine",
+    "cancelSubscriptionTitle": "Annuler Votre Abonnement ?",
+    "cancelSubscriptionWarning": "Nous sommes désolés de vous voir partir ! Avant d'annuler, veuillez considérer les avantages que vous perdrez.",
+    "whatYouWillLose": "Ce Que Vous Perdrez :",
+    "loseUnlimitedReminders": "Rappels illimités (retour à la limite de 50/mois)",
+    "loseAdvancedFeatures": "Options de récurrence avancées et intervalles personnalisés",
+    "loseFamilySharing": "Fonctionnalités de partage familial et de collaboration",
+    "considerAlternatives": "Considérez Ces Alternatives :",
+    "pauseInstead": "Mettez votre abonnement en pause temporairement",
+    "changeToCheaperPlan": "Passez à un plan plus abordable",
+    "finalCancellationConfirm": "Confirmation Finale",
+    "finalCancellationDescription": "Êtes-vous absolument sûr de vouloir annuler ? Cette action ne peut pas être annulée.",
+    "pauseSubscription": "Mettre en Pause",
+    "pauseSubscriptionDescription": "Mettez votre abonnement en pause jusqu'à 3 mois. Vous pouvez reprendre à tout moment.",
+    "pauseSubscriptionSuccess": "Votre abonnement a été mis en pause avec succès.",
+    "keepSubscription": "Garder Mon Abonnement",
+    "cancellationInfo": "Vous pouvez réactiver votre abonnement à tout moment depuis les paramètres de votre appareil.",
+    "cancellationError": "Erreur de Annulation",
+    "cancellationErrorDescription": "Une erreur s'est produite lors du traitement de votre annulation. Veuillez réessayer ou contacter le support.",
+    "cancelling": "Annulation en cours...",
+    "manualCancellationTitle": "Annulation Manuelle Requise",
+    "tryAgain": "Réessayer"
   },
   "common": {
     "cancel": "Annuler",
@@ -524,8 +614,8 @@
   "notifications": {
     "taskCreated": "🎯 Nouvelle Tâche Familiale",
     "taskCreatedMessage": "{{name}} vient d'ajouter \"{{taskTitle}}\" à la liste de tâches de votre famille !",
-    "taskAssigned": "📋 Vous Avez une Tâche !",
-    "taskAssignedMessage": "{{name}} pense que vous êtes parfait pour : \"{{taskTitle}}\" 💪",
+    "taskAssigned": "📋 Nouvelle Tâche pour Vous !",
+    "taskAssignedMessage": "{{name}} vous a assigné une nouvelle tâche : \"{{taskTitle}}\" - jetez-y un coup d'œil ! 💪",
     "taskUpdated": "🔄 Tâche Mise à Jour",
     "taskUpdatedMessage": "{{name}} a apporté des modifications à \"{{taskTitle}}\" - jetez-y un coup d'œil !",
     "taskDueDateChanged": "📅 Date d'Échéance Modifiée",
@@ -916,6 +1006,49 @@
       "30minAfter": "30 minutes après",
       "1hrAfter": "1 heure après"
     },
+    "monetization": {
+      "reminderLimit": {
+        "warning": "Vous approchez de votre limite de {{limit}} rappels. Mettez à niveau pour créer des rappels illimités.",
+        "blocked": "Vous avez atteint votre limite de {{limit}} rappels. Mettez à niveau pour créer des rappels illimités."
+      },
+      "familyLimit": {
+        "warning": "Excellent ! Vous construisez votre famille. Mettez à niveau pour ajouter des membres de famille illimités et partager des fonctionnalités premium.",
+        "blocked": "Vous avez atteint votre limite de {{limit}} membres de famille. Mettez à niveau pour ajouter des membres de famille illimités."
+      },
+      "listLimit": {
+        "warning": "Vous approchez de votre limite de {{limit}} listes. Mettez à niveau pour créer des listes illimitées.",
+        "blocked": "Vous avez atteint votre limite de {{limit}} listes. Mettez à niveau pour créer des listes illimitées."
+      },
+      "feature": {
+        "premiumOnly": "Cette fonctionnalité n'est disponible que pour les utilisateurs premium.",
+        "recurring": {
+          "premiumOnly": "Les rappels récurrents sont une fonctionnalité premium. Mettez à niveau pour configurer des tâches récurrentes automatiques."
+        },
+        "customNotifications": {
+          "premiumOnly": "Le timing de notification personnalisé est une fonctionnalité premium. Mettez à niveau pour définir plusieurs horaires de rappel."
+        },
+        "multipleNotifications": {
+          "premiumOnly": "Les notifications multiples sont une fonctionnalité premium. Mettez à niveau pour définir plusieurs horaires de rappel."
+        }
+      },
+      "upgrade": {
+        "title": "Passer à Premium",
+        "subtitle": "Débloquez des rappels illimités et des fonctionnalités avancées",
+        "individual": "Plan Individuel",
+        "family": "Plan Familial",
+        "monthly": "Mensuel",
+        "yearly": "Annuel",
+        "save": "Économisez {{percent}}%",
+        "unlimited": "Illimité",
+        "features": {
+          "unlimitedReminders": "Rappels illimités",
+          "advancedRecurring": "Modèles récurrents avancés",
+          "multipleNotifications": "Horaires de notification multiples",
+          "familySharing": "Membres de famille illimités",
+          "adFree": "Expérience sans publicité"
+        }
+      }
+    },
     "escalating": {
       "gentle": "30 minutes avant (Doux)",
       "medium": "15 minutes avant (Moyen)",
@@ -1030,8 +1163,7 @@
     "formatOptions": {
       "checkmarks": "Coches",
       "lines": "Lignes",
-      "numbers": "Nombres",
-      "plainText": "Texte Simple"
+      "numbers": "Nombres"
     },
     "deleteList": "Supprimer la Liste",
     "deleteConfirm": "Êtes-vous sûr de vouloir supprimer \"{{name}}\" ? Cette action ne peut pas être annulée.",

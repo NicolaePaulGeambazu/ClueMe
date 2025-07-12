@@ -9,6 +9,7 @@ import { measurePerformance, performanceMonitor } from '../utils/performanceUtil
 import analyticsService from '../services/analyticsService';
 import { cleanReminderForFirestore } from '../utils/reminderUtils';
 import { ReminderStatus, ReminderPriority } from '../design-system/reminders/types';
+import { userUsageService } from '../services/userUsageService';
 
 // Convert Firebase reminder to a simpler format for the UI
 const convertToUIReminder = (firebaseReminder: FirebaseReminder) => {
@@ -106,6 +107,7 @@ interface ReminderContextType {
   getPerformanceStats: () => any;
   getPerformanceRecommendations: () => any;
   clearPerformanceMetrics: () => void;
+  clearReminders: () => void;
 }
 
 const ReminderContext = createContext<ReminderContextType | undefined>(undefined);
@@ -271,6 +273,12 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
     if (!user) {throw new Error('User not authenticated');}
 
     try {
+      // Check usage limits before creating reminder
+      const canCreate = await userUsageService.canCreateReminder(user.uid);
+      if (!canCreate.allowed) {
+        throw new Error(canCreate.reason || 'Reminder creation limit reached');
+      }
+
       // Add family context if user is in a family
       const reminderWithFamily = {
         ...reminderData,
@@ -279,6 +287,9 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       };
 
       const reminderId = await reminderService.createReminder(reminderWithFamily);
+      
+      // Increment usage count after successful creation
+      await userUsageService.incrementReminderCount(user.uid);
       
       // Notify family members if reminder is shared
       if (family && reminderWithFamily.sharedWithFamily) {
@@ -290,8 +301,6 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
           message: `New reminder created: ${reminderData.title}`,
         });
       }
-
-
 
       return reminderId;
     } catch (error) {
@@ -687,6 +696,24 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
     }
   }, [user]);
 
+  // Clear all reminders and reset state
+  const clearReminders = useCallback(() => {
+    setReminders([]);
+    setIsInitialized(false);
+    setError(null);
+    setHasMore(false);
+    setTotalCount(0);
+    setCurrentPage(0);
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+      updateTimeoutRef.current = null;
+    }
+  }, []);
+
   const contextValue: ReminderContextType = {
     reminders,
     isLoading,
@@ -713,6 +740,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
     getPerformanceStats: () => performanceMonitor.getStats(),
     getPerformanceRecommendations: () => performanceMonitor.getRecommendations(),
     clearPerformanceMetrics: () => performanceMonitor.clear(),
+    clearReminders, // <-- Add to context
   };
 
   return (

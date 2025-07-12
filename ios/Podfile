@@ -3,14 +3,19 @@
 # related to Swift pods and static library linking, especially with Firebase.
 
 # Section 1: React Native Core Configuration
-# This line resolves the `react_native_pods.rb` script using Node's module resolution.
-# This ensures that the correct script, potentially from a hoisted `react-native`
-# package in a monorepo or complex setup, is used.
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+# Transform this into a `node_require` generic function to allow for hoisting
+def node_require(script)
+  # Resolve script with node to allow for hoisting
+  require Pod::Executable.execute_command('node', ['-p',
+    "require.resolve(
+      '#{script}',
+      {paths: [process.argv[1]]},
+    )", __dir__]).strip
+end
+
+# Use it to require both react-native's and react-native-permissions' scripts:
+node_require('react-native/scripts/react_native_pods.rb')
+node_require('react-native-permissions/scripts/setup.rb')
 
 # Define the minimum iOS deployment target for your project.
 # Based on your React Native version (0.75.5), iOS 15.0 is a reasonable minimum.
@@ -82,6 +87,19 @@ target 'ClearCue2' do
   # pod 'RNCSafeAreaContext', :path => '../node_modules/react-native-safe-area-context' # Remove this line
   # pod 'RNScreens', :path => '../node_modules/react-native-screens' # Remove this line
 
+  # React Native Permissions - Setup the permissions you need
+  setup_permissions([
+    'LocationWhenInUse',
+    'LocationAlways',
+    'Notifications',
+    'Camera',
+    'PhotoLibrary',
+    'Microphone',
+    'Calendars',
+    'Contacts',
+    'FaceID',
+  ])
+
   # AdMob - Google Mobile Ads SDK (temporarily disabled due to codegen issues)
   # pod 'Google-Mobile-Ads-SDK'
 
@@ -147,5 +165,7 @@ target 'ClearCue2' do
     #   end
     # end
     # END: Disable codegen for problematic modules
+
+
   end
 end

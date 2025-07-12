@@ -1,8 +1,7 @@
 // Feature Flag System for ClearCue Pro
-// TEMPORARY: All features unlocked for testing
 // Set TESTING_MODE to false to enable real Pro restrictions
 
-const TESTING_MODE = true; // Set to false for production - ALL FEATURES UNLOCKED FOR TESTING
+const TESTING_MODE = false; // Set to false for production - ALL FEATURES UNLOCKED FOR TESTING
 
 export interface FeatureFlags {
   multipleNotifications: boolean;
@@ -124,8 +123,14 @@ export class FeatureFlagService {
 
   // Check if user has Pro access
   isProUser(): boolean {
-    // FOR TESTING: All users are premium
-    return true;
+    // Use centralized premium status manager
+    try {
+      const { premiumStatusManager } = require('./premiumStatusManager');
+      return premiumStatusManager.isPro();
+    } catch (error) {
+      // Fallback to local tier
+      return this.userTier === 'pro';
+    }
   }
 
   // Get feature restrictions for UI display
@@ -204,14 +209,21 @@ export class FeatureFlagService {
   }
 }
 
-// Feature-specific checks - FOR TESTING: All features enabled
+// Feature-specific checks
 export const canUseMultipleNotifications = (): boolean => {
-  return true;
+  // TODO: Integrate with actual premium service
+  return FeatureFlagService.getInstance().isFeatureEnabled('multipleNotifications');
 };
 
 export const isProUser = (): boolean => {
-  // FOR TESTING: All users are premium
-  return true;
+  // Use centralized premium status manager
+  try {
+    const { premiumStatusManager } = require('./premiumStatusManager');
+    return premiumStatusManager.isPro();
+  } catch (error) {
+    // Fallback to feature flags
+    return FeatureFlagService.getInstance().isProUser();
+  }
 };
 
 // Get maximum number of notifications allowed

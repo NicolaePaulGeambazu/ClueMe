@@ -7,26 +7,21 @@ import {
   Modal,
   Animated,
   Dimensions,
-  ScrollView,
   Alert,
   Platform,
 } from 'react-native';
 import {
-  X,
-  Crown,
-  Zap, // Keeping Zap for 'priority support' if that's still relevant
   Clock,
   Users,
   Calendar,
-  Check,
-  // Removed Sparkles and Star as per no analytics/custom themes
-  Lock, // Used for exclusive content or features
+  Lock,
 } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes } from '../../constants/Fonts';
 import { useTranslation } from 'react-i18next';
 import { ImageBackground } from 'react-native';
+import { revenueCatService, PRODUCT_IDS } from '../../services/revenueCatService';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -51,6 +46,8 @@ export default function FullScreenPaywall({ visible, onClose, onUpgrade, trigger
   const crownScaleAnim = useRef(new Animated.Value(0.8)).current; // For subtle crown pulse
   const upgradeButtonScaleAnim = useRef(new Animated.Value(1)).current; // For button press animation
   const [selectedPlan, setSelectedPlan] = React.useState<'yearly' | 'weekly'>('yearly');
+  const [products, setProducts] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Timer states
   const [timeLeft, setTimeLeft] = useState(5);
@@ -119,6 +116,13 @@ export default function FullScreenPaywall({ visible, onClose, onUpgrade, trigger
     }
   }, [visible]);
 
+  // Load products when modal opens
+  useEffect(() => {
+    if (visible) {
+      loadProducts();
+    }
+  }, [visible]);
+
   // Timer effect
   useEffect(() => {
     if (visible && timeLeft > 0) {
@@ -132,35 +136,158 @@ export default function FullScreenPaywall({ visible, onClose, onUpgrade, trigger
     }
   }, [visible, timeLeft]);
 
-  const handleUpgrade = () => {
-    // Animate button press
-    Animated.sequence([
-      Animated.timing(upgradeButtonScaleAnim, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(upgradeButtonScaleAnim, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // TEMPORARY: For testing, unlock all features without payment
+  const loadProducts = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Initialize RevenueCat if not already done
+      const initialized = await revenueCatService.initialize();
+      if (!initialized) {
+        console.warn('RevenueCat not available - using fallback pricing');
+        // Set fallback products for development
+        setProducts({
+          weekly: {
+            identifier: 'weekly',
+            product: {
+              identifier: 'com.clearcue.pro.weekly',
+              price: 0.99,
+              priceString: '$0.99/week',
+              currencyCode: 'USD',
+            },
+          },
+          annual: {
+            identifier: 'annual',
+            product: {
+              identifier: 'com.clearcue.pro.yearly',
+              price: 34.49,
+              priceString: '$34.49/year',
+              currencyCode: 'USD',
+            },
+          },
+        });
+        return;
+      }
+      
+      const offerings = await revenueCatService.getOfferings();
+      if (offerings) {
+        setProducts(offerings);
+        console.log('Products loaded:', offerings);
+      } else {
+        console.log('No offerings available');
+      }
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      // Set fallback products on error
+      setProducts({
+        weekly: {
+          identifier: 'weekly',
+          product: {
+            identifier: 'com.clearcue.pro.weekly',
+            price: 0.99,
+            priceString: '$0.99/week',
+            currencyCode: 'USD',
+          },
+        },
+        annual: {
+          identifier: 'annual',
+          product: {
+            identifier: 'com.clearcue.pro.yearly',
+            price: 34.49,
+            priceString: '$34.49/year',
+            currencyCode: 'USD',
+          },
+        },
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Initialize RevenueCat if not already done
+      const initialized = await revenueCatService.initialize();
+      if (!initialized) {
+        Alert.alert(
+          'Development Mode',
+          'RevenueCat is not available in development mode. In production, this would process your payment.',
+          [
+            {
+              text: 'Simulate Success',
+              onPress: () => {
+                onUpgrade();
+                onClose();
+              },
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel',
+            },
+          ],
+        );
+        return;
+      }
+      
+      // Get the selected product from offerings
+      const selectedOffering = selectedPlan === 'yearly' 
+        ? products?.annual 
+        : products?.weekly;
+      
+      if (!selectedOffering?.product) {
+        Alert.alert('Error', 'Selected plan not available. Please try again.');
+        return;
+      }
+      
+      console.log('Attempting to purchase:', selectedOffering.product.identifier);
+      
+      // Attempt to purchase using the product from offerings
+      const result = await revenueCatService.purchaseProduct(selectedOffering.product.identifier);
+      
+      if (result.success) {
+        Alert.alert(
+          '🎉 Purchase Successful!',
+          'Your subscription has been activated.',
+          [
+            {
+              text: 'Continue',
+              onPress: () => {
+                onUpgrade();
+                onClose();
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          'Purchase Failed',
+          result.error || 'Unable to complete purchase. Please try again.',
+          [{ text: 'OK' }],
+        );
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
       Alert.alert(
-        '🎉 Pro Features Unlocked!',
-        'For testing purposes, all Pro features are now unlocked. In production, this would trigger the payment flow.',
+        'Development Mode',
+        'RevenueCat is not available in development mode. In production, this would process your payment.',
         [
           {
-            text: 'Continue',
+            text: 'Simulate Success',
             onPress: () => {
               onUpgrade();
               onClose();
             },
           },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
         ],
       );
-    });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const proFeatures = [
@@ -238,47 +365,65 @@ export default function FullScreenPaywall({ visible, onClose, onUpgrade, trigger
 
             {/* Plan Card */}
             <View style={styles.planCardContainer}>
-              {/* Yearly Plan */}
-              <TouchableOpacity
-                style={[styles.planRow, selectedPlan === 'yearly' && styles.planRowSelected]}
-                onPress={() => setSelectedPlan('yearly')}
-                activeOpacity={0.9}
-              >
-                <View style={styles.planRadioOuter}>
-                  {selectedPlan === 'yearly' && <View style={styles.planRadioInner} />}
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>Loading prices...</Text>
                 </View>
-                <View style={styles.planInfo}>
-                  <View style={styles.planLabelRow}>
-                    <Text style={styles.planLabel}>Yearly</Text>
-                    <View style={styles.savingsBadge}><Text style={styles.savingsText}>SAVE 82%</Text></View>
-                  </View>
-                  <Text style={styles.planPrice}>$35.99/year <Text style={styles.planSubPrice}>($0.70/week)</Text></Text>
-                  <Text style={styles.planTrial}>$35.99 per year, no free trial</Text>
-                </View>
-              </TouchableOpacity>
-              {/* Weekly Plan */}
-              <TouchableOpacity
-                style={[styles.planRow, selectedPlan === 'weekly' && styles.planRowSelected]}
-                onPress={() => setSelectedPlan('weekly')}
-                activeOpacity={0.9}
-              >
-                <View style={styles.planRadioOuter}>
-                  {selectedPlan === 'weekly' && <View style={styles.planRadioInner} />}
-                </View>
-                <View style={styles.planInfo}>
-                  <View style={styles.planLabelRow}>
-                    <Text style={styles.planLabel}>Weekly</Text>
-                  </View>
-                  <Text style={styles.planPrice}>$3.99/week</Text>
-                  <Text style={styles.planTrial}>$3.99 per week, no free trial</Text>
-                </View>
-              </TouchableOpacity>
+              ) : (
+                <>
+                  {/* Yearly Plan */}
+                  <TouchableOpacity
+                    style={[styles.planRow, selectedPlan === 'yearly' && styles.planRowSelected]}
+                    onPress={() => setSelectedPlan('yearly')}
+                    activeOpacity={0.9}
+                  >
+                    <View style={styles.planRadioOuter}>
+                      {selectedPlan === 'yearly' && <View style={styles.planRadioInner} />}
+                    </View>
+                    <View style={styles.planInfo}>
+                      <View style={styles.planLabelRow}>
+                        <Text style={styles.planLabel}>Yearly</Text>
+                        <View style={styles.savingsBadge}><Text style={styles.savingsText}>SAVE 82%</Text></View>
+                      </View>
+                      <Text style={styles.planPrice}>
+                        {products?.annual?.product?.priceString || 'Loading...'}
+                        <Text style={styles.planSubPrice}> (yearly)</Text>
+                      </Text>
+                      <Text style={styles.planTrial}>Auto-renewing subscription</Text>
+                    </View>
+                  </TouchableOpacity>
+                  {/* Weekly Plan */}
+                  <TouchableOpacity
+                    style={[styles.planRow, selectedPlan === 'weekly' && styles.planRowSelected]}
+                    onPress={() => setSelectedPlan('weekly')}
+                    activeOpacity={0.9}
+                  >
+                    <View style={styles.planRadioOuter}>
+                      {selectedPlan === 'weekly' && <View style={styles.planRadioInner} />}
+                    </View>
+                    <View style={styles.planInfo}>
+                      <View style={styles.planLabelRow}>
+                        <Text style={styles.planLabel}>Weekly</Text>
+                      </View>
+                      <Text style={styles.planPrice}>
+                        {products?.monthly?.product?.priceString || 'Loading...'}
+                        <Text style={styles.planSubPrice}> (weekly)</Text>
+                      </Text>
+                      <Text style={styles.planTrial}>Auto-renewing subscription</Text>
+                    </View>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
 
             {/* Action Button */}
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity 
+              style={[styles.actionButton, isLoading && styles.actionButtonDisabled]} 
+              onPress={handleUpgrade}
+              disabled={isLoading}
+            >
               <Text style={styles.actionButtonText}>
-                {selectedPlan === 'yearly' ? 'Upgrade now' : 'Upgrade now'}
+                {isLoading ? 'Processing...' : 'Upgrade now'}
               </Text>
             </TouchableOpacity>
             <Text style={styles.renewalText}>Cancel anytime, auto renewal</Text>
@@ -745,5 +890,18 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   darkOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.75)',
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+    opacity: 0.8,
+  },
+  actionButtonDisabled: {
+    opacity: 0.6,
   },
 });

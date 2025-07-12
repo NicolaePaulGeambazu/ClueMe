@@ -176,7 +176,7 @@ function getNotificationText(notificationType, language, params = {}) {
         : t('notifications.overdueBy', lang, params);
       return { title, body };
       
-    case 'task_assigned':
+    case 'taskAssigned':
       return {
         title: t('notifications.taskAssigned', lang),
         body: t('notifications.taskAssignedBy', lang, params)
@@ -201,11 +201,10 @@ function getNotificationText(notificationType, language, params = {}) {
       };
       
     default:
+      // For any unknown notification type, use a more descriptive format
       return {
         title: t('notifications.general', lang),
-        body: params.description 
-          ? t('notifications.generalWithDescription', lang, params)
-          : params.title || t('notifications.general', lang)
+        body: params.title || params.description || t('notifications.general', lang)
       };
   }
 }

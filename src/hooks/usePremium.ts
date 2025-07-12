@@ -24,6 +24,18 @@ interface UsePremiumReturn {
   // Actions
   purchasePlan: (planId: string) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
+  openSubscriptionManagement: () => Promise<void>;
+  
+  // Detailed subscription info
+  getDetailedSubscriptionInfo: () => Promise<{
+    isActive: boolean;
+    planName: string;
+    expirationDate: Date | null;
+    isInTrial: boolean;
+    willRenew: boolean;
+    trialDaysLeft: number;
+    nextBillingDate: Date | null;
+  }>;
   
   // Loading state
   isLoading: boolean;
@@ -32,6 +44,18 @@ interface UsePremiumReturn {
 export const usePremium = (): UsePremiumReturn => {
   const [currentTier, setCurrentTier] = useState<SubscriptionTier>('free');
   const [features, setFeatures] = useState<PremiumFeatures>(premiumService.getCurrentFeatures());
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<{
+    tier: SubscriptionTier;
+    name: string;
+    description: string;
+    isActive: boolean;
+  }>({
+    tier: 'free',
+    name: 'Free',
+    description: 'Basic features with ads',
+    isActive: false,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Initialize premium service
@@ -42,7 +66,17 @@ export const usePremium = (): UsePremiumReturn => {
         await premiumService.initialize();
         setCurrentTier(premiumService.getCurrentTier());
         setFeatures(premiumService.getCurrentFeatures());
+        
+        // Load subscription plans and status
+        const [subscriptionPlans, status] = await Promise.all([
+          premiumService.getSubscriptionPlans(),
+          premiumService.getSubscriptionStatus(),
+        ]);
+        
+        setPlans(subscriptionPlans);
+        setSubscriptionStatus(status);
       } catch (error) {
+        console.error('[usePremium] Initialization error:', error);
       } finally {
         setIsLoading(false);
       }
@@ -65,6 +99,15 @@ export const usePremium = (): UsePremiumReturn => {
         // Update local state
         setCurrentTier(premiumService.getCurrentTier());
         setFeatures(premiumService.getCurrentFeatures());
+        
+        // Refresh subscription plans and status
+        const [subscriptionPlans, status] = await Promise.all([
+          premiumService.getSubscriptionPlans(),
+          premiumService.getSubscriptionStatus(),
+        ]);
+        
+        setPlans(subscriptionPlans);
+        setSubscriptionStatus(status);
       }
       return success;
     } catch (error) {
@@ -83,6 +126,15 @@ export const usePremium = (): UsePremiumReturn => {
         // Update local state
         setCurrentTier(premiumService.getCurrentTier());
         setFeatures(premiumService.getCurrentFeatures());
+        
+        // Refresh subscription plans and status
+        const [subscriptionPlans, status] = await Promise.all([
+          premiumService.getSubscriptionPlans(),
+          premiumService.getSubscriptionStatus(),
+        ]);
+        
+        setPlans(subscriptionPlans);
+        setSubscriptionStatus(status);
       }
       return success;
     } catch (error) {
@@ -97,11 +149,13 @@ export const usePremium = (): UsePremiumReturn => {
     isPremium: premiumService.isPremium(),
     isPro: premiumService.isPro(),
     features,
-    plans: premiumService.getSubscriptionPlans(),
-    subscriptionStatus: premiumService.getSubscriptionStatus(),
+    plans,
+    subscriptionStatus,
     hasFeature,
     purchasePlan,
     restorePurchases,
+    openSubscriptionManagement: () => premiumService.openSubscriptionManagement(),
+    getDetailedSubscriptionInfo: () => premiumService.getDetailedSubscriptionInfo(),
     isLoading,
   };
 }; 

@@ -63,6 +63,7 @@ export interface ReminderData {
   timezoneOffset?: number;
   type?: ReminderType;
   status?: ReminderStatus;
+  coOwners?: string[]; // Array of user IDs who can manage this reminder
   createdAt?: string;
   updatedAt?: string;
 }
@@ -390,18 +391,99 @@ class NotificationService {
         });
       }
 
-      // Schedule Cloud Function notifications for assigned users (all priority levels)
-      if (reminder.assignedTo && reminder.assignedTo.length > 0) {
+      // Schedule notifications for all co-owners (creator + assigned users)
+      // Each co-owner will receive notifications about the reminder
+      if (reminder.coOwners && reminder.coOwners.length > 0) {
+        console.log(`[NotificationService] Reminder ${reminder.id} has ${reminder.coOwners.length} co-owners: ${reminder.coOwners.join(', ')}`);
+        
+        // Schedule notifications for each co-owner
+        for (const coOwnerId of reminder.coOwners) {
+          if (coOwnerId === reminder.userId) {
+            // Creator notifications are already scheduled above (client-side)
+            continue;
+          }
+          
+          // Schedule notifications for assigned users (co-owners)
+          await this.scheduleCoOwnerNotifications(reminder, coOwnerId, notificationTimings);
+        }
+      } else if (reminder.assignedTo && reminder.assignedTo.length > 0) {
+        // Fallback for backward compatibility
+        console.log(`[NotificationService] Reminder ${reminder.id} has ${reminder.assignedTo.length} assigned users (legacy mode)`);
         await this.scheduleAssignedUserCloudNotifications(reminder, notificationTimings);
       }
-
-      // NOTE: Assigned user notifications are now handled by each user's device
-      // when they load their assigned tasks. This prevents cross-device notification issues.
-      if (reminder.assignedTo && reminder.assignedTo.length > 0) {
-        console.log(`[NotificationService] Reminder ${reminder.id} has ${reminder.assignedTo.length} assigned users`);
-        console.log(`[NotificationService] Each assigned user's device will schedule their own notifications when they load this task`);
-      }
     } catch (error) {
+    }
+  }
+
+  /**
+   * Schedule notifications for co-owners (assigned users who can manage the reminder)
+   * This creates scheduled notification records in Firestore for each co-owner
+   */
+  private async scheduleCoOwnerNotifications(reminder: ReminderData, coOwnerId: string, notificationTimings: NotificationTiming[]): Promise<void> {
+    try {
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.log(`[NotificationService] No authenticated user for co-owner notifications`);
+        return;
+      }
+
+      console.log(`[NotificationService] Scheduling notifications for co-owner: ${coOwnerId} of reminder: ${reminder.id}`);
+
+      // Create scheduled notifications for each timing
+      const notificationPromises = notificationTimings.map(async (timing: NotificationTiming) => {
+        try {
+          // Calculate notification time
+          const notificationTime = this.calculateNotificationTime(reminder, timing);
+          
+          // Skip if notification time is in the past
+          if (notificationTime <= new Date()) {
+            console.log(`[NotificationService] Skipping past notification time for co-owner ${coOwnerId}: ${notificationTime.toISOString()}`);
+            return;
+          }
+
+          // Determine notification type based on timing
+          let notificationType: string;
+          if (timing.type === 'exact') {
+            notificationType = 'due';
+          } else if (timing.type === 'before') {
+            if (timing.value === 15) notificationType = '15min';
+            else if (timing.value === 30) notificationType = '30min';
+            else if (timing.value === 60) notificationType = '1hour';
+            else notificationType = 'custom';
+          } else {
+            notificationType = 'after';
+          }
+
+          // Create scheduled notification in Firestore for co-owner
+          const scheduledNotificationData = {
+            reminderId: reminder.id,
+            userId: coOwnerId,
+            scheduledTime: firestore.Timestamp.fromDate(notificationTime),
+            notificationType: notificationType,
+            priority: reminder.priority || 'medium',
+            status: 'pending',
+            createdAt: firestore.FieldValue.serverTimestamp(),
+            familyId: reminder.familyId,
+            assignedBy: currentUser.uid,
+            isCoOwner: true, // Flag to identify co-owner notifications
+            reminderTitle: reminder.title,
+          };
+
+          await firestore()
+            .collection('scheduledNotifications')
+            .add(scheduledNotificationData);
+
+          console.log(`[NotificationService] Co-owner notification scheduled for user ${coOwnerId} at ${notificationTime.toISOString()}`);
+
+        } catch (error) {
+          console.error(`[NotificationService] Error scheduling co-owner notification for user ${coOwnerId}:`, error);
+        }
+      });
+
+      await Promise.all(notificationPromises);
+
+    } catch (error) {
+      console.error(`[NotificationService] Error in scheduleCoOwnerNotifications:`, error);
     }
   }
 
@@ -823,48 +905,29 @@ class NotificationService {
     }
   ): Promise<void> {
     try {
-      console.log(`[NotificationService] Sending direct FCM notification to token: ${fcmToken.substring(0, 20)}...`);
+      console.log(`[NotificationService] Sending FCM notification to token: ${fcmToken.substring(0, 20)}...`);
       
-      // For now, we'll use local notifications as a fallback since Cloud Functions aren't deployed
-      // In a production environment, you would send this to a Cloud Function or use a direct FCM API call
-      
-      // Create a local notification to simulate the push notification
-      const notificationId = `fcm-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      PushNotification.localNotification({
-        id: notificationId,
-        channelId: 'reminders',
-        title: notification.title,
-        message: notification.body,
-        playSound: true,
-        soundName: 'default',
-        importance: 'high',
-        priority: 'high',
-        vibrate: true,
-        vibration: 300,
-        userInfo: {
-          ...notification.data,
-          type: notification.type,
-          fcmToken: fcmToken.substring(0, 20) + '...',
-        },
-      });
-      
-      console.log(`[NotificationService] Local notification sent as FCM fallback with ID: ${notificationId}`);
-      
-      // Log the notification attempt for debugging
+      // Send to Cloud Function via Firestore
       const firestoreInstance = getFirestoreInstance();
-      await firestoreInstance.collection('notificationLogs').add({
-        fcmToken: fcmToken.substring(0, 20) + '...',
+      await firestoreInstance.collection('fcmNotifications').add({
+        fcmToken: fcmToken,
         notification: {
           title: notification.title,
           body: notification.body,
         },
-        data: notification.data || {},
+        data: {
+          ...notification.data,
+          type: notification.type,
+        },
         type: notification.type,
+        userId: auth().currentUser?.uid, // Include userId for language detection
         timestamp: firestore.FieldValue.serverTimestamp(),
-        status: 'sent_as_local_fallback',
-        method: 'local_notification',
+        status: 'pending',
+        attempts: 0,
+        maxAttempts: 3,
       });
+      
+      console.log(`[NotificationService] FCM notification request created in Firestore`);
       
     } catch (error) {
       console.error(`[NotificationService] Error sending FCM notification:`, error);
@@ -1343,12 +1406,61 @@ class NotificationService {
             assignmentData.familyId = familyId;
           }
           
-          await firestoreInstance.collection('taskAssignments').add(assignmentData);
+          // Filter out any undefined values to prevent Firestore errors
+          const cleanAssignmentData: any = {};
+          Object.entries(assignmentData).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+              cleanAssignmentData[key] = value;
+            }
+          });
+          
+          // Debug: Log the assignment data being written
+          console.log(`[NotificationService] Writing assignment data:`, JSON.stringify(cleanAssignmentData, null, 2));
+          
+          // Try to create the assignment record
+          await firestoreInstance.collection('taskAssignments').add(cleanAssignmentData);
           
           console.log(`[NotificationService] Assignment record created for user: ${assignedUserId}`);
           
         } catch (error) {
           console.error(`[NotificationService] Failed to create assignment record for user ${assignedUserId}:`, error);
+          
+          // Fallback: Try to send direct FCM notification
+          try {
+            const assignedUserDoc = await firestoreInstance.collection('users').doc(assignedUserId).get();
+            if (assignedUserDoc.exists) {
+              const assignedUserData = assignedUserDoc.data();
+              const fcmTokens = assignedUserData?.fcmTokens || [];
+              const fcmToken = assignedUserData?.fcmToken || (fcmTokens.length > 0 ? fcmTokens[0] : null);
+              
+              if (fcmToken) {
+                // Send direct FCM notification as fallback
+                await firestoreInstance.collection('fcmNotifications').add({
+                  fcmToken: fcmToken,
+                  notification: {
+                    title: '📋 New Task Assigned!',
+                    body: `${assignedByName} assigned you: ${reminderTitle}`,
+                  },
+                  data: {
+                    type: 'task_assigned',
+                    reminderId: reminderId,
+                    assignedByUserId: assignedByUserId,
+                    assignedToUserId: assignedUserId,
+                    familyId: familyId,
+                  },
+                  userId: assignedUserId,
+                  timestamp: firestore.FieldValue.serverTimestamp(),
+                  status: 'pending',
+                  attempts: 0,
+                  maxAttempts: 3,
+                });
+                
+                console.log(`[NotificationService] Fallback FCM notification sent for user: ${assignedUserId}`);
+              }
+            }
+          } catch (fallbackError) {
+            console.error(`[NotificationService] Fallback notification also failed for user ${assignedUserId}:`, fallbackError);
+          }
           
           // Fallback to local notification for current user in simulator
           const currentUser = auth().currentUser;

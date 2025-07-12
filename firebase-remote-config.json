@@ -1,0 +1,249 @@
+{
+  "conditions": [
+    {
+      "name": "Default",
+      "expression": "true",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "Premium Users",
+      "expression": "user.property('subscription_tier') == 'premium'",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "Family Users",
+      "expression": "user.property('subscription_tier') == 'family'",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "Free Users",
+      "expression": "user.property('subscription_tier') == 'free' || user.property('subscription_tier') == null",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "US Users",
+      "expression": "user.property('country') == 'US'",
+      "tagColor": "RED"
+    },
+    {
+      "name": "UK Users",
+      "expression": "user.property('country') == 'GB'",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "EU Users",
+      "expression": "user.property('country') in ['DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AT', 'IE', 'FI', 'SE', 'DK', 'NO']",
+      "tagColor": "YELLOW"
+    },
+    {
+      "name": "Canada Users",
+      "expression": "user.property('country') == 'CA'",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "Australia Users",
+      "expression": "user.property('country') == 'AU'",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "Japan Users",
+      "expression": "user.property('country') == 'JP'",
+      "tagColor": "RED"
+    },
+    {
+      "name": "India Users",
+      "expression": "user.property('country') == 'IN'",
+      "tagColor": "ORANGE"
+    },
+    {
+      "name": "Brazil Users",
+      "expression": "user.property('country') == 'BR'",
+      "tagColor": "GREEN"
+    },
+    {
+      "name": "Mexico Users",
+      "expression": "user.property('country') == 'MX'",
+      "tagColor": "BLUE"
+    },
+    {
+      "name": "South Korea Users",
+      "expression": "user.property('country') == 'KR'",
+      "tagColor": "RED"
+    },
+    {
+      "name": "Singapore Users",
+      "expression": "user.property('country') == 'SG'",
+      "tagColor": "PURPLE"
+    },
+    {
+      "name": "Hong Kong Users",
+      "expression": "user.property('country') == 'HK'",
+      "tagColor": "YELLOW"
+    }
+  ],
+  "parameters": {
+    "monetization_free_tier_reminders": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "description": "Maximum number of reminders for free tier users",
+      "valueType": "NUMBER"
+    },
+    "monetization_free_tier_family_members": {
+      "defaultValue": {
+        "value": "1"
+      },
+      "description": "Maximum number of additional family members for free tier (owner + 1 = 2 total)",
+      "valueType": "NUMBER"
+    },
+    "monetization_free_tier_lists": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "description": "Maximum number of lists for free tier users",
+      "valueType": "NUMBER"
+    },
+    "monetization_free_tier_countdowns": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "description": "Maximum number of countdowns for free tier users",
+      "valueType": "NUMBER"
+    },
+    "monetization_free_tier_allow_recurring": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "description": "Whether free tier users can create recurring reminders",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_free_tier_allow_custom_notifications": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "description": "Whether free tier users can use custom notification timing",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_free_tier_allow_multiple_notifications": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "description": "Whether free tier users can set multiple notifications",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_paywall_reminder_warning_at": {
+      "defaultValue": {
+        "value": "4"
+      },
+      "description": "Show small paywall when user has this many reminders",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_reminder_block_at": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "description": "Show fullscreen paywall when user has this many reminders",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_family_warning_at": {
+      "defaultValue": {
+        "value": "1"
+      },
+      "description": "Show small paywall when family has this many additional members",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_family_block_at": {
+      "defaultValue": {
+        "value": "2"
+      },
+      "description": "Show fullscreen paywall when family has this many total members",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_list_warning_at": {
+      "defaultValue": {
+        "value": "4"
+      },
+      "description": "Show small paywall when user has this many lists",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_list_block_at": {
+      "defaultValue": {
+        "value": "5"
+      },
+      "description": "Show fullscreen paywall when user has this many lists",
+      "valueType": "NUMBER"
+    },
+    "monetization_paywall_feature_attempts_recurring": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Show paywall when free users attempt recurring reminders",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_paywall_feature_attempts_custom_notifications": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Show paywall when free users attempt custom notifications",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_paywall_feature_attempts_multiple_notifications": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Show paywall when free users attempt multiple notifications",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_reset_date": {
+      "defaultValue": {
+        "value": "monthly"
+      },
+      "description": "When to reset user limits (monthly, weekly, never)",
+      "valueType": "STRING"
+    },
+    "monetization_enabled": {
+      "defaultValue": {
+        "value": "true"
+      },
+      "description": "Whether monetization is enabled globally",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_test_mode": {
+      "defaultValue": {
+        "value": "false"
+      },
+      "description": "Enable test mode for development",
+      "valueType": "BOOLEAN"
+    },
+    "monetization_regional_pricing": {
+      "defaultValue": {
+        "value": "{\"US\":{\"currency\":\"USD\",\"symbol\":\"$\",\"individual\":{\"monthly\":3.99,\"yearly\":35.99},\"family\":{\"monthly\":7.99,\"yearly\":69.99},\"yearlySavingsPercent\":82},\"GB\":{\"currency\":\"GBP\",\"symbol\":\"£\",\"individual\":{\"monthly\":2.99,\"yearly\":29.99},\"family\":{\"monthly\":5.99,\"yearly\":59.99},\"yearlySavingsPercent\":83},\"CA\":{\"currency\":\"CAD\",\"symbol\":\"C$\",\"individual\":{\"monthly\":4.99,\"yearly\":49.99},\"family\":{\"monthly\":9.99,\"yearly\":99.99},\"yearlySavingsPercent\":83},\"AU\":{\"currency\":\"AUD\",\"symbol\":\"A$\",\"individual\":{\"monthly\":5.99,\"yearly\":59.99},\"family\":{\"monthly\":11.99,\"yearly\":119.99},\"yearlySavingsPercent\":83},\"JP\":{\"currency\":\"JPY\",\"symbol\":\"¥\",\"individual\":{\"monthly\":398,\"yearly\":3980},\"family\":{\"monthly\":798,\"yearly\":7980},\"yearlySavingsPercent\":83},\"IN\":{\"currency\":\"INR\",\"symbol\":\"₹\",\"individual\":{\"monthly\":299,\"yearly\":2999},\"family\":{\"monthly\":599,\"yearly\":5999},\"yearlySavingsPercent\":83},\"BR\":{\"currency\":\"BRL\",\"symbol\":\"R$\",\"individual\":{\"monthly\":19.90,\"yearly\":199.90},\"family\":{\"monthly\":39.90,\"yearly\":399.90},\"yearlySavingsPercent\":83},\"MX\":{\"currency\":\"MXN\",\"symbol\":\"$\",\"individual\":{\"monthly\":79.90,\"yearly\":799.90},\"family\":{\"monthly\":159.90,\"yearly\":1599.90},\"yearlySavingsPercent\":83},\"KR\":{\"currency\":\"KRW\",\"symbol\":\"₩\",\"individual\":{\"monthly\":4990,\"yearly\":49900},\"family\":{\"monthly\":9990,\"yearly\":99900},\"yearlySavingsPercent\":83},\"SG\":{\"currency\":\"SGD\",\"symbol\":\"S$\",\"individual\":{\"monthly\":5.99,\"yearly\":59.99},\"family\":{\"monthly\":11.99,\"yearly\":119.99},\"yearlySavingsPercent\":83},\"HK\":{\"currency\":\"HKD\",\"symbol\":\"HK$\",\"individual\":{\"monthly\":29.90,\"yearly\":299.90},\"family\":{\"monthly\":59.90,\"yearly\":599.90},\"yearlySavingsPercent\":83},\"DE\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"FR\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"IT\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"ES\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"NL\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"BE\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"AT\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"IE\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"FI\":{\"currency\":\"EUR\",\"symbol\":\"€\",\"individual\":{\"monthly\":3.99,\"yearly\":39.99},\"family\":{\"monthly\":7.99,\"yearly\":79.99},\"yearlySavingsPercent\":83},\"SE\":{\"currency\":\"SEK\",\"symbol\":\"kr\",\"individual\":{\"monthly\":39.90,\"yearly\":399.90},\"family\":{\"monthly\":79.90,\"yearly\":799.90},\"yearlySavingsPercent\":83},\"DK\":{\"currency\":\"DKK\",\"symbol\":\"kr\",\"individual\":{\"monthly\":29.90,\"yearly\":299.90},\"family\":{\"monthly\":59.90,\"yearly\":599.90},\"yearlySavingsPercent\":83},\"NO\":{\"currency\":\"NOK\",\"symbol\":\"kr\",\"individual\":{\"monthly\":39.90,\"yearly\":399.90},\"family\":{\"monthly\":79.90,\"yearly\":799.90},\"yearlySavingsPercent\":83},\"CH\":{\"currency\":\"CHF\",\"symbol\":\"CHF\",\"individual\":{\"monthly\":4.99,\"yearly\":49.99},\"family\":{\"monthly\":9.99,\"yearly\":99.99},\"yearlySavingsPercent\":83},\"TW\":{\"currency\":\"TWD\",\"symbol\":\"NT$\",\"individual\":{\"monthly\":119,\"yearly\":1199},\"family\":{\"monthly\":239,\"yearly\":2399},\"yearlySavingsPercent\":83},\"TH\":{\"currency\":\"THB\",\"symbol\":\"฿\",\"individual\":{\"monthly\":139,\"yearly\":1399},\"family\":{\"monthly\":279,\"yearly\":2799},\"yearlySavingsPercent\":83},\"MY\":{\"currency\":\"MYR\",\"symbol\":\"RM\",\"individual\":{\"monthly\":17.90,\"yearly\":179.90},\"family\":{\"monthly\":35.90,\"yearly\":359.90},\"yearlySavingsPercent\":83},\"ID\":{\"currency\":\"IDR\",\"symbol\":\"Rp\",\"individual\":{\"monthly\":59000,\"yearly\":590000},\"family\":{\"monthly\":119000,\"yearly\":1190000},\"yearlySavingsPercent\":83},\"PH\":{\"currency\":\"PHP\",\"symbol\":\"₱\",\"individual\":{\"monthly\":199,\"yearly\":1999},\"family\":{\"monthly\":399,\"yearly\":3999},\"yearlySavingsPercent\":83},\"VN\":{\"currency\":\"VND\",\"symbol\":\"₫\",\"individual\":{\"monthly\":90000,\"yearly\":900000},\"family\":{\"monthly\":180000,\"yearly\":1800000},\"yearlySavingsPercent\":83}}"
+      },
+      "description": "Regional pricing configuration with currency and pricing per country",
+      "valueType": "STRING"
+    },
+    "monetization_default_country": {
+      "defaultValue": {
+        "value": "US"
+      },
+      "description": "Default country for fallback pricing",
+      "valueType": "STRING"
+    },
+    "monetization_currency_formatting": {
+      "defaultValue": {
+        "value": "{\"USD\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"GBP\":{\"position\":\"before\",\"spacing\":false,\"decimals\":2},\"EUR\":{\"position\":\"after\",\"spacing\":true,\"decimals\":2},\"CAD\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"AUD\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"JPY\":{\"position\":\"before\",\"spacing\":false,\"decimals\":0},\"INR\":{\"position\":\"before\",\"spacing\":false,\"decimals\":2},\"BRL\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"MXN\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"KRW\":{\"position\":\"before\",\"spacing\":false,\"decimals\":0},\"SGD\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"HKD\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"SEK\":{\"position\":\"after\",\"spacing\":true,\"decimals\":2},\"DKK\":{\"position\":\"after\",\"spacing\":true,\"decimals\":2},\"NOK\":{\"position\":\"after\",\"spacing\":true,\"decimals\":2},\"CHF\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"TWD\":{\"position\":\"before\",\"spacing\":false,\"decimals\":0},\"THB\":{\"position\":\"before\",\"spacing\":false,\"decimals\":2},\"MYR\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"IDR\":{\"position\":\"before\",\"spacing\":false,\"decimals\":0},\"PHP\":{\"position\":\"before\",\"spacing\":true,\"decimals\":2},\"VND\":{\"position\":\"after\",\"spacing\":false,\"decimals\":0}}"
+      },
+      "description": "Currency formatting rules per currency",
+      "valueType": "STRING"
+    }
+  },
+  "version": {
+    "versionNumber": "2",
+    "updateTime": "2024-01-01T00:00:00Z",
+    "updateUser": {
+      "email": "admin@clearcue.app"
+    },
+    "updateOrigin": "CONSOLE",
+    "updateType": "INCREMENTAL_UPDATE"
+  }
+} 

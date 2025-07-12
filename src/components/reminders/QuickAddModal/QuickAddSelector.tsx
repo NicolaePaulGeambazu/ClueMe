@@ -20,19 +20,17 @@ export const QuickAddSelector: React.FC<QuickAddSelectorProps> = ({
   colors,
   styles,
 }) => (
-  <View style={styles.section}>
-    <View style={styles.selectorContainer}>
-      <TouchableOpacity
-        testID={testID}
-        style={[styles.selector, { borderColor: colors.borderLight }]}
-        onPress={onPress}
-      >
-        {icon}
-        <Text style={[styles.selectorText, { color: colors.text }]}>
-          {label}
-        </Text>
-        <ChevronRight size={16} color={colors.textTertiary} />
-      </TouchableOpacity>
-    </View>
+  <View style={styles.selectorContainer}>
+    <TouchableOpacity
+      testID={testID}
+      style={[styles.selector, { borderColor: colors.borderLight }]}
+      onPress={onPress}
+    >
+      {icon}
+      <Text style={[styles.selectorText, { color: colors.text }]}>
+        {label}
+      </Text>
+      <ChevronRight size={16} color={colors.textTertiary} />
+    </TouchableOpacity>
   </View>
 ); 

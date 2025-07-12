@@ -145,7 +145,7 @@ export default function PremiumUpgradeModal({
 
         <View style={styles.planPrice}>
           <Text style={[styles.priceAmount, { color: colors.text }]}>
-            {plan.currencySymbol}{plan.price}
+            {plan.priceString}
           </Text>
           <Text style={[styles.priceCurrency, { color: colors.textSecondary }]}>
             /{plan.interval}

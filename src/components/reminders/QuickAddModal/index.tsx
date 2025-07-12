@@ -12,12 +12,13 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useFamily } from '../../../hooks/useFamily';
 import { useModal } from '../../../contexts/ModalContext';
 import { usePremium } from '../../../hooks/usePremium';
+import { useMonetization } from '../../../hooks/useMonetization';
+import monetizationService from '../../../services/monetizationService';
 import { Colors } from '../../../constants/Colors';
 import { CustomDateTimePickerModal } from '../../ReminderForm/CustomDateTimePicker';
 import { RepeatOptions } from '../../ReminderForm/RepeatOptions';
 import NotificationTimingModal from '../NotificationTimingModal';
 import InterstitialAdTrigger from '../../ads/InterstitialAdTrigger';
-import { TaskChunkingModal } from '../TaskChunkingModal';
 import { QuickAddHeader } from './QuickAddHeader';
 import { QuickAddForm } from './QuickAddForm';
 import { QuickAddFooter } from './QuickAddFooter';
@@ -25,7 +26,8 @@ import { QuickAddSheets } from './QuickAddSheets';
 import { useQuickAddForm, ReminderData } from './useQuickAddForm';
 import { createStyles } from './styles';
 import { SubTask } from '../../../design-system/reminders/types';
-import { suggestSubTasks, createSubTasksFromSuggestions } from '../../../utils/taskChunkingUtils';
+import SmallPaywallModal from '../../premium/SmallPaywallModal';
+import FullScreenPaywall from '../../premium/FullScreenPaywall';
 
 interface QuickAddModalProps {
   visible: boolean;
@@ -51,21 +53,49 @@ export default function QuickAddModal({
   const { members } = useFamily();
   const { showDatePicker: showGlobalDatePicker } = useModal();
   const { isPremium } = usePremium();
+  const { 
+    showFullScreenPaywall, 
+    showSmallPaywall, 
+    paywallMessage, 
+    paywallTrigger,
+    checkReminderCreation,
+    hidePaywall,
+    isLoading: monetizationLoading 
+  } = useMonetization();
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
-  // Animation
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  // Debug: Log family members for assignment debugging
+  useEffect(() => {
+    if (members.length > 0) {
+      console.log('[QuickAddModal] Family members for assignment:', members.map(m => ({
+        id: m.id,
+        userId: m.userId,
+        name: m.name,
+        email: m.email
+      })));
+    } else {
+      console.log('[QuickAddModal] No family members available for assignment');
+    }
+  }, [members]);
 
-  // Form state and logic
+  // Animation
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  // Form state
   const form = useQuickAddForm(prefillData, prefillDate, prefillTime);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Task chunking state
-  const [showTaskChunking, setShowTaskChunking] = useState(false);
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [isChunked, setIsChunked] = useState(false);
+  const [showTaskChunking, setShowTaskChunking] = useState(false);
+
+  // Debug: Log when assignments change
+  useEffect(() => {
+    if (form.assignedTo.length > 0) {
+      console.log('[QuickAddModal] Current assignments:', form.assignedTo);
+    }
+  }, [form.assignedTo]);
 
   // Animation effects
   useEffect(() => {
@@ -100,23 +130,57 @@ export default function QuickAddModal({
 
   // Handlers
   const handleSave = async () => {
-    if (!form.title.trim() || isSaving) return;
+    if (!form.title.trim()) return;
 
-    setIsSaving(true);
     try {
-      const reminderData = form.createReminderData();
+      setIsSaving(true);
       
-      // Add task chunking data if present
-      if (isChunked && subTasks.length > 0) {
-        reminderData.isChunked = true;
-        reminderData.subTasks = subTasks;
-        reminderData.chunkedProgress = 0; // Will be calculated by the service
+      // Check monetization limits before saving
+      const monetizationResult = await checkReminderCreation();
+      
+      if (monetizationResult.isBlocking) {
+        // Don't proceed with saving if blocked
+        setIsSaving(false);
+        return;
       }
       
+      // Debug: Log the reminder data being saved
+      const reminderData = form.createReminderData();
+      console.log('[QuickAddModal] Saving reminder with assignments:', {
+        title: reminderData.title,
+        assignedTo: reminderData.assignedTo,
+        assignedToCount: reminderData.assignedTo?.length || 0
+      });
+
       await onSave(reminderData);
-      handleClose();
+      
+      // Reset form
+      form.setTitle('');
+      form.setLocation('');
+      form.setSelectedDate('today');
+      form.setSelectedTime('in1hour');
+      form.setCustomTimeValue('');
+      form.setCustomDateValue(null);
+      form.setIsRecurring(false);
+      form.setRecurringPattern({
+        type: 'none',
+        interval: 1,
+        days: [],
+        endCondition: 'never',
+        endDate: null,
+        endOccurrences: undefined,
+      });
+      form.setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+      form.setAssignedTo([]);
+      form.setNotificationTimings([]);
+      
+      // Reset task chunking
+      setSubTasks([]);
+      setIsChunked(false);
+      
+      onClose();
     } catch (error) {
-      console.error('Failed to save reminder:', error);
+      console.error('[QuickAddModal] Error saving reminder:', error);
     } finally {
       setIsSaving(false);
     }
@@ -140,17 +204,6 @@ export default function QuickAddModal({
     const timeString = `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     form.setCustomTimeValue(timeString);
     form.setShowTimePicker(false);
-  };
-
-  // Task chunking handlers
-  const handleBreakDownTask = () => {
-    if (subTasks.length === 0) {
-      // Auto-suggest sub-tasks for new chunking
-      const suggestions = suggestSubTasks(form.title);
-      const initialSubTasks = createSubTasksFromSuggestions(suggestions);
-      setSubTasks(initialSubTasks);
-    }
-    setShowTaskChunking(true);
   };
 
   const handleTaskChunkingSave = (newSubTasks: SubTask[]) => {
@@ -183,7 +236,13 @@ export default function QuickAddModal({
               styles.modal,
               { 
                 backgroundColor: colors.background,
-                opacity: opacityAnim 
+                opacity: opacityAnim,
+                transform: [{
+                  translateY: slideAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [300, 0], // Slide up from 300px below
+                  })
+                }]
               }
             ]}
             onStartShouldSetResponder={() => true}
@@ -203,6 +262,8 @@ export default function QuickAddModal({
               <QuickAddForm
                 title={form.title}
                 setTitle={form.setTitle}
+                location={form.location}
+                setLocation={form.setLocation}
                 selectedDate={form.selectedDate}
                 selectedTime={form.selectedTime}
                 customTimeValue={form.customTimeValue}
@@ -221,7 +282,6 @@ export default function QuickAddModal({
                 onRecurringPress={() => form.setShowRepeatOptions(true)}
                 onNotificationPress={() => form.setShowNotificationModal(true)}
                 onFamilyPress={() => form.setShowFamilyPicker(true)}
-                onBreakDownTask={handleBreakDownTask}
                 isChunked={isChunked}
                 subTasksCount={subTasks.length}
                 colors={colors}
@@ -331,19 +391,33 @@ export default function QuickAddModal({
           currentTimings={form.notificationTimings}
         />
 
-        {/* Task Chunking Modal */}
-        <TaskChunkingModal
-          visible={showTaskChunking}
-          onClose={handleTaskChunkingClose}
-          onSave={handleTaskChunkingSave}
-          initialSubTasks={subTasks}
-          taskTitle={form.title}
-        />
-
         {/* Interstitial Ad Trigger - Show after user creates 3 reminders */}
         <InterstitialAdTrigger
           triggerOnAction={true}
           actionCompleted={isSaving && form.title.trim().length > 0}
+        />
+
+        {/* Small Paywall Modal */}
+        <SmallPaywallModal
+          visible={showSmallPaywall}
+          onClose={hidePaywall}
+          onUpgrade={() => {
+            // Handle upgrade flow
+            hidePaywall();
+          }}
+          message={paywallMessage}
+          triggerFeature={paywallTrigger || undefined}
+        />
+
+        {/* Full Screen Paywall */}
+        <FullScreenPaywall
+          visible={showFullScreenPaywall}
+          onClose={hidePaywall}
+          onUpgrade={() => {
+            // Handle upgrade flow
+            hidePaywall();
+          }}
+          triggerFeature={paywallTrigger || undefined}
         />
       </TouchableOpacity>
     </View>

@@ -22,7 +22,37 @@
     "doesNotRepeat": "Does not repeat",
     "timezone": "Timezone",
     "selectTimezone": "Select timezone",
-    "assignToMe": "👤 Me"
+    "assignToMe": "👤 Me",
+    "notificationTiming": "Notification Timing",
+    "notifications": "{{count}} notifications",
+    "singleNotification": "{{label}}",
+    "pickTime": "Pick Time...",
+    "assignToFamily": "Assign to Family",
+    "noAssignments": "No one assigned",
+    "assignedTo": "Assigned to {{count}} members",
+    "assignedToSingle": "Assigned to {{name}}",
+    "nextWeekDesc": "Next week",
+    "custom": "Custom",
+    "customDesc": "Pick a specific date",
+    "in1Hour": "In 1 hour",
+    "in1HourDesc": "1 hour from now",
+    "in2Hours": "In 2 hours",
+    "in2HoursDesc": "2 hours from now",
+    "in4Hours": "In 4 hours",
+    "in4HoursDesc": "4 hours from now",
+    "tomorrowDesc": "Tomorrow morning",
+    "noRepeat": "Does not repeat",
+    "noAssignment": "No one assigned",
+    "whenShouldThisHappen": "When should this happen?",
+    "cancel": "Cancel",
+    "done": "Done",
+    "assignToFamilyMembers": "Assign to family members",
+    "assigned": "Assigned",
+    "notAssigned": "Not assigned",
+    "assignedToMultiple": "Assigned to {count} people",
+    "assignedTo1": "Assigned to {{name}}",
+    "location": "Location",
+    "locationPlaceholder": "Add location"
   },
   "taskChunking": {
     "sectionTitle": "Break Down Task",
@@ -513,7 +543,69 @@
     "footerSubtext": "No ads, no tracking, just clear reminders when you need them.",
     "helpContent": "Need help with ClearCue?\n\n📧 Email: support@clearcue.app\n🌐 Website: clearcue.app\n📱 In-app feedback available\n\nWe're here to help you get the most out of your reminders!",
     "aboutContent": "ClearCue v1.0.0\n\nA simple, private, and effective reminder app designed to help you stay organized without the clutter.\n\n✨ Features:\n• Smart notifications\n• Calendar integration\n• Priority management\n• Family sharing\n• No ads or tracking\n\nMade with ❤️ for productivity",
-    "privacyContent": "🔒 Your Privacy Matters\n\nClearCue is built with privacy-first principles:\n\n📱 Local Storage:\n• Reminders stored locally on your device\n• No cloud sync unless you choose Firebase\n• Your data stays private\n\n☁️ Firebase Sync (Optional):\n• End-to-end encrypted when enabled\n• Only you can access your data\n• No data mining or tracking\n\n🚫 No Tracking:\n• No analytics or user profiling\n• No third-party data sharing\n• No targeted advertising\n\n📋 Data Control:\n• Export your data anytime\n• Delete all data permanently\n• Complete control over your information\n\nYour reminders, your privacy, your control."
+    "privacyContent": "🔒 Your Privacy Matters\n\nClearCue is built with privacy-first principles:\n\n📱 Local Storage:\n• Reminders stored locally on your device\n• No cloud sync unless you choose Firebase\n• Your data stays private\n\n☁️ Firebase Sync (Optional):\n• End-to-end encrypted when enabled\n• Only you can access your data\n• No data mining or tracking\n\n🚫 No Tracking:\n• No analytics or user profiling\n• No third-party data sharing\n• No targeted advertising\n\n📋 Data Control:\n• Export your data anytime\n• Delete all data permanently\n• Complete control over your information\n\nYour reminders, your privacy, your control.",
+    "subscriptionManagement": "Subscription Management",
+    "manageSubscription": "Manage Subscription",
+    "activeSubscription": "Active subscription",
+    "inactiveSubscription": "Inactive subscription",
+    "subscriptionManagementError": "Unable to open subscription management. Please go to your device settings to manage your subscription.",
+    "premiumBenefits": "Premium Benefits",
+    "premiumBenefitsDescription": "You have unlimited access to all features",
+    "unlimitedReminders": "Unlimited reminders",
+    "advancedRecurring": "Advanced recurring options",
+    "familySharing": "Family sharing (up to 5 members)",
+    "noAds": "No ads",
+    "prioritySupport": "Priority support",
+    "changePlan": "Change Plan",
+    "changePlanDescription": "Switch to a different subscription plan",
+    "cancelSubscription": "Cancel Subscription",
+    "cancelSubscriptionDescription": "Cancel your subscription and stop billing",
+    "cancelSubscriptionConfirm": "Are you sure you want to cancel your subscription? You'll lose access to premium features at the end of your current billing period.",
+    "cancelSubscriptionError": "Unable to cancel subscription. Please try again or contact support.",
+    "nextBilling": "Next Billing",
+    "trialDaysLeft": "Trial Days Left",
+    "autoRenew": "Auto-Renew",
+    "days": "days",
+    "important": "Important",
+    "subscriptionManagementInfo": "You can manage your subscription details, change plans, or cancel your subscription. Changes will take effect at the end of your current billing period.",
+    "selectPlan": "Select Plan",
+    "chooseYourPlan": "Choose Your Plan",
+    "current": "Current",
+    "select": "Select",
+    "selectThisPlan": "Select This Plan",
+    "currentPlanSelected": "Current Plan Selected",
+    "confirmPlanChange": "Confirm Plan Change",
+    "confirmPlanChangeDescription": "Are you sure you want to change your subscription plan? This will update your billing and features.",
+    "planChanged": "Plan Changed",
+    "planChangedDescription": "Your subscription plan has been successfully updated.",
+    "planChangeError": "Failed to change plan. Please try again.",
+    "planChangeInfo": "Plan changes will take effect immediately. You'll be charged the new rate at your next billing cycle.",
+    "month": "month",
+    "year": "year",
+    "week": "week",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "cancelSubscriptionTitle": "Cancel Your Subscription?",
+    "cancelSubscriptionWarning": "We're sorry to see you go! Before you cancel, please consider the benefits you'll lose.",
+    "whatYouWillLose": "What You'll Lose:",
+    "loseUnlimitedReminders": "Unlimited reminders (back to 50/month limit)",
+    "loseAdvancedFeatures": "Advanced recurring options and custom intervals",
+    "loseFamilySharing": "Family sharing and collaboration features",
+    "considerAlternatives": "Consider These Alternatives:",
+    "pauseInstead": "Pause your subscription temporarily",
+    "changeToCheaperPlan": "Switch to a more affordable plan",
+    "finalCancellationConfirm": "Final Confirmation",
+    "finalCancellationDescription": "Are you absolutely sure you want to cancel? This action cannot be undone.",
+    "pauseSubscription": "Pause Subscription",
+    "pauseSubscriptionDescription": "Pause your subscription for up to 3 months. You can resume anytime.",
+    "pauseSubscriptionSuccess": "Your subscription has been paused successfully.",
+    "keepSubscription": "Keep My Subscription",
+    "cancellationInfo": "You can reactivate your subscription anytime from your device settings.",
+    "cancellationError": "Cancellation Error",
+    "cancellationErrorDescription": "There was an error processing your cancellation. Please try again or contact support.",
+    "cancelling": "Cancelling...",
+    "manualCancellationTitle": "Manual Cancellation Required",
+    "tryAgain": "Try Again"
   },
   "common": {
     "add": "Add",
@@ -584,8 +676,8 @@
   "notifications": {
     "taskCreated": "🎯 New Family Task",
     "taskCreatedMessage": "{{name}} just added \"{{taskTitle}}\" to your family's to-do list!",
-    "taskAssigned": "📋 You've Got a Task!",
-    "taskAssignedMessage": "{{name}} thinks you're perfect for: \"{{taskTitle}}\" 💪",
+    "taskAssigned": "📋 New Task for You!",
+    "taskAssignedMessage": "{{name}} assigned you a new task: \"{{taskTitle}}\" - check it out! 💪",
     "taskUpdated": "🔄 Task Updated",
     "taskUpdatedMessage": "{{name}} made changes to \"{{taskTitle}}\" - check it out!",
     "taskDueDateChanged": "📅 Due Date Changed",
@@ -976,6 +1068,49 @@
       "30minAfter": "30 minutes after",
       "1hrAfter": "1 hour after"
     },
+    "monetization": {
+          "reminderLimit": {
+      "warning": "You're approaching your limit of {{limit}} reminders. Upgrade to create unlimited reminders.",
+      "blocked": "You've reached your limit of {{limit}} reminders. Upgrade to create unlimited reminders."
+    },
+    "familyLimit": {
+      "warning": "Great! You're building your family. Upgrade to add unlimited family members and share premium features.",
+      "blocked": "You've reached your limit of {{limit}} family members. Upgrade to add unlimited family members."
+    },
+    "listLimit": {
+      "warning": "You're approaching your limit of {{limit}} lists. Upgrade to create unlimited lists.",
+      "blocked": "You've reached your limit of {{limit}} lists. Upgrade to create unlimited lists."
+    },
+      "feature": {
+        "premiumOnly": "This feature is only available for premium users.",
+        "recurring": {
+          "premiumOnly": "Recurring reminders are a premium feature. Upgrade to set up automatic recurring tasks."
+        },
+        "customNotifications": {
+          "premiumOnly": "Custom notification timing is a premium feature. Upgrade to set multiple reminder times."
+        },
+        "multipleNotifications": {
+          "premiumOnly": "Multiple notifications are a premium feature. Upgrade to set multiple reminder times."
+        }
+      },
+      "upgrade": {
+        "title": "Upgrade to Premium",
+        "subtitle": "Unlock unlimited reminders and advanced features",
+        "individual": "Individual Plan",
+        "family": "Family Plan",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "save": "Save {{percent}}%",
+        "unlimited": "Unlimited",
+        "features": {
+          "unlimitedReminders": "Unlimited reminders",
+          "advancedRecurring": "Advanced recurring patterns",
+          "multipleNotifications": "Multiple notification times",
+          "familySharing": "Unlimited family members",
+          "adFree": "Ad-free experience"
+        }
+      }
+    },
     "escalating": {
       "gentle": "30 minutes before (Gentle)",
       "medium": "15 minutes before (Medium)",
@@ -1082,8 +1217,7 @@
     "formatOptions": {
       "checkmarks": "Checkmarks",
       "lines": "Lines",
-      "numbers": "Numbers",
-      "plainText": "Plain Text"
+      "numbers": "Numbers"
     },
     "deleteList": "Delete List",
     "deleteConfirm": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",

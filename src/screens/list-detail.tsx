@@ -88,6 +88,14 @@ export default function ListDetailScreen({ navigation, route }: any) {
     loadListDetails();
   }, [loadListDetails]);
 
+  // Debug: Log list format when list changes
+  useEffect(() => {
+    if (list) {
+      console.log('List loaded with format:', list.format);
+      console.log('List items:', list.items.map(item => ({ id: item.id, title: item.title, format: item.format })));
+    }
+  }, [list]);
+
   // Set up real-time listener for this specific list
   useEffect(() => {
     if (!listId) {return;}
@@ -159,20 +167,52 @@ export default function ListDetailScreen({ navigation, route }: any) {
       sortOrder: list.items.length
     });
     
+    console.log('List format:', list.format);
+    console.log('List items before adding:', list.items.map(item => ({ id: item.id, title: item.title, format: item.format })));
+    
     setActionLoading(true);
     setError(null);
     try {
-      const itemId = await listService.addListItem(listId, {
-        title: newItemTitle.trim(),
-        description: newItemDescription.trim() || undefined,
-        completed: false,
-        format: list.format,
-        sortOrder: list.items.length,
-      });
+      let itemId: string;
       
-      console.log('Item added successfully with ID:', itemId);
+      if (list.format === 'plain') {
+        // For plain text format, update the existing item or create the first one
+        if (list.items.length > 0) {
+          // Update the existing item
+          await listService.updateListItem(listId, list.items[0].id, {
+            title: newItemTitle.trim(),
+            description: newItemDescription.trim() || undefined,
+          });
+          itemId = list.items[0].id;
+        } else {
+          // Create the first item
+          itemId = await listService.addListItem(listId, {
+            title: newItemTitle.trim(),
+            description: newItemDescription.trim() || undefined,
+            completed: false,
+            format: list.format,
+            sortOrder: 0,
+          });
+        }
+      } else {
+        // For other formats, add a new item
+        itemId = await listService.addListItem(listId, {
+          title: newItemTitle.trim(),
+          description: newItemDescription.trim() || undefined,
+          completed: false,
+          format: list.format,
+          sortOrder: list.items.length,
+        });
+      }
+      
+      console.log('Item added/updated successfully with ID:', itemId);
       
       // The listener will automatically update the list
+      
+      // Debug: Check the updated list after adding item
+      setTimeout(() => {
+        console.log('List items after adding:', list?.items.map(item => ({ id: item.id, title: item.title, format: item.format })));
+      }, 1000);
       
       // Store the title before clearing the form
       const addedItemTitle = newItemTitle.trim();
@@ -184,7 +224,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       // Show success popup
       setGracePopup({
         visible: true,
-        message: t('success.itemAdded', { title: addedItemTitle }),
+        message: list.format === 'plain' ? t('success.contentSaved') : t('success.itemAdded', { title: addedItemTitle }),
         type: 'success',
       });
     } catch (err: any) {
@@ -299,18 +339,23 @@ export default function ListDetailScreen({ navigation, route }: any) {
   const renderItem = (item: ListItem, index: number) => {
     if (!list) {return null;}
 
-    const IconComponent = getFormatIcon(list.format);
+    // Use the item's format, fallback to list format for backward compatibility
+    const itemFormat = item.format || list.format;
+    const IconComponent = getFormatIcon(itemFormat);
+    
+    // Debug: Log the format being used for rendering
+    console.log(`Rendering item "${item.title}" with format:`, { itemFormat, itemFormatValue: item.format, listFormat: list.format });
 
     return (
       <View key={item.id} style={styles.itemCard}>
         <View style={styles.itemHeader}>
           <View style={styles.itemLeft}>
-            {list.format === 'number' && (
+            {itemFormat === 'number' && (
               <View style={[styles.numberBadge, { backgroundColor: colors.primary + '15' }]}>
                 <Text style={[styles.numberText, { color: colors.primary }]}>{index + 1}</Text>
               </View>
             )}
-            {list.format === 'checkmark' && (
+            {itemFormat === 'checkmark' && (
               <TouchableOpacity
                 style={[
                   styles.checkbox,
@@ -324,31 +369,57 @@ export default function ListDetailScreen({ navigation, route }: any) {
                 {item.completed && <Check size={16} color="white" />}
               </TouchableOpacity>
             )}
-            {list.format === 'line' && (
+            {itemFormat === 'line' && (
               <View style={[styles.lineIndicator, { backgroundColor: colors.primary }]} />
             )}
-            {list.format === 'plain' && (
-              <View style={[styles.plainIndicator, { backgroundColor: colors.textSecondary }]} />
+            {itemFormat === 'plain' && (
+              <View style={[styles.plainIndicator, { backgroundColor: colors.textTertiary }]} />
             )}
           </View>
 
           <View style={styles.itemContent}>
-            <Text style={[
-              styles.itemTitle,
-              {
-                color: item.completed ? colors.textSecondary : colors.text,
-                textDecorationLine: item.completed ? 'line-through' : 'none',
-              },
-            ]}>
-              {item.title}
-            </Text>
-            {item.description && (
-              <Text style={[
-                styles.itemDescription,
-                { color: item.completed ? colors.textSecondary : colors.textSecondary },
-              ]}>
-                {item.description}
-              </Text>
+            {itemFormat === 'plain' ? (
+              // For plain text format, show content in a more text-focused way
+              <View>
+                <Text style={[
+                  styles.plainTextTitle,
+                  {
+                    color: item.completed ? colors.textSecondary : colors.text,
+                    textDecorationLine: item.completed ? 'line-through' : 'none',
+                  },
+                ]}>
+                  {item.title}
+                </Text>
+                {item.description && (
+                  <Text style={[
+                    styles.plainTextDescription,
+                    { color: item.completed ? colors.textSecondary : colors.textSecondary },
+                  ]}>
+                    {item.description}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              // For other formats, use the standard layout
+              <>
+                <Text style={[
+                  styles.itemTitle,
+                  {
+                    color: item.completed ? colors.textSecondary : colors.text,
+                    textDecorationLine: item.completed ? 'line-through' : 'none',
+                  },
+                ]}>
+                  {item.title}
+                </Text>
+                {item.description && (
+                  <Text style={[
+                    styles.itemDescription,
+                    { color: item.completed ? colors.textSecondary : colors.textSecondary },
+                  ]}>
+                    {item.description}
+                  </Text>
+                )}
+              </>
             )}
           </View>
 
@@ -471,24 +542,73 @@ export default function ListDetailScreen({ navigation, route }: any) {
           </View>
         </View>
 
-        <View style={styles.itemsList}>
-          {sortedItems.map((item, index) => renderItem(item, index))}
-        </View>
-
-        {sortedItems.length === 0 && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No items yet</Text>
-            <Text style={styles.emptyDescription}>
-              Add your first item to get started
-            </Text>
-            <TouchableOpacity
-              style={[styles.createButton, { backgroundColor: colors.primary }]}
-              onPress={() => setIsAddModalVisible(true)}
-            >
-              <Plus size={20} color="white" />
-              <Text style={styles.createButtonText}>Add Item</Text>
-            </TouchableOpacity>
+        {list!.format === 'plain' ? (
+          // For plain text format, show a single text area
+          <View style={styles.plainTextContainer}>
+            {list!.items.length > 0 ? (
+              // Show the content of the first (and only) item
+              <View style={styles.plainTextContent}>
+                <Text style={[styles.plainTextTitle, { color: colors.text }]}>
+                  {list!.items[0].title}
+                </Text>
+                {list!.items[0].description && (
+                  <Text style={[styles.plainTextDescription, { color: colors.textSecondary }]}>
+                    {list!.items[0].description}
+                  </Text>
+                )}
+                <TouchableOpacity
+                  style={[styles.editButton, { backgroundColor: colors.primary }]}
+                  onPress={() => {
+                    setEditingItem(list!.items[0]);
+                    setNewItemTitle(list!.items[0].title);
+                    setNewItemDescription(list!.items[0].description || '');
+                    setIsAddModalVisible(true);
+                  }}
+                >
+                  <Edit size={16} color="white" />
+                  <Text style={styles.editButtonText}>Edit Content</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              // Show empty state for plain text
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>Start Writing</Text>
+                <Text style={styles.emptyDescription}>
+                  Begin writing your notes or content
+                </Text>
+                <TouchableOpacity
+                  style={[styles.createButton, { backgroundColor: colors.primary }]}
+                  onPress={() => setIsAddModalVisible(true)}
+                >
+                  <Plus size={20} color="white" />
+                  <Text style={styles.createButtonText}>Start Writing</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
+        ) : (
+          // For other formats, show the regular list of items
+          <>
+            <View style={styles.itemsList}>
+              {sortedItems.map((item, index) => renderItem(item, index))}
+            </View>
+
+            {sortedItems.length === 0 && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>No items yet</Text>
+                <Text style={styles.emptyDescription}>
+                  Add your first item to get started
+                </Text>
+                <TouchableOpacity
+                  style={[styles.createButton, { backgroundColor: colors.primary }]}
+                  onPress={() => setIsAddModalVisible(true)}
+                >
+                  <Plus size={20} color="white" />
+                  <Text style={styles.createButtonText}>Add Item</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
         )}
 
         {isLoading && (
@@ -523,7 +643,10 @@ export default function ListDetailScreen({ navigation, route }: any) {
               <Text style={[styles.modalButton, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              {editingItem ? t('lists.editItem') : t('lists.addItem')}
+              {list?.format === 'plain' 
+                ? (editingItem ? 'Edit Content' : 'Write Content')
+                : (editingItem ? t('lists.editItem') : t('lists.addItem'))
+              }
             </Text>
             <TouchableOpacity
               onPress={editingItem ? handleUpdateItem : handleAddItem}
@@ -536,7 +659,9 @@ export default function ListDetailScreen({ navigation, route }: any) {
 
           <View style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('lists.itemTitle')}</Text>
+                              <Text style={styles.inputLabel}>
+                  {list?.format === 'plain' ? 'Title' : t('lists.itemTitle')}
+                </Text>
               <TextInput
                 style={[styles.textInput, {
                   borderColor: colors.border,
@@ -552,7 +677,9 @@ export default function ListDetailScreen({ navigation, route }: any) {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>{t('lists.itemDescription')}</Text>
+                              <Text style={styles.inputLabel}>
+                  {list?.format === 'plain' ? 'Content' : t('lists.itemDescription')}
+                </Text>
               <TextInput
                 style={[styles.textArea, {
                   borderColor: colors.border,
@@ -691,9 +818,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: 2,
   },
   plainIndicator: {
-    width: 4,
-    height: 24,
-    borderRadius: 2,
+    width: 3,
+    height: 20,
+    borderRadius: 1.5,
+    marginTop: 2,
   },
   itemContent: {
     flex: 1,
@@ -706,6 +834,44 @@ const createStyles = (colors: any) => StyleSheet.create({
   itemDescription: {
     fontFamily: Fonts.text.regular,
     fontSize: 14,
+  },
+  plainTextTitle: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 18,
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  plainTextDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  plainTextContainer: {
+    flex: 1,
+    paddingVertical: 16,
+  },
+  plainTextContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 16,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignSelf: 'flex-start',
+  },
+  editButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: 'white',
   },
   itemActions: {
     flexDirection: 'row',

@@ -63,11 +63,11 @@ interface RepeatOptionsProps {
 // Premium feature limits
 const PREMIUM_LIMITS = {
   free: {
-    maxInterval: 365, // Temporarily increased for testing
-    maxOccurrences: 999, // Temporarily increased for testing
-    maxRepeatDays: 7, // Temporarily increased for testing
-    customIntervals: true, // Temporarily enabled for testing
-    advancedEndConditions: true // Temporarily enabled for testing
+    maxInterval: 30,
+    maxOccurrences: 50,
+    maxRepeatDays: 3,
+    customIntervals: false,
+    advancedEndConditions: false
   },
   ascend: {
     maxInterval: 30,
@@ -167,11 +167,10 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   const handleFrequencySelect = useCallback((frequency: string) => {
     const option = FREQUENCY_OPTIONS.find(opt => opt.id === frequency);
     
-    // Temporarily disable premium checks for testing
-    // if (option?.premium && !isPremiumUser) {
-    //   // Show premium upgrade prompt
-    //   return;
-    // }
+    if (option?.premium && !isPremiumUser) {
+      // Show premium upgrade prompt
+      return;
+    }
     
     setSelectedFrequency(frequency);
     onRepeatPatternChange(frequency);
@@ -197,11 +196,10 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   const handleEndConditionSelect = useCallback((condition: typeof endCondition) => {
     const option = END_CONDITIONS.find(opt => opt.id === condition);
     
-    // Temporarily disable premium checks for testing
-    // if (option?.premium && !isPremiumUser) {
-    //   // Show premium upgrade prompt
-    //   return;
-    // }
+    if (option?.premium && !isPremiumUser) {
+      // Show premium upgrade prompt
+      return;
+    }
     
     setEndCondition(condition);
     if (condition === 'never') {
@@ -314,8 +312,8 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
       <View style={styles.optionsGrid}>
         {FREQUENCY_OPTIONS.map((option) => {
           const isSelected = selectedFrequency === option.id;
-          // Temporarily disable premium restrictions for testing
-          const isDisabled = false; // option.premium && !isPremiumUser;
+          // Enable premium restrictions for free users
+          const isDisabled = option.premium && !isPremiumUser;
           
           return (
             <TouchableOpacity
@@ -445,8 +443,8 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
       <View style={styles.optionsGrid}>
         {END_CONDITIONS.map((option) => {
           const isSelected = endCondition === option.id;
-          // Temporarily disable premium restrictions for testing
-          const isDisabled = false; // option.premium && !isPremiumUser;
+          // Enable premium restrictions for free users
+          const isDisabled = option.premium && !isPremiumUser;
           
           return (
             <TouchableOpacity
@@ -473,13 +471,12 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
                 ]}>
                   {option.description}
                 </Text>
-                {/* Temporarily hide premium badges for testing */}
-                {/* {option.premium && !isPremiumUser && (
+                {option.premium && !isPremiumUser && (
                   <View style={styles.premiumBadge}>
                     <Crown size={12} color={colors.warning} />
                     <Text style={styles.premiumText}>Premium</Text>
                   </View>
-                )} */}
+                )}
               </View>
             </TouchableOpacity>
           );

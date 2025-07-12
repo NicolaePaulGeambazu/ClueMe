@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { Calendar, Clock, Repeat, Globe, Users, ChevronRight, Scissors } from 'lucide-react-native';
+import { Calendar, Clock, Repeat, Globe, Users, ChevronRight, Scissors, MapPin } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { QuickAddSelector } from './QuickAddSelector';
 import { getTimezoneDisplayName } from '../../../utils/timezoneUtils';
@@ -10,6 +10,8 @@ import BannerAdComponent from '../../ads/BannerAdComponent';
 interface QuickAddFormProps {
   title: string;
   setTitle: (title: string) => void;
+  location: string;
+  setLocation: (location: string) => void;
   selectedDate: string;
   selectedTime: string;
   customTimeValue: string;
@@ -38,6 +40,8 @@ interface QuickAddFormProps {
 export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   title,
   setTitle,
+  location,
+  setLocation,
   selectedDate,
   selectedTime,
   customTimeValue,
@@ -73,10 +77,20 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
 
   const getTimeLabel = () => {
     if (selectedTime === 'custom') {
-      return customTimeValue || 'Pick Time';
+      return customTimeValue || t('quickAdd.pickTime');
     }
     const timeOption = getTimeOptions().find(opt => opt.value === selectedTime);
     return timeOption?.time || timeOption?.label;
+  };
+
+  const getNotificationDisplayText = () => {
+    if (notificationTimings.length === 0) {
+      return t('quickAdd.noNotifications');
+    }
+    if (notificationTimings.length === 1) {
+      return t('quickAdd.singleNotification', { label: notificationTimings[0].label });
+    }
+    return t('quickAdd.notifications', { count: notificationTimings.length });
   };
 
   return (
@@ -129,6 +143,31 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
         />
       </View>
 
+      {/* Location Input - moved here for visibility */}
+      <View style={styles.section}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <MapPin size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}> 
+            {t('quickAdd.location')}
+          </Text>
+        </View>
+        <TextInput
+          testID="location-input"
+          style={[styles.titleInput, { 
+            borderColor: colors.borderLight,
+            color: colors.text,
+            backgroundColor: colors.surface,
+            marginTop: 4
+          }]}
+          placeholder={t('quickAdd.locationPlaceholder')}
+          placeholderTextColor={colors.textTertiary}
+          value={location}
+          onChangeText={setLocation}
+          multiline
+          maxLength={100}
+        />
+      </View>
+
       {/* Enhanced Recurring and Timezone Selectors */}
       <View style={styles.dateTimeContainer}>
         <QuickAddSelector
@@ -139,22 +178,13 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
           colors={colors}
           styles={styles}
         />
-        <QuickAddSelector
-          testID="timezone-selector"
-          icon={<Globe size={20} color={colors.textSecondary} />}
-          label={getTimezoneDisplayName(timezone)}
-          onPress={() => {
-            // Could open timezone picker here
-          }}
-          colors={colors}
-          styles={styles}
-        />
+        {/* Removed timezone selector */}
       </View>
 
       {/* Notification Timing */}
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          Notification Timing
+          {t('quickAdd.notificationTiming')}
         </Text>
         <TouchableOpacity
           testID="notification-timing-selector"
@@ -162,7 +192,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
           onPress={onNotificationPress}
         >
           <Text style={[styles.selectorText, { color: colors.text }]}>
-            🔔 {notificationTimings.length === 1 ? notificationTimings[0].label : `${notificationTimings.length} notifications`}
+            🔔 {getNotificationDisplayText()}
           </Text>
           <ChevronRight size={16} color={colors.textTertiary} />
         </TouchableOpacity>
@@ -179,46 +209,6 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
           styles={styles}
         />
       </View>
-
-      {/* Task Chunking - ADHD-friendly feature */}
-      {title.trim().length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-            {t('taskChunking.sectionTitle')}
-          </Text>
-          <TouchableOpacity
-            testID="break-down-task-button"
-            style={[
-              styles.selector,
-              { borderColor: colors.borderLight },
-              isChunked && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
-            ]}
-            onPress={onBreakDownTask}
-          >
-            <View style={styles.breakDownContent}>
-              <Scissors size={20} color={isChunked ? colors.primary : colors.textSecondary} />
-              <View style={styles.breakDownText}>
-                <Text style={[
-                  styles.selectorText,
-                  { color: isChunked ? colors.primary : colors.text }
-                ]}>
-                  {isChunked 
-                    ? t('taskChunking.editSubTasks', { count: subTasksCount })
-                    : t('taskChunking.breakDownTask')
-                  }
-                </Text>
-                {isChunked && (
-                  <Text style={[styles.breakDownSubtext, { color: colors.textSecondary }]}>
-                    {t('taskChunking.subTasksCreated')}
-                  </Text>
-                )}
-              </View>
-            </View>
-            <ChevronRight size={16} color={isChunked ? colors.primary : colors.textTertiary} />
-          </TouchableOpacity>
-        </View>
-      )}
-
       {/* Banner Ad - Bottom of Quick Add Modal (only for free users) */}
       {!isPremium && (
         <BannerAdComponent style={{ marginTop: 16, marginBottom: 16 }} />

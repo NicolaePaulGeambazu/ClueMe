@@ -87,6 +87,8 @@ export interface Reminder {
   subTasks?: SubTask[]; // Array of sub-tasks
   parentTaskId?: string; // ID of parent task (for sub-tasks)
   chunkedProgress?: number; // Progress percentage (0-100) for chunked tasks
+  // Co-ownership fields - multiple users can own and manage the same reminder
+  coOwners?: string[]; // Array of user IDs who can manage this reminder (creator + assigned users)
 }
 
 export interface TaskType {
@@ -353,7 +355,19 @@ export const initializeFirebase = async (): Promise<boolean> => {
 };
 
 // Helper function to get Firestore instance
+// Cache the Firestore instance to reduce repeated calls
+let cachedFirestoreInstance: any = null;
+let lastInstanceCheck = 0;
+const INSTANCE_CACHE_DURATION = 30 * 1000; // 30 seconds
+
 export const getFirestoreInstance = () => {
+  const now = Date.now();
+  
+  // Return cached instance if it's still valid
+  if (cachedFirestoreInstance && (now - lastInstanceCheck) < INSTANCE_CACHE_DURATION) {
+    return cachedFirestoreInstance;
+  }
+  
   try {
     console.log('Getting Firestore instance...');
     const firestoreInstance = firestore();
@@ -362,6 +376,11 @@ export const getFirestoreInstance = () => {
       throw new Error('Firestore not initialized');
     }
     console.log('Firestore instance obtained successfully');
+    
+    // Cache the instance
+    cachedFirestoreInstance = firestoreInstance;
+    lastInstanceCheck = now;
+    
     return firestoreInstance;
   } catch (error) {
     console.error('Error getting Firestore instance:', error);
@@ -528,10 +547,18 @@ export const reminderService = {
         recurringGroupId = reminderId; // Use the first reminder's ID as the group ID
       }
 
+      // Create co-owners array - include the creator and all assigned users
+      const coOwners = [reminderData.userId]; // Creator is always a co-owner
+      if (reminderData.assignedTo && reminderData.assignedTo.length > 0) {
+        // Add assigned users as co-owners (they can trigger notifications and manage the reminder)
+        coOwners.push(...reminderData.assignedTo.filter(userId => userId !== reminderData.userId));
+      }
+
       const newReminder: Reminder = {
         ...reminderData,
         id: reminderId,
         recurringGroupId,
+        coOwners: coOwners, // Add co-owners field
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -592,6 +619,7 @@ export const reminderService = {
           familyId: newReminder.familyId,
           type: newReminder.type,
           status: newReminder.status,
+          coOwners: newReminder.coOwners, // Include co-owners for notification scheduling
           createdAt: newReminder.createdAt instanceof Date ? newReminder.createdAt.toISOString() : newReminder.createdAt,
           updatedAt: newReminder.updatedAt instanceof Date ? newReminder.updatedAt.toISOString() : newReminder.updatedAt,
           notificationTimings: newReminder.notificationTimings?.map(timing => ({
@@ -600,6 +628,9 @@ export const reminderService = {
             label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`
           }))
         };
+        
+        // Schedule notifications for all co-owners (creator + assigned users)
+        // Each co-owner will receive notifications about the reminder
         await notificationService.scheduleReminderNotifications(notificationReminder);
 
         // Send assignment notifications if reminder is assigned to other users
@@ -1647,6 +1678,14 @@ export const reminderService = {
         } catch (notificationError) {
           // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
         }
+        
+        // Clean up assignment records and scheduled notifications for this reminder
+        try {
+          await this.cleanupReminderNotifications(reminderId);
+        } catch (cleanupError) {
+          console.error('Error cleaning up reminder notifications:', cleanupError);
+          // Don't throw here - the reminder was deleted successfully, just cleanup failed
+        }
       }
       
     } catch (error) {
@@ -1683,7 +1722,72 @@ export const reminderService = {
         // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
       }
       
+      // Clean up assignment records and scheduled notifications for this reminder
+      try {
+        await this.cleanupReminderNotifications(reminderId);
+      } catch (cleanupError) {
+        console.error('Error cleaning up reminder notifications:', cleanupError);
+        // Don't throw here - the reminder was deleted successfully, just cleanup failed
+      }
+      
     } catch (error) {
+      throw error;
+    }
+  },
+
+  // Clean up assignment records and scheduled notifications for a deleted reminder
+  async cleanupReminderNotifications(reminderId: string): Promise<void> {
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      
+      // 1. Delete task assignment records
+      const assignmentsQuery = await firestoreInstance
+        .collection('taskAssignments')
+        .where('reminderId', '==', reminderId)
+        .get();
+      
+      if (!assignmentsQuery.empty) {
+        const batch = firestoreInstance.batch();
+        assignmentsQuery.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        console.log(`[ReminderService] Cleaned up ${assignmentsQuery.docs.length} task assignment records for reminder ${reminderId}`);
+      }
+      
+      // 2. Delete scheduled notifications
+      const scheduledQuery = await firestoreInstance
+        .collection('scheduledNotifications')
+        .where('reminderId', '==', reminderId)
+        .get();
+      
+      if (!scheduledQuery.empty) {
+        const batch = firestoreInstance.batch();
+        scheduledQuery.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        console.log(`[ReminderService] Cleaned up ${scheduledQuery.docs.length} scheduled notifications for reminder ${reminderId}`);
+      }
+      
+      // 3. Delete pending FCM notifications
+      const fcmQuery = await firestoreInstance
+        .collection('fcmNotifications')
+        .where('data.reminderId', '==', reminderId)
+        .where('status', '==', 'pending')
+        .get();
+      
+      if (!fcmQuery.empty) {
+        const batch = firestoreInstance.batch();
+        fcmQuery.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        await batch.commit();
+        console.log(`[ReminderService] Cleaned up ${fcmQuery.docs.length} pending FCM notifications for reminder ${reminderId}`);
+      }
+      
+    } catch (error) {
+      console.error(`[ReminderService] Error cleaning up notifications for reminder ${reminderId}:`, error);
       throw error;
     }
   },
@@ -3743,34 +3847,56 @@ export async function addFamilyNotification(notification: {
 
 // Cache for valid family members to reduce Firestore calls
 const validFamilyMembersCache = new Map<string, { members: FamilyMember[]; timestamp: number }>();
-const VALID_MEMBERS_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+const VALID_MEMBERS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes (increased from 2 minutes)
 
 // Get only valid family members (whose userId exists in users collection)
 export async function getValidFamilyMembers(familyId: string) {
   // Check cache first
   const cached = validFamilyMembersCache.get(familyId);
   if (cached && Date.now() - cached.timestamp < VALID_MEMBERS_CACHE_DURATION) {
+    console.log(`[getValidFamilyMembers] Returning cached members for family ${familyId}`);
     return cached.members;
   }
 
+  console.log(`[getValidFamilyMembers] Fetching members for family ${familyId}`);
   const firestoreInstance = getFirestoreInstance();
-  const membersSnapshot = await firestoreInstance
-    .collection('familyMembers')
-    .where('familyId', '==', familyId)
-    .get();
-  const members = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyMember));
   
-  // For now, return all members without individual user validation to reduce Firestore calls
-  // The assignment validation in notificationService will handle invalid users
-  const validMembers = members.filter(member => member.userId);
-  
-  // Cache the result
-  validFamilyMembersCache.set(familyId, {
-    members: validMembers,
-    timestamp: Date.now()
-  });
-  
-  return validMembers;
+  try {
+    const membersSnapshot = await firestoreInstance
+      .collection('familyMembers')
+      .where('familyId', '==', familyId)
+      .get();
+    
+    const members = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyMember));
+    
+    // Filter out members without userId and cache the result
+    const validMembers = members.filter(member => member.userId && member.userId.trim() !== '');
+    
+    console.log(`[getValidFamilyMembers] Found ${validMembers.length} valid members out of ${members.length} total for family ${familyId}`);
+    
+    // Cache the result
+    validFamilyMembersCache.set(familyId, {
+      members: validMembers,
+      timestamp: Date.now()
+    });
+    
+    return validMembers;
+  } catch (error) {
+    console.error(`[getValidFamilyMembers] Error fetching family members for ${familyId}:`, error);
+    // Return empty array on error to prevent app crashes
+    return [];
+  }
+}
+
+// Function to clear family members cache (useful for testing or when family data changes)
+export function clearFamilyMembersCache(familyId?: string) {
+  if (familyId) {
+    validFamilyMembersCache.delete(familyId);
+    console.log(`[clearFamilyMembersCache] Cleared cache for family ${familyId}`);
+  } else {
+    validFamilyMembersCache.clear();
+    console.log(`[clearFamilyMembersCache] Cleared all family members cache`);
+  }
 }
 
 export default firebaseService;

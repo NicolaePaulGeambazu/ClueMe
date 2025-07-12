@@ -417,7 +417,7 @@ export const RepeatModal: React.FC<RepeatModalProps> = ({ visible, onClose, onCo
             <Text style={styles.textBase}>{t('repeat.setAsRepeat')}</Text>
             <Switch
               value={repeat.enabled}
-              onValueChange={v => setRepeat({ ...repeat, enabled: v })}
+              onValueChange={(v: boolean) => setRepeat({ ...repeat, enabled: v })}
             />
           </View>
 

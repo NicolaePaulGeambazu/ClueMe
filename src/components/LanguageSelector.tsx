@@ -163,7 +163,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginVertical: 8,
-    borderWidth: 1,
+    shadowColor: '#000000',
   },
   selectorContent: {
     flexDirection: 'row',

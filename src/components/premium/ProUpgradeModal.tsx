@@ -87,20 +87,9 @@ export default function ProUpgradeModal({
   }, [visible]);
 
   const handleUpgrade = () => {
-    // TEMPORARY: For testing, unlock all features without payment
-    Alert.alert(
-      '🎉 Pro Features Unlocked!',
-      'For testing purposes, all Pro features are now unlocked. In production, this would trigger the payment flow.',
-      [
-        {
-          text: 'Continue',
-          onPress: () => {
-            onUpgrade();
-            onClose();
-          },
-        },
-      ]
-    );
+    // Trigger the real upgrade flow
+    onUpgrade();
+    onClose();
   };
 
   const handleMaybeLater = () => {

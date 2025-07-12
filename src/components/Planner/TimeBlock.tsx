@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, Star, CheckCircle, AlertCircle, User, Repeat } from 'lucide-react-native';
+import { Clock, Star, CheckCircle, AlertCircle, User, Repeat, MapPin } from 'lucide-react-native';
 import { Fonts } from '../../constants/Fonts';
 import { formatTimeOnly } from '../../utils/dateUtils';
 
@@ -127,6 +127,13 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
             </View>
           )}
 
+          {reminder.location && (
+            <View style={styles.locationMeta}>
+              <MapPin size={12} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={styles.locationText}>{reminder.location}</Text>
+            </View>
+          )}
+
           {reminder.isRecurring && (
             <View style={styles.recurringMeta}>
               <Repeat size={12} color={colors.primary} strokeWidth={2} />
@@ -234,6 +241,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
   },
   timeText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
+  locationMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textSecondary,

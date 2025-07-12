@@ -19,11 +19,12 @@ export const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '90%',
-    minHeight: '60%',
+    maxHeight: '85%',
+    minHeight: '50%',
   },
   keyboardAvoidingContainer: {
     flex: 1,
+    justifyContent: 'flex-end',
   },
   keyboardView: {
     flex: 1,
@@ -74,9 +75,11 @@ export const createStyles = (colors: any) => StyleSheet.create({
   dateTimeContainer: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 24,
   },
   selectorContainer: {
     flex: 1,
+    minWidth: 0, // Ensures flex items can shrink below their content size
   },
   selector: {
     flexDirection: 'row',

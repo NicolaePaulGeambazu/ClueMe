@@ -20,7 +20,6 @@ import { useFamily } from '../contexts/FamilyContext';
 import { usePremium } from '../hooks/usePremium';
 import { useModal } from '../contexts/ModalContext';
 import { useSettings } from '../contexts/SettingsContext';
-import { useFocusModeEffects } from '../hooks/useFocusModeEffects';
 import PremiumUpgradeModal from '../components/premium/PremiumUpgradeModal';
 import { Colors } from '../constants/Colors';
 import { Fonts, FontSizes } from '../constants/Fonts';
@@ -37,17 +36,13 @@ import {
   TrendingUp,
   Trash2,
   Edit,
+  MapPin,
 } from 'lucide-react-native';
 import { GridIcon } from '../components/common/GridIcon';
-import { FocusModeToggle } from '../components/common/FocusModeToggle';
-import { FocusModeBanner } from '../components/common/FocusModeBanner';
 import { filterReminders, getRecurringPatternDescription } from '../utils/reminderUtils';
 import { formatDate, formatTimeOnly, getTodayISO } from '../utils/dateUtils';
 import { format as formatDateFns } from 'date-fns';
-import { NotificationDebug } from '../components/NotificationDebug';
-import BannerAdComponent from '../components/ads/BannerAdComponent';
-import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
-import { PanGestureHandler, State, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import DeleteConfirmationModal from '../components/common/DeleteConfirmationModal';
 import { isRecurringReminder } from '../utils/reminderUtils';
 
@@ -93,7 +88,6 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const [selectedReminderId, setSelectedReminderId] = useState('');
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const { isPremium, hasFeature } = usePremium();
-  const focusEffects = useFocusModeEffects();
   
   // FAB drag state
   const fabTranslateX = useRef(new Animated.Value(0)).current;
@@ -539,7 +533,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             ]}
             onPress={handlePress}
           >
-            {/* Left: Title */}
+            {/* Left: Title and Location */}
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text
                 style={{
@@ -555,6 +549,19 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               >
                 {reminder.title}
               </Text>
+              {reminder.location && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
+                  <MapPin size={12} color={colors.textTertiary} strokeWidth={2} />
+                  <Text style={{
+                    fontSize: FontSizes.caption1,
+                    fontFamily: Fonts.text.regular,
+                    color: colors.textTertiary,
+                    flexShrink: 1,
+                  }} numberOfLines={1}>
+                    {reminder.location}
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Center: Recurring icon/label */}
@@ -652,7 +659,6 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       {/* Focus Mode Banner */}
-      <FocusModeBanner />
       
       {/* Enhanced Hero Header with White Background */}
       <View style={[styles.heroContainer, { backgroundColor: '#FFFFFF' }]}>
@@ -669,11 +675,6 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             </Text>
           </View>
           
-          <FocusModeToggle
-            size="small"
-            variant="icon"
-            showLabel={false}
-          />
         </View>
       </View>
 
@@ -681,7 +682,6 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
         style={[
           styles.content, 
           { backgroundColor: colors.background },
-          focusEffects.focusModeStyles
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -760,7 +760,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             <EmptyState />
           ) : (
             <View style={styles.remindersList}>
-              {focusEffects.getFilteredReminders(todayReminders).map((reminder, index) => (
+                {todayReminders.map((reminder, index) => (
                 <SwipeableHomeReminder
                   key={reminder.id}
                   reminder={reminder}
@@ -774,36 +774,9 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
           )}
         </View>
 
-        {/* Banner Ad - Bottom of Home Screen (only for free users) */}
-        {!isPremium && focusEffects.showAds && (
-          <BannerAdComponent style={{ marginTop: 20, marginBottom: 20 }} />
-        )}
-
         {/* Interstitial Ad Trigger - Show after user completes 3 actions */}
-        {focusEffects.showAds && (
-          <InterstitialAdTrigger
-            triggerOnAction={true}
-            actionCompleted={stats.total >= 3}
-            onAdShown={() => {/* Ad shown */}}
-            onAdFailed={() => {/* Ad failed */}}
-          />
-        )}
-      </ScrollView>
 
-      {/* Notification Debug Modal */}
-      {showNotificationDebug && (
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-            <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>Notification Debug</Text>
-              <TouchableOpacity onPress={() => setShowNotificationDebug(false)}>
-                <Text style={[styles.modalClose, { color: colors.primary }]}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <NotificationDebug />
-          </View>
-        </View>
-      )}
+      </ScrollView>
 
       {/* Enhanced Floating Action Button */}
       <View style={[

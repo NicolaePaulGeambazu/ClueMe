@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Check } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 interface DateOption {
   value: string;
@@ -58,6 +59,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
   styles,
 }) => {
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -68,7 +70,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
           paddingBottom: insets.bottom + 16 
         }]}> 
           <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>When should this happen?</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.whenShouldThisHappen')}</Text>
           </View>
           {dateOptions.map(opt => (
             <TouchableOpacity 
@@ -86,7 +88,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
             </TouchableOpacity>
           ))}
           <TouchableOpacity testID="date-sheet-cancel" style={styles.sheetCancel} onPress={onCloseDateSheet}>
-            <Text style={[styles.sheetCancelText, { color: colors.error }]}>Cancel</Text>
+            <Text style={[styles.sheetCancelText, { color: colors.error }]}>{t('quickAdd.cancel')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -98,7 +100,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
           paddingBottom: insets.bottom + 16 
         }]}> 
           <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>When should this happen?</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.whenShouldThisHappen')}</Text>
           </View>
           {timeOptions.map(opt => (
             <TouchableOpacity 
@@ -117,7 +119,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
             </TouchableOpacity>
           ))}
           <TouchableOpacity testID="time-sheet-cancel" style={styles.sheetCancel} onPress={onCloseTimeSheet}>
-            <Text style={[styles.sheetCancelText, { color: colors.error }]}>Cancel</Text>
+            <Text style={[styles.sheetCancelText, { color: colors.error }]}>{t('quickAdd.cancel')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -129,7 +131,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
           paddingBottom: insets.bottom + 16 
         }]}> 
           <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>Assign to family members</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.assignToFamilyMembers')}</Text>
           </View>
           {members.map((member) => (
             <TouchableOpacity 
@@ -141,7 +143,7 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
               <View style={styles.sheetOptionContent}>
                 <Text style={[styles.sheetOptionText, { color: colors.text }]}>{member.name}</Text>
                 <Text style={[styles.sheetOptionDescription, { color: colors.textSecondary }]}>
-                  {assignedTo.includes(member.userId) ? 'Assigned' : 'Not assigned'}
+                  {assignedTo.includes(member.userId) ? t('quickAdd.assigned') : t('quickAdd.notAssigned')}
                 </Text>
               </View>
               {assignedTo.includes(member.userId) && (

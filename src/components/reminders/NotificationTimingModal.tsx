@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -88,14 +88,31 @@ export default function NotificationTimingModal({
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
-  const handleSelect = (option: NotificationTimingOption) => {
-    // For now, select single option. Could be extended to multiple
-    onSelect([option]);
-    onClose();
+  // Local state for multi-selection
+  const [selectedTimings, setSelectedTimings] = useState<NotificationTimingOption[]>([]);
+
+  useEffect(() => {
+    setSelectedTimings(currentTimings);
+  }, [currentTimings, visible]);
+
+  const toggleSelect = (option: NotificationTimingOption) => {
+    setSelectedTimings((prev) => {
+      const exists = prev.some(t => t.value === option.value);
+      if (exists) {
+        return prev.filter(t => t.value !== option.value);
+      } else {
+        return [...prev, option];
+      }
+    });
   };
 
   const isSelected = (option: NotificationTimingOption) => {
-    return currentTimings.some(timing => timing.value === option.value);
+    return selectedTimings.some(timing => timing.value === option.value);
+  };
+
+  const handleDone = () => {
+    onSelect(selectedTimings);
+    onClose();
   };
 
   return (
@@ -112,18 +129,13 @@ export default function NotificationTimingModal({
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <X size={24} color={colors.textSecondary} />
             </TouchableOpacity>
-            <Text style={[styles.title, { color: colors.text }]}>
-              Notification Timing
-            </Text>
+            <Text style={[styles.title, { color: colors.text }]}>Notification Timing</Text>
             <View style={styles.headerSpacer} />
           </View>
 
           {/* Content */}
           <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Choose when you'd like to be notified
-            </Text>
-            
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Choose when you'd like to be notified</Text>
             {notificationOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
@@ -134,15 +146,11 @@ export default function NotificationTimingModal({
                     backgroundColor: isSelected(option) ? colors.primary + '10' : colors.surface
                   }
                 ]}
-                onPress={() => handleSelect(option)}
+                onPress={() => toggleSelect(option)}
               >
                 <View style={styles.optionContent}>
-                  <Text style={[styles.optionLabel, { color: colors.text }]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.optionDescription, { color: colors.textSecondary }]}>
-                    {option.description}
-                  </Text>
+                  <Text style={[styles.optionLabel, { color: colors.text }]}>{option.label}</Text>
+                  <Text style={[styles.optionDescription, { color: colors.textSecondary }]}>{option.description}</Text>
                 </View>
                 {isSelected(option) && (
                   <Check size={20} color={colors.primary} strokeWidth={2} />
@@ -157,9 +165,14 @@ export default function NotificationTimingModal({
               style={[styles.cancelButton, { borderColor: colors.borderLight }]}
               onPress={onClose}
             >
-              <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>
-                Cancel
-              </Text>
+              <Text style={[styles.cancelButtonText, { color: colors.textSecondary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.doneButton, { backgroundColor: colors.primary }]}
+              onPress={handleDone}
+              disabled={selectedTimings.length === 0}
+            >
+              <Text style={[styles.doneButtonText, { color: colors.text }]}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -240,19 +253,37 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: Fonts.text?.regular,
   },
   footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 24,
-    paddingVertical: 20,
+    paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },
   cancelButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
+    flex: 1,
+    marginRight: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButtonText: {
-    fontSize: 16,
     fontFamily: Fonts.text?.medium,
+    fontSize: 16,
+  },
+  doneButton: {
+    flex: 1,
+    marginLeft: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  doneButtonText: {
+    fontFamily: Fonts.text?.bold,
+    fontSize: 16,
   },
 }); 

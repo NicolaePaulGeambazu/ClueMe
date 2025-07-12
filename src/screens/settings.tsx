@@ -16,8 +16,7 @@ import {
   Edit,
   Save,
   X,
-  Settings as SettingsIcon,
-  User as UserIcon,
+
   Crown,
   Star,
   Zap,
@@ -40,26 +39,64 @@ import { LanguageSelector } from '../components/LanguageSelector';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
 import PrivacySettings from '../components/PrivacySettings';
 import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
-import { usePremium } from '../hooks/usePremium';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import { useUserUsage } from '../hooks/useUserUsage';
 import FullScreenPaywall from '../components/premium/FullScreenPaywall';
+import SubscriptionManagementModal from '../components/premium/SubscriptionManagementModal';
 import { useSettings } from '../contexts/SettingsContext';
 import notificationService from '../services/notificationService';
-import { getFirestoreInstance } from '../services/firebaseService';
-import auth from '@react-native-firebase/auth';
+import { useReminderContext } from '../contexts/ReminderContext';
 
 
 const { width } = Dimensions.get('window');
 
-// Mock subscription status - replace with actual subscription service
+// Use centralized premium status manager and user usage tracking
 const useSubscription = () => {
+  const premium = usePremiumStatus();
+  const userUsage = useUserUsage();
+  
+  // Get subscription details based on premium status and usage
+  const getSubscriptionDetails = () => {
+    if (premium.isPremium) {
+      return {
+        remainingReminders: 999, // Unlimited for premium
+        maxReminders: 999,
+        remainingLists: 999, // Unlimited for premium
+        maxLists: 999,
+        remainingFamilyMembers: 5,
+        maxFamilyMembers: 5,
+        daysUntilRenewal: 0,
+      };
+    } else {
+      // Use actual usage data for free users
+      const stats = userUsage.usageStats;
+      return {
+        remainingReminders: stats?.reminders.remaining || 5,
+        maxReminders: stats?.reminders.limit || 5,
+        remainingLists: stats?.lists.remaining || 2,
+        maxLists: stats?.lists.limit || 2,
+        remainingFamilyMembers: 1,
+        maxFamilyMembers: 2,
+        daysUntilRenewal: 0,
+      };
+    }
+  };
+
+  const subscriptionDetails = getSubscriptionDetails();
+
   return {
-    isPro: false,
-    plan: 'free',
-    remainingReminders: 35,
-    maxReminders: 50,
-    remainingFamilyMembers: 1,
-    maxFamilyMembers: 3,
-    daysUntilRenewal: 0,
+    isPro: premium.isPro,
+    isPremium: premium.isPremium,
+    plan: premium.currentTier,
+    ...subscriptionDetails,
+    subscriptionStatus: {
+      tier: premium.currentTier,
+      name: premium.status.name,
+      description: premium.status.description,
+      isActive: premium.isActive,
+    },
+    usageStats: userUsage.usageStats,
+    nextResetDate: userUsage.usageStats?.nextResetDate,
   };
 };
 
@@ -87,7 +124,7 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   section: {
-    marginTop: 32,
+    marginTop: 16,
   },
   sectionTitle: {
     fontFamily: Fonts.display.semibold,
@@ -97,48 +134,50 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     paddingHorizontal: 4,
   },
   profileSection: {
-    marginTop: 24,
-    marginBottom: 24,
+    marginTop: 12,
+    marginBottom: 12,
   },
   profileCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 12,
+    padding: 12,
     marginHorizontal: 24,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   avatarContainer: {
     position: 'relative',
   },
   avatarPlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
   editAvatarButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    padding: 4,
+    top: 6,
+    right: 6,
+    padding: 2,
     borderWidth: 1,
     borderColor: colors.primary,
-    borderRadius: 8,
+    borderRadius: 6,
     backgroundColor: colors.background,
   },
   profileInfo: {
     flex: 1,
+    marginRight: 12,
   },
   nameRow: {
     flexDirection: 'row',
@@ -167,18 +206,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   email: {
     fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.subheadline,
+    fontSize: FontSizes.caption1,
     color: colors.textSecondary,
-    marginBottom: 8,
   },
   anonymousBadge: {
     backgroundColor: colors.warning + '15',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: colors.warning + '30',
-    alignSelf: 'flex-start',
   },
   anonymousText: {
     fontFamily: Fonts.text.medium,
@@ -223,20 +260,54 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: FontSizes.footnote,
     color: colors.textSecondary,
   },
+  inlineUpgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+    marginLeft: 'auto',
+  },
+  inlineUpgradeText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.caption1,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  signInButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+    marginLeft: 'auto',
+  },
+  signInText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.caption1,
+    color: colors.primary,
+    marginLeft: 4,
+  },
   usageSection: {
-    marginTop: 16,
+    marginTop: 12,
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
   },
   usageTitle: {
     fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.subheadline,
+    fontSize: FontSizes.body,
     color: colors.text,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   usageItem: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   usageHeader: {
     flexDirection: 'row',
@@ -246,24 +317,47 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   },
   usageLabel: {
     fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
+    fontSize: FontSizes.caption1,
     color: colors.textSecondary,
   },
   usageCount: {
     fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
+    fontSize: FontSizes.caption1,
     color: colors.text,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: 4,
+    height: 12,
+    backgroundColor: colors.border + '40',
+    borderRadius: 6,
     overflow: 'hidden',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 4,
+    borderRadius: 6,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+    position: 'relative',
+  },
+  progressHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 6,
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   usageWarning: {
     fontFamily: Fonts.text.regular,
@@ -312,8 +406,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    padding: 12,
+    marginBottom: 6,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -326,38 +420,38 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     flex: 1,
   },
   settingIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   settingContent: {
     flex: 1,
   },
   settingLabel: {
     fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
+    fontSize: FontSizes.subheadline,
     color: colors.text,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   settingDescription: {
     fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.footnote,
+    fontSize: FontSizes.caption1,
     color: colors.textSecondary,
   },
   footer: {
-    marginTop: 40,
+    marginTop: 24,
     paddingHorizontal: 4,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   footerText: {
     fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
+    fontSize: FontSizes.subheadline,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   footerSubtext: {
     fontFamily: Fonts.text.regular,
@@ -365,237 +459,8 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
   },
-  tabContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginHorizontal: 4,
-  },
-  tabLabel: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.footnote,
-    marginLeft: 6,
-  },
-  tabContent: {
-    flex: 1,
-    padding: 24,
-  },
-  planCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  planHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  planIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  planInfo: {
-    flex: 1,
-  },
-  planName: {
-    fontFamily: Fonts.display.semibold,
-    fontSize: FontSizes.title3,
-    color: colors.text,
-    marginBottom: 4,
-  },
-  planDescription: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    color: colors.textSecondary,
-  },
-  upgradeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  upgradeButtonText: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
-    color: 'white',
-    marginLeft: 8,
-  },
-  featureCategory: {
-    marginBottom: 24,
-  },
-  featureCategoryTitle: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.subheadline,
-    color: colors.text,
-    marginBottom: 12,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
-  },
-  lockedFeature: {
-    opacity: 0.7,
-  },
-  featureLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  featureIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  featureContent: {
-    flex: 1,
-  },
-  featureLabel: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
-    color: colors.text,
-    marginBottom: 2,
-  },
-  featureDescription: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.footnote,
-    color: colors.textSecondary,
-  },
-  limitComparison: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-  },
-  limitRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  limitRowLast: {
-    borderBottomWidth: 0,
-  },
-  limitLabel: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  limitValues: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  limitFree: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    color: colors.textTertiary,
-  },
-  limitSeparator: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    color: colors.textTertiary,
-    marginHorizontal: 8,
-  },
-  limitPro: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
-    color: colors.primary,
-  },
-  pricingSection: {
-    marginTop: 32,
-    marginBottom: 24,
-  },
-  pricingTitle: {
-    fontFamily: Fonts.display.semibold,
-    fontSize: FontSizes.title3,
-    color: colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  pricingCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  pricingCardPopular: {
-    borderColor: colors.primary,
-    position: 'relative',
-  },
-  popularBadge: {
-    position: 'absolute',
-    top: -12,
-    right: 20,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  popularText: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.caption2,
-    color: 'white',
-  },
-  pricingHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  pricingPlan: {
-    fontFamily: Fonts.text.semibold,
-    fontSize: FontSizes.body,
-    color: colors.text,
-    marginRight: 12,
-  },
-  pricingAmount: {
-    fontFamily: Fonts.display.bold,
-    fontSize: FontSizes.title2,
-    color: colors.text,
-  },
-  pricingPeriod: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    color: colors.textSecondary,
-    marginLeft: 4,
-  },
-  pricingSavings: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.footnote,
-    color: colors.success,
-    marginTop: 8,
-  },
+
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -690,6 +555,10 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: FontSizes.body,
     color: 'white',
     marginLeft: 8,
+  },
+  bannerContainer: {
+    marginTop: 16,
+    marginBottom: 8,
   },
   disabledButton: {
     backgroundColor: colors.border,
@@ -820,6 +689,102 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: FontSizes.body,
     color: colors.text,
   },
+  subscriptionCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  subscriptionContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  subscriptionTitle: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  subscriptionDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
+    color: colors.textSecondary,
+  },
+  manageSubscriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primary + '10',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  manageSubscriptionText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.caption1,
+    color: colors.primary,
+  },
+  premiumBenefitsCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  premiumBenefitsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  premiumBenefitsContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  premiumBenefitsTitle: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.body,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  premiumBenefitsDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
+    color: colors.textSecondary,
+  },
+  premiumFeaturesList: {
+    gap: 8,
+  },
+  premiumFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  premiumFeatureText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.footnote,
+    color: colors.text,
+  },
+  resetInfo: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: colors.surface + '50',
+    borderRadius: 8,
+  },
+  resetText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: FontSizes.caption2,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
 
 });
 
@@ -834,7 +799,7 @@ export default function SettingsScreen({ navigation }: any) {
     error: notificationError,
   } = useNotifications();
   const subscription = useSubscription();
-  const { isPremium } = usePremium();
+  const premium = usePremiumStatus();
   const { fabPosition, setFabPosition } = useSettings();
   const colors = Colors[theme];
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -845,8 +810,7 @@ export default function SettingsScreen({ navigation }: any) {
     type: 'info' as 'info' | 'help' | 'privacy' | 'warning',
   });
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'account' | 'general' | 'premium'>('account');
+
 
   // Name editing state
   const [showNameEditModal, setShowNameEditModal] = useState(false);
@@ -859,7 +823,11 @@ export default function SettingsScreen({ navigation }: any) {
   // Privacy settings modal state
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
 
+  // Subscription management modal state
+  const [showSubscriptionManagement, setShowSubscriptionManagement] = useState(false);
+
   const styles = React.useMemo(() => createStyles(colors), [colors]);
+  const { clearReminders } = useReminderContext();
 
   // Update newDisplayName when user changes
   useEffect(() => {
@@ -891,6 +859,7 @@ export default function SettingsScreen({ navigation }: any) {
           onPress: async () => {
             try {
               await signOut();
+              clearReminders(); // Clear reminders after sign out
             } catch (error) {
               Alert.alert(t('common.error'), t('settings.signOutError'));
             }
@@ -965,14 +934,14 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatarPlaceholder}>
-              <User size={32} color="#FFFFFF" strokeWidth={2} />
+              <User size={24} color="#FFFFFF" strokeWidth={2} />
             </View>
             {!isAnonymous && (
               <TouchableOpacity
                 style={styles.editAvatarButton}
                 onPress={handleEditName}
               >
-                <Edit size={14} color={colors.primary} strokeWidth={2} />
+                <Edit size={12} color={colors.primary} strokeWidth={2} />
               </TouchableOpacity>
             )}
           </View>
@@ -982,9 +951,9 @@ export default function SettingsScreen({ navigation }: any) {
               <Text style={styles.displayName}>
                 {user?.displayName || t('settings.welcomeUser')}
               </Text>
-              {subscription.isPro && (
+              {premium.isPremium && (
                 <View style={styles.proBadge}>
-                  <Crown size={12} color="#FFD700" strokeWidth={2} />
+                  <Crown size={10} color="#FFD700" strokeWidth={2} />
                   <Text style={styles.proBadgeText}>PRO</Text>
                 </View>
               )}
@@ -992,130 +961,160 @@ export default function SettingsScreen({ navigation }: any) {
             <Text style={styles.email}>
               {user?.email || t('settings.userEmail')}
             </Text>
-
-            {isAnonymous && (
-              <View style={styles.anonymousBadge}>
-                <Text style={styles.anonymousText}>{t('settings.anonymousUser')}</Text>
-              </View>
-            )}
           </View>
-        </View>
 
-        {/* Subscription Status */}
-        {!subscription.isPro && (
-          <TouchableOpacity style={styles.upgradeCard} onPress={() => setShowUpgradeModal(true)}>
-            <View style={styles.upgradeContent}>
-              <View style={styles.upgradeIcon}>
-                <Sparkles size={24} color={colors.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.upgradeText}>
-                <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
-                <Text style={styles.upgradeSubtitle}>Unlock all features and remove limits</Text>
-              </View>
+          {/* Inline upgrade button for signed-in non-pro users */}
+          {!premium.isPremium && !isAnonymous && (
+            <TouchableOpacity style={styles.inlineUpgradeButton} onPress={() => setShowUpgradeModal(true)}>
+              <Sparkles size={16} color={colors.primary} strokeWidth={2} />
+              <Text style={styles.inlineUpgradeText}>Upgrade</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Anonymous badge positioned at the end */}
+          {isAnonymous && (
+            <View style={styles.anonymousBadge}>
+              <Text style={styles.anonymousText}>{t('settings.anonymousUser')}</Text>
             </View>
-            <ChevronRight size={20} color={colors.primary} strokeWidth={2} />
-          </TouchableOpacity>
-        )}
+          )}
+
+
+        </View>
       </View>
     </View>
   );
 
-  const renderAccountTab = () => (
-    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+  const renderSettingsContent = () => (
+    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
       {/* Account Information */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.accountInfo')}</Text>
-
-        <View style={styles.infoItem}>
-          <View style={styles.infoIcon}>
-            <Mail size={20} color={colors.primary} strokeWidth={2} />
-          </View>
-          <View style={styles.infoContent}>
-            <Text style={styles.infoLabel}>{t('settings.email')}</Text>
-            <Text style={styles.infoValue}>
-              {user?.email || t('settings.notAvailable')}
-            </Text>
-          </View>
-        </View>
-
-        {/* Usage Stats */}
-        <View style={styles.usageSection}>
-          <Text style={styles.usageTitle}>Current Usage</Text>
-          
-          <View style={styles.usageItem}>
-            <View style={styles.usageHeader}>
-              <Text style={styles.usageLabel}>Monthly Reminders</Text>
-              <Text style={styles.usageCount}>
-                {subscription.remainingReminders}/{subscription.maxReminders}
-              </Text>
+      {!premium.isPremium && !isAnonymous && (
+        <View style={styles.section}>
+          {/* Usage Stats - Only show for signed-in free users */}
+          <View style={styles.usageSection}>
+            <Text style={styles.usageTitle}>Current Usage</Text>
+            
+            <View style={styles.usageItem}>
+              <View style={styles.usageHeader}>
+                <Text style={styles.usageLabel}>Monthly Reminders</Text>
+                <Text style={styles.usageCount}>
+                  {subscription.remainingReminders}/{subscription.maxReminders}
+                </Text>
+              </View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${((subscription.maxReminders - subscription.remainingReminders) / subscription.maxReminders) * 100}%`,
+                      backgroundColor: subscription.remainingReminders < 2 ? colors.warning : colors.primary
+                    }
+                  ]}
+                >
+                  {/* Glossy highlight overlay */}
+                  <View style={styles.progressHighlight} />
+                </View>
+              </View>
+              {subscription.remainingReminders < 2 && (
+                <Text style={styles.usageWarning}>
+                  Only {subscription.remainingReminders} reminders left this month
+                </Text>
+              )}
             </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${((subscription.maxReminders - subscription.remainingReminders) / subscription.maxReminders) * 100}%`,
-                    backgroundColor: subscription.remainingReminders < 10 ? colors.warning : colors.primary
-                  }
-                ]}
-              />
+
+            <View style={styles.usageItem}>
+              <View style={styles.usageHeader}>
+                <Text style={styles.usageLabel}>Lists</Text>
+                <Text style={styles.usageCount}>
+                  {subscription.remainingLists}/{subscription.maxLists}
+                </Text>
+              </View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${((subscription.maxLists - subscription.remainingLists) / subscription.maxLists) * 100}%`,
+                      backgroundColor: subscription.remainingLists < 1 ? colors.warning : colors.primary
+                    }
+                  ]}
+                >
+                  {/* Glossy highlight overlay */}
+                  <View style={styles.progressHighlight} />
+                </View>
+              </View>
+              {subscription.remainingLists < 1 && (
+                <Text style={styles.usageWarning}>
+                  No lists remaining. Upgrade to Pro for unlimited lists.
+                </Text>
+              )}
             </View>
-            {!subscription.isPro && subscription.remainingReminders < 10 && (
-              <Text style={styles.usageWarning}>
-                Only {subscription.remainingReminders} reminders left this month
-              </Text>
+
+            <View style={styles.usageItem}>
+              <View style={styles.usageHeader}>
+                <Text style={styles.usageLabel}>Family Members</Text>
+                <Text style={styles.usageCount}>
+                  {subscription.maxFamilyMembers - subscription.remainingFamilyMembers}/{subscription.maxFamilyMembers}
+                </Text>
+              </View>
+              <View style={styles.progressBar}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${((subscription.maxFamilyMembers - subscription.remainingFamilyMembers) / subscription.maxFamilyMembers) * 100}%`,
+                      backgroundColor: colors.primary
+                    }
+                  ]}
+                >
+                  {/* Glossy highlight overlay */}
+                  <View style={styles.progressHighlight} />
+                </View>
+              </View>
+            </View>
+
+            {/* Next reset date */}
+            {subscription.nextResetDate && (
+              <View style={styles.resetInfo}>
+                <Text style={styles.resetText}>
+                  Limits reset on {subscription.nextResetDate.toLocaleDateString()}
+                </Text>
+              </View>
             )}
           </View>
-
-          <View style={styles.usageItem}>
-            <View style={styles.usageHeader}>
-              <Text style={styles.usageLabel}>Family Members</Text>
-              <Text style={styles.usageCount}>
-                {subscription.maxFamilyMembers - subscription.remainingFamilyMembers}/{subscription.maxFamilyMembers}
-              </Text>
-            </View>
-            <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${((subscription.maxFamilyMembers - subscription.remainingFamilyMembers) / subscription.maxFamilyMembers) * 100}%`
-                  }
-                ]}
-              />
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Account Actions */}
-      {!isAnonymous && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
-
-          <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
-            <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
-                <LogOut size={20} color={colors.error} strokeWidth={2} />
-              </View>
-              <View style={styles.settingContent}>
-                <Text style={[styles.settingLabel, { color: colors.error }]}>{t('settings.signOut')}</Text>
-                <Text style={styles.settingDescription}>{t('settings.signOutDescription')}</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
-          </TouchableOpacity>
         </View>
       )}
-    </ScrollView>
-  );
 
-  const renderGeneralTab = () => (
-    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+
+
+      {/* Subscription Management */}
+      {premium.isPremium && (
+        <View style={styles.section}>
+          <View style={styles.subscriptionCard}>
+            <View style={styles.subscriptionHeader}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
+                <Crown size={20} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.subscriptionContent}>
+                <Text style={styles.subscriptionTitle}>{subscription.subscriptionStatus.name}</Text>
+                <Text style={styles.subscriptionDescription}>
+                  {subscription.subscriptionStatus.isActive ? t('settings.activeSubscription') : t('settings.inactiveSubscription')}
+                </Text>
+              </View>
+            </View>
+            
+            <TouchableOpacity 
+              style={styles.manageSubscriptionButton}
+              onPress={() => setShowSubscriptionManagement(true)}
+            >
+              <Text style={styles.manageSubscriptionText}>{t('settings.manageSubscription')}</Text>
+              <ChevronRight size={16} color={colors.primary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Appearance */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
-
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.secondary + '15' }]}>
@@ -1135,34 +1134,14 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
       </View>
 
-
-
       {/* Language */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('language.title')}</Text>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingLeft}>
-            <View style={[styles.settingIcon, { backgroundColor: colors.tertiary + '15' }]}>
-              <Globe size={20} color={colors.tertiary} strokeWidth={2} />
-            </View>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingLabel}>{t('language.title')}</Text>
-              <Text style={styles.settingDescription}>{t('language.description')}</Text>
-            </View>
-          </View>
-        </View>
-
         <LanguageSelector
           currentLanguage={i18n.language}
           onLanguageChange={handleLanguageChange}
         />
-      </View>
 
       {/* Notifications */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
-
         <View style={styles.settingItem}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -1188,31 +1167,10 @@ export default function SettingsScreen({ navigation }: any) {
             disabled={notificationsLoading}
           />
         </View>
-
-        {/* Notification Test Section - Only in development */}
-        {__DEV__ && (
-          <TouchableOpacity 
-            style={styles.settingItem} 
-            onPress={() => navigation.navigate('NotificationTest')}
-          >
-            <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
-                <Bell size={20} color={colors.warning} strokeWidth={2} />
-              </View>
-              <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Test Notifications</Text>
-                <Text style={styles.settingDescription}>Test assignment notifications on simulator</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
-          </TouchableOpacity>
-        )}
       </View>
 
       {/* Privacy & Security */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.privacySecurity')}</Text>
-
         <TouchableOpacity style={styles.settingItem} onPress={handleDataPrivacy}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.success + '15' }]}>
@@ -1227,10 +1185,71 @@ export default function SettingsScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
+      {/* Debug Section - Only in development */}
+      {__DEV__ && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Debug</Text>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
+                <Brain size={20} color={colors.warning} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Debug Premium Status</Text>
+                <Text style={styles.settingDescription}>Check why user shows as Pro</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={premium.debugStatus}>
+              <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
+                <Zap size={20} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Force Refresh</Text>
+                <Text style={styles.settingDescription}>Force refresh from RevenueCat</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={premium.refreshStatus}>
+              <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
+                <X size={20} color={colors.error} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Reset to Free</Text>
+                <Text style={styles.settingDescription}>Reset premium status to free</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={premium.forceClearStatus}>
+              <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.settingItem}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
+                <Shield size={20} color={colors.warning} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Clear RevenueCat Data</Text>
+                <Text style={styles.settingDescription}>Clear cached subscription data</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={premium.forceClearStatus}>
+              <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
       {/* Support */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
-
         <TouchableOpacity style={styles.settingItem} onPress={handleHelpSupport}>
           <View style={styles.settingLeft}>
             <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
@@ -1258,82 +1277,35 @@ export default function SettingsScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* Debug Section */}
-      {__DEV__ && (
+      {/* Account Actions */}
+      {isAnonymous ? (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔧 Debug (Development Only)</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem} 
-                         onPress={async () => {
-               try {
-                 const token = await notificationService.getFCMToken();
-                 console.log('Current FCM Token:', token);
-                 Alert.alert('FCM Token', token ? `Token: ${token.substring(0, 50)}...` : 'No token available');
-               } catch (error) {
-                 Alert.alert('Error', `Failed to get FCM token: ${error instanceof Error ? error.message : 'Unknown error'}`);
-               }
-             }}
-           >
-             <Text style={styles.settingText}>Get FCM Token</Text>
-             <Text style={styles.settingText}>→</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={() => navigation.navigate('Login')}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}> 
+                <User size={20} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={[styles.settingLabel, { color: colors.primary }]}>Sign In</Text>
+                <Text style={styles.settingDescription}>Sign in to sync your reminders and unlock more features.</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.settingItem} 
-            onPress={async () => {
-              try {
-                const token = await notificationService.forceRefreshFCMToken();
-                console.log('Refreshed FCM Token:', token);
-                Alert.alert('FCM Token Refreshed', token ? `New token: ${token.substring(0, 50)}...` : 'No token available');
-              } catch (error) {
-                Alert.alert('Error', `Failed to refresh FCM token: ${error.message}`);
-              }
-            }}
-          >
-            <Text style={styles.settingText}>Refresh FCM Token</Text>
-            <Icon name="chevron-right" size={20} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.settingItem} 
-            onPress={async () => {
-              try {
-                const currentUser = auth().currentUser;
-                if (!currentUser) {
-                  Alert.alert('Error', 'No user logged in');
-                  return;
-                }
-                
-                const firestoreInstance = getFirestoreInstance();
-                const userDoc = await firestoreInstance.collection('users').doc(currentUser.uid).get();
-                const userData = userDoc.data();
-                const fcmTokens = userData?.fcmTokens || [];
-                
-                Alert.alert('FCM Tokens', `User has ${fcmTokens.length} FCM tokens stored`);
-                console.log('Stored FCM Tokens:', fcmTokens);
-              } catch (error) {
-                Alert.alert('Error', `Failed to check FCM tokens: ${error.message}`);
-              }
-            }}
-          >
-            <Text style={styles.settingText}>Check Stored FCM Tokens</Text>
-            <Icon name="chevron-right" size={20} color={colors.text} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.settingItem} 
-            onPress={async () => {
-              try {
-                await notificationService.sendTestNotification(true);
-                Alert.alert('Success', 'Test notification sent!');
-              } catch (error) {
-                Alert.alert('Error', `Failed to send test notification: ${error.message}`);
-              }
-            }}
-          >
-            <Text style={styles.settingText}>Send Test Notification</Text>
-            <Icon name="chevron-right" size={20} color={colors.text} />
+        </View>
+      ) : (
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}> 
+                <LogOut size={20} color={colors.error} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={[styles.settingLabel, { color: colors.error }]}>{t('settings.signOut')}</Text>
+                <Text style={styles.settingDescription}>{t('settings.signOutDescription')}</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       )}
@@ -1342,221 +1314,21 @@ export default function SettingsScreen({ navigation }: any) {
         <Text style={styles.footerText}>
           {t('settings.footerText')}
         </Text>
-        <Text style={styles.footerSubtext}>
-          {t('settings.footerSubtext')}
-        </Text>
-      </View>
-    </ScrollView>
-  );
-
-  const renderPremiumTab = () => (
-    <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-      {/* Current Plan */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your Plan</Text>
-        
-        <View style={styles.planCard}>
-          <View style={styles.planHeader}>
-            <View style={styles.planIcon}>
-              {subscription.isPro ? (
-                <Crown size={24} color="#FFD700" strokeWidth={2} />
-              ) : (
-                <Star size={24} color={colors.textSecondary} strokeWidth={2} />
-              )}
-            </View>
-            <View style={styles.planInfo}>
-              <Text style={styles.planName}>
-                {subscription.isPro ? 'ClearCue Pro' : 'Free Plan'}
-              </Text>
-              <Text style={styles.planDescription}>
-                {subscription.isPro
-                  ? `Renews in ${subscription.daysUntilRenewal} days`
-                  : 'Limited features with usage limits'
-                }
-              </Text>
-            </View>
-          </View>
-          
-          {!subscription.isPro && (
-            <TouchableOpacity style={styles.upgradeButton} onPress={() => setShowUpgradeModal(true)}>
-              <Zap size={16} color="white" strokeWidth={2} />
-              <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
 
-      {/* Premium Features */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Premium Features</Text>
-
-        {/* Advanced Reminders */}
-        <View style={styles.featureCategory}>
-          <Text style={styles.featureCategoryTitle}>Advanced Reminders</Text>
-          
-          <TouchableOpacity
-            style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && setShowUpgradeModal(true)}
-          >
-            <View style={styles.featureLeft}>
-              <View style={[styles.featureIcon, { backgroundColor: colors.primary + '15' }]}>
-                <Calendar size={20} color={colors.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureLabel}>Complex Recurring Patterns</Text>
-                <Text style={styles.featureDescription}>Weekdays only, custom intervals, skip dates</Text>
-              </View>
-            </View>
-            {subscription.isPro ? (
-              <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-            ) : (
-              <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && setShowUpgradeModal(true)}
-          >
-            <View style={styles.featureLeft}>
-              <View style={[styles.featureIcon, { backgroundColor: colors.secondary + '15' }]}>
-                <MapPin size={20} color={colors.primary} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureLabel}>Location-based Reminders</Text>
-                <Text style={styles.featureDescription}>Get reminded when you arrive or leave places</Text>
-              </View>
-            </View>
-            {subscription.isPro ? (
-              <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-            ) : (
-              <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && handleUpgrade()}
-          >
-            <View style={styles.featureLeft}>
-              <View style={[styles.featureIcon, { backgroundColor: colors.tertiary + '15' }]}>
-                <Brain size={20} color={colors.tertiary} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureLabel}>Smart Suggestions</Text>
-                <Text style={styles.featureDescription}>AI-powered reminder recommendations</Text>
-              </View>
-            </View>
-            {subscription.isPro ? (
-              <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-            ) : (
-              <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Family Features */}
-        <View style={styles.featureCategory}>
-          <Text style={styles.featureCategoryTitle}>Family Features</Text>
-          
-          <TouchableOpacity
-            style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && handleUpgrade()}
-          >
-            <View style={styles.featureLeft}>
-              <View style={[styles.featureIcon, { backgroundColor: colors.warning + '15' }]}>
-                <Users size={20} color={colors.warning} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureLabel}>Unlimited Family Members</Text>
-                <Text style={styles.featureDescription}>Add as many family members as you need</Text>
-              </View>
-            </View>
-            {subscription.isPro ? (
-              <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-            ) : (
-              <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.featureItem, !subscription.isPro && styles.lockedFeature]}
-            onPress={() => !subscription.isPro && handleUpgrade()}
-          >
-            <View style={styles.featureLeft}>
-              <View style={[styles.featureIcon, { backgroundColor: colors.success + '15' }]}>
-                <BarChart3 size={20} color={colors.success} strokeWidth={2} />
-              </View>
-              <View style={styles.featureContent}>
-                <Text style={styles.featureLabel}>Family Analytics</Text>
-                <Text style={styles.featureDescription}>Track family productivity and insights</Text>
-              </View>
-            </View>
-            {subscription.isPro ? (
-              <CheckCircle size={20} color={colors.success} strokeWidth={2} />
-            ) : (
-              <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Limits */}
-        <View style={styles.featureCategory}>
-          <Text style={styles.featureCategoryTitle}>Usage Limits</Text>
-          
-          <View style={styles.limitComparison}>
-            <View style={styles.limitRow}>
-              <Text style={styles.limitLabel}>Monthly Reminders</Text>
-              <View style={styles.limitValues}>
-                <Text style={styles.limitFree}>50</Text>
-                <Text style={styles.limitSeparator}>→</Text>
-                <Text style={styles.limitPro}>Unlimited</Text>
-              </View>
-            </View>
-            
-            <View style={[styles.limitRow, styles.limitRowLast]}>
-              <Text style={styles.limitLabel}>Family Members</Text>
-              <View style={styles.limitValues}>
-                <Text style={styles.limitFree}>3</Text>
-                <Text style={styles.limitSeparator}>→</Text>
-                <Text style={styles.limitPro}>Unlimited</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Pricing */}
-      {!subscription.isPro && (
-        <View style={styles.pricingSection}>
-          <Text style={styles.pricingTitle}>Choose Your Plan</Text>
-          
-          <TouchableOpacity style={styles.pricingCard} onPress={() => setShowUpgradeModal(true)}>
-            <View style={styles.pricingHeader}>
-              <Text style={styles.pricingPlan}>Monthly</Text>
-              <Text style={styles.pricingAmount}>$4.99</Text>
-              <Text style={styles.pricingPeriod}>/month</Text>
-            </View>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={[styles.pricingCard, styles.pricingCardPopular]} onPress={() => setShowUpgradeModal(true)}>
-            <View style={styles.popularBadge}>
-              <Text style={styles.popularText}>SAVE 17%</Text>
-            </View>
-            <View style={styles.pricingHeader}>
-              <Text style={styles.pricingPlan}>Annual</Text>
-              <Text style={styles.pricingAmount}>$49.99</Text>
-              <Text style={styles.pricingPeriod}>/year</Text>
-            </View>
-            <Text style={styles.pricingSavings}>$10 savings compared to monthly</Text>
-          </TouchableOpacity>
+      {/* Banner Ad - Integrated at bottom of content (only for free users) */}
+      {!premium.isPremium && (
+        <View style={styles.bannerContainer}>
+          <BannerAdComponent 
+            style={{ marginTop: 16 }} 
+            backgroundType="transparent"
+          />
         </View>
       )}
-
-      {/* Banner Ad - Bottom of Settings (temporarily disabled) */}
-      {/* <BannerAdComponent style={{ marginTop: 20, marginBottom: 20 }} /> */}
     </ScrollView>
   );
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -1568,61 +1340,8 @@ export default function SettingsScreen({ navigation }: any) {
       {/* Profile Section */}
       {renderProfileSection()}
 
-      {/* Tabs */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'account' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setActiveTab('account')}
-        >
-          <UserIcon size={20} color={activeTab === 'account' ? 'white' : colors.textSecondary} strokeWidth={2} />
-          <Text style={[
-            styles.tabLabel,
-            { color: activeTab === 'account' ? 'white' : colors.textSecondary },
-          ]}>
-            {t('settings.account')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'general' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setActiveTab('general')}
-        >
-          <SettingsIcon size={20} color={activeTab === 'general' ? 'white' : colors.textSecondary} strokeWidth={2} />
-          <Text style={[
-            styles.tabLabel,
-            { color: activeTab === 'general' ? 'white' : colors.textSecondary },
-          ]}>
-            {t('settings.general')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'premium' && { backgroundColor: colors.primary },
-          ]}
-          onPress={() => setActiveTab('premium')}
-        >
-          <Crown size={20} color={activeTab === 'premium' ? 'white' : colors.textSecondary} strokeWidth={2} />
-          <Text style={[
-            styles.tabLabel,
-            { color: activeTab === 'premium' ? 'white' : colors.textSecondary },
-          ]}>
-            Premium
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Tab Content */}
-      {activeTab === 'account' && renderAccountTab()}
-      {activeTab === 'general' && renderGeneralTab()}
-      {activeTab === 'premium' && renderPremiumTab()}
+      {/* Settings Content */}
+      {renderSettingsContent()}
 
       {/* Info Modal */}
       <InfoModal
@@ -1713,13 +1432,13 @@ export default function SettingsScreen({ navigation }: any) {
         triggerFeature="Premium Features"
       />
 
-      {/* Banner Ad - Bottom of Settings Screen (only for free users) */}
-      {!isPremium && (
-        <BannerAdComponent 
-          style={{ marginBottom: 20 }} 
-          backgroundType="transparent"
-        />
-      )}
+      {/* Subscription Management Modal */}
+      <SubscriptionManagementModal
+        visible={showSubscriptionManagement}
+        onClose={() => setShowSubscriptionManagement(false)}
+      />
+
+
 
       {/* Interstitial Ad Trigger - Show after user changes settings */}
       <InterstitialAdTrigger

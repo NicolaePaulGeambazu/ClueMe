@@ -18,12 +18,13 @@ import { ModalProvider } from './src/contexts/ModalContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { ReminderProvider } from './src/contexts/ReminderContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
-import { FocusModeProvider } from './src/contexts/FocusModeContext';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
 import notificationService from './src/services/notificationService';
 import globalNotificationService from './src/services/globalNotificationService';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import secureKeyService from './src/services/secureKeyService';
+import { migrateKeysToKeychain } from './src/utils/migrateKeys';
 // Analytics service removed to fix Firebase issues
 import { AppState, AppStateStatus } from 'react-native';
 
@@ -60,6 +61,12 @@ function AppContent() {
   useEffect(() => {
     const initNotifications = async () => {
       try {
+        // Initialize secure key service first
+        await secureKeyService.initialize();
+        
+        // Run key migration (this will only run once)
+        await migrateKeysToKeychain();
+        
         // Initialize with a longer timeout and better error handling
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Notification initialization timeout')), 30000); // Increased to 30 seconds
@@ -293,12 +300,10 @@ export default function App() {
             <FamilyProvider>
               <ReminderProvider>
                 <SettingsProvider>
-                  <FocusModeProvider>
                     <ToastProvider>
                       <StatusBar barStyle="dark-content" />
                       <AppContent />
                     </ToastProvider>
-                  </FocusModeProvider>
                 </SettingsProvider>
               </ReminderProvider>
             </FamilyProvider>

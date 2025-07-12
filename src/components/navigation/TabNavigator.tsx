@@ -15,6 +15,7 @@ import SettingsScreen from '../../screens/settings';
 import AddCountdownScreen from '../../screens/add-countdown';
 import ListsScreen from '../../screens/lists';
 import RemindersScreen from '../../screens/reminders';
+import RevenueCatTestScreen from '../../screens/RevenueCatTestScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -26,6 +27,7 @@ function HomeStack() {
       <Stack.Screen name="Countdown" component={CountdownScreen} />
       <Stack.Screen name="AddCountdown" component={AddCountdownScreen} />
       <Stack.Screen name="Reminders" component={RemindersScreen} />
+      <Stack.Screen name="RevenueCatTest" component={RevenueCatTestScreen} />
     </Stack.Navigator>
   );
 }

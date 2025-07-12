@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
-import { Users, Settings, Activity, Bell, TrendingUp, Mail } from 'lucide-react-native';
+import { Users, Settings, Activity, Bell, TrendingUp, Mail, MapPin } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useFamily } from '../hooks/useFamily';
+import { useMonetization } from '../hooks/useMonetization';
 import { Colors } from '../constants/Colors';
 import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
 import FamilyInvitationModal from '../components/FamilyInvitationModal';
 import { formatForActivity } from '../utils/dateUtils';
 // Analytics service removed to fix Firebase issues
-import { addFamilyNotification, getFirestoreInstance, listService, UserList } from '../services/firebaseService';
+import { addFamilyNotification, getFirestoreInstance, listService, UserList, FamilyMember } from '../services/firebaseService';
+import SmallPaywallModal from '../components/premium/SmallPaywallModal';
+import FullScreenPaywall from '../components/premium/FullScreenPaywall';
 
 // Mock analytics service to prevent crashes
 const analyticsService = {
@@ -20,17 +23,7 @@ const analyticsService = {
   }
 };
 
-// Mock types
-interface FamilyMember {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  avatar?: string;
-  isOnline: boolean;
-  lastActive: string;
-}
-
+// Use the proper FamilyMember interface from firebaseService
 interface FamilyActivity {
   id: string;
   type: string;
@@ -61,6 +54,15 @@ export default function FamilyScreen() {
     isOwner,
     hasPendingInvitations,
   } = useFamily();
+  const { 
+    showFullScreenPaywall, 
+    showSmallPaywall, 
+    paywallMessage, 
+    paywallTrigger,
+    checkFamilyMemberAddition,
+    hidePaywall,
+    isLoading: monetizationLoading 
+  } = useMonetization();
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
@@ -239,11 +241,22 @@ export default function FamilyScreen() {
     // Navigate to activity details or related screen
   };
 
-  const handleInvitations = () => {
+  const handleInvitations = async () => {
     analyticsService.trackAction('invitations_opened', { 
       screen: 'Family',
       user_id: user?.uid 
     });
+    
+    // Check monetization limits before showing invitation modal
+    if (family?.id) {
+      const monetizationResult = await checkFamilyMemberAddition();
+      
+      if (monetizationResult.isBlocking) {
+        // Don't show invitation modal if blocked
+        return;
+      }
+    }
+    
     setShowInvitationModal(true);
   };
 
@@ -364,6 +377,8 @@ export default function FamilyScreen() {
                     <Text style={styles.memberName}>{member.name || 'Unknown Member'}</Text>
                     <Text style={styles.memberEmail}>{member.email || 'No email'}</Text>
                     <Text style={styles.memberRole}>{t(`family.roles.${member.role || 'member'}`)}</Text>
+                    {/* Debug: Show user ID for assignment purposes */}
+                    <Text style={styles.memberUserId}>User ID: {member.userId || 'No user ID'}</Text>
                   </View>
                   <View style={[styles.onlineIndicator, { backgroundColor: member.isOnline ? colors.success : colors.textTertiary }]} />
                 </TouchableOpacity>
@@ -406,6 +421,12 @@ export default function FamilyScreen() {
                       <Text style={styles.activityTitle}>{activity.title || 'Activity'}</Text>
                       <Text style={styles.activityTimestamp}>{activity.createdAt ? formatForActivity(activity.createdAt) : 'Unknown time'}</Text>
                     </View>
+                    {activity.metadata?.location && (
+                      <View style={styles.activityLocation}>
+                        <MapPin size={12} color={colors.textTertiary} strokeWidth={2} />
+                        <Text style={styles.activityLocationText}>{activity.metadata.location}</Text>
+                      </View>
+                    )}
                     <Text style={styles.activityDescription}>{activity.description || 'No description'}</Text>
                     <Text style={styles.activityMember}>by {activity.memberName || 'Unknown member'}</Text>
                   </TouchableOpacity>
@@ -534,6 +555,29 @@ export default function FamilyScreen() {
         onAcceptInvitation={acceptInvitation}
         onDeclineInvitation={declineInvitation}
         isOwner={isOwner}
+      />
+
+      {/* Small Paywall Modal */}
+      <SmallPaywallModal
+        visible={showSmallPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        message={paywallMessage}
+        triggerFeature={paywallTrigger || undefined}
+      />
+
+      {/* Full Screen Paywall */}
+      <FullScreenPaywall
+        visible={showFullScreenPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        triggerFeature={paywallTrigger || undefined}
       />
     </View>
   );
@@ -674,6 +718,12 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontSize: 12,
     color: colors.textTertiary,
   },
+  memberUserId: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 4,
+  },
   onlineIndicator: {
     width: 12,
     height: 12,
@@ -705,6 +755,17 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.text,
   },
   activityTimestamp: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+  activityLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 4,
+  },
+  activityLocationText: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
     color: colors.textTertiary,
