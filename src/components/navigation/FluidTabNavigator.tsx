@@ -9,11 +9,15 @@ import { useFluidAnimation } from '../../design-system/hooks/useFluidAnimation';
 
 // Import screen components
 import HomeScreen from '../../screens/index';
+import FluidHomeScreen from '../../screens/FluidHomeScreen';
 import CountdownScreen from '../../screens/countdown';
 import AddReminderTab from '../reminders/AddReminderTab';
+import FluidAddReminderTab from '../reminders/FluidAddReminderTab';
 import SettingsScreen from '../../screens/settings';
+import FluidSettingsScreen from '../../screens/FluidSettingsScreen';
 import AddCountdownScreen from '../../screens/add-countdown';
 import ListsScreen from '../../screens/lists';
+import FluidListsScreen from '../../screens/FluidListsScreen';
 import RemindersScreen from '../../screens/reminders';
 
 const Tab = createBottomTabNavigator();
@@ -22,7 +26,7 @@ const Stack = createNativeStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="HomeMain" component={FluidHomeScreen} />
       <Stack.Screen name="Countdown" component={CountdownScreen} />
       <Stack.Screen name="AddCountdown" component={AddCountdownScreen} />
       <Stack.Screen name="Reminders" component={RemindersScreen} />
@@ -113,7 +117,7 @@ export default function FluidTabNavigator() {
       />
       <Tab.Screen
         name="Add"
-        component={AddReminderTab}
+        component={FluidAddReminderTab}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <FluidTabIcon
@@ -127,7 +131,7 @@ export default function FluidTabNavigator() {
       />
       <Tab.Screen
         name="Lists"
-        component={ListsScreen}
+        component={FluidListsScreen}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <FluidTabIcon
@@ -141,7 +145,7 @@ export default function FluidTabNavigator() {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={FluidSettingsScreen}
         options={{
           tabBarIcon: ({ focused, color, size }) => (
             <FluidTabIcon
