@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { reminderService, Reminder as FirebaseReminder, FamilyMember, addFamilyNotification } from '../services/firebaseService';
 import notificationService from '../services/notificationService';
-import globalNotificationService from '../services/globalNotificationService';
 import { useAuth } from './AuthContext';
 import { useNotifications } from '../hooks/useNotifications';
 import { useFamily } from './FamilyContext';

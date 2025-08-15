@@ -2,7 +2,7 @@ import firebase from '@react-native-firebase/app';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 // Analytics service removed to fix Firebase issues
-import globalNotificationService from './globalNotificationService';
+import notificationService from './notificationService';
 import { Platform } from 'react-native';
 import { generateNextOccurrence, shouldGenerateNextOccurrence } from '../utils/reminderUtils';
 import type { ReminderType } from '../design-system/reminders/types';
@@ -613,7 +613,7 @@ export const reminderService = {
       // Always schedule a default notification at the due time, even if no custom timings are set
       try {
         // Check if notification service is available
-        if (!globalNotificationService) {
+        if (!notificationService) {
           return reminderId;
         }
 
@@ -651,7 +651,7 @@ export const reminderService = {
           isRecurring: newReminder.isRecurring,
           notificationTimings: newReminder.notificationTimings
         });
-        await globalNotificationService.scheduleReminderNotifications(notificationReminder);
+        await notificationService.scheduleReminderNotifications(notificationReminder);
 
         // Send assignment notifications if reminder is assigned to other users
         if (reminderData.assignedTo && reminderData.assignedTo.length > 0) {
@@ -661,14 +661,7 @@ export const reminderService = {
             const assignedByUserData = assignedByUserDoc.data();
             const assignedByDisplayName = assignedByUserData?.displayName || reminderData.assignedBy || 'Unknown';
 
-            // Use global notification service for better handling (push + toast)
-            await globalNotificationService.sendAssignmentNotification(
-              reminderId,
-              reminderData.title,
-              reminderData.userId, // assigned by
-              assignedByDisplayName,
-              reminderData.assignedTo
-            );
+            // Note: Assignment notifications are now handled through family notifications only
 
             // Add family notification for assignment if this is a family reminder
             if (reminderData.familyId) {
@@ -1292,14 +1285,7 @@ export const reminderService = {
           const assignedByUserData = assignedByUserDoc.data();
           const assignedByDisplayName = assignedByUserData?.displayName || 'Unknown';
 
-          // Use global notification service for better handling (push + toast)
-          await globalNotificationService.sendAssignmentNotification(
-            reminderId,
-            currentData.title,
-            assignedByUserId,
-            assignedByDisplayName,
-            newAssignedTo
-          );
+          // Note: Assignment notifications are now handled through family notifications only
 
           // Add family notification for assignment if this is a family reminder
           if (currentData.familyId) {
@@ -1350,7 +1336,7 @@ export const reminderService = {
             label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`,
           })),
         };
-        await globalNotificationService.updateReminderNotifications(notificationUpdatedReminder);
+        await notificationService.updateReminderNotifications(notificationUpdatedReminder);
       } catch (notificationError) {
         // Don't throw here - the reminder was updated successfully, just notification update failed
       }
@@ -1364,7 +1350,7 @@ export const reminderService = {
     try {
       // Cancel the notification for this occurrence
       try {
-        globalNotificationService.cancelOccurrenceNotification(reminderId, occurrenceDate);
+        await notificationService.cancelReminderNotifications(reminderId);
       } catch (notificationError) {
       }
       // Optionally, reschedule if needed
@@ -1375,7 +1361,7 @@ export const reminderService = {
         const currentData = currentReminder.data() as Reminder;
         const updatedReminder = { ...currentData, ...updates, updatedAt: new Date() };
         try {
-          await globalNotificationService.scheduleOccurrenceNotification(updatedReminder, occurrenceDate);
+          await notificationService.scheduleReminderNotifications(updatedReminder);
         } catch (notificationError) {
         }
       }
@@ -1624,7 +1610,7 @@ export const reminderService = {
               // Cancel notifications for all reminders in the group
         for (const reminder of reminders) {
           try {
-            await globalNotificationService.cancelReminderNotifications(reminder.id);
+            await notificationService.cancelReminderNotifications(reminder.id);
           } catch (notificationError) {
             console.error(`[ReminderService] Error cancelling notifications for reminder ${reminder.id}:`, notificationError);
           }
@@ -1658,7 +1644,7 @@ export const reminderService = {
 
       // Cancel notifications for this specific reminder
       try {
-        await globalNotificationService.cancelReminderNotifications(reminderId);
+        await notificationService.cancelReminderNotifications(reminderId);
       } catch (notificationError) {
         console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
       }
@@ -1700,14 +1686,10 @@ export const reminderService = {
 
         // Cancel all notifications for this reminder using comprehensive cleanup
         try {
-          const { cleanupReminderNotifications } = await import('../utils/notificationCleanupUtils');
-          const cleanupResult = await cleanupReminderNotifications(reminderId);
+          // Cleanup is now handled by the notification service
+          await notificationService.cancelReminderNotifications(reminderId);
 
-          if (cleanupResult.success) {
-            console.log(`[ReminderService] Successfully cleaned up ${cleanupResult.cancelledCount} notifications for reminder ${reminderId}`);
-          } else {
-            console.warn(`[ReminderService] Cleanup had errors for reminder ${reminderId}:`, cleanupResult.errors);
-          }
+          console.log(`[ReminderService] Successfully cleaned up notifications for reminder ${reminderId}`);
         } catch (notificationError) {
           console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
           // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
@@ -1752,7 +1734,7 @@ export const reminderService = {
 
       // Cancel all notifications for this reminder
       try {
-        await globalNotificationService.cancelReminderNotifications(reminderId);
+        await notificationService.cancelReminderNotifications(reminderId);
       } catch (notificationError) {
         console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
         // Don't throw here - the reminder was deleted successfully, just notification cancellation failed

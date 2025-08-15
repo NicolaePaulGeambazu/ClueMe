@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { runNotificationTests, debugNotificationTiming } from '../utils/notificationTestUtils';
+import notificationService from '../services/notificationService';
 
 
 const NotificationTestScreen: React.FC = () => {
