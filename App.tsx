@@ -18,6 +18,7 @@ import { ModalProvider } from './src/contexts/ModalContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { ReminderProvider } from './src/contexts/ReminderContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
+import { FluidThemeProvider } from './src/design-system';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
 import notificationService from './src/services/notificationService';
@@ -30,6 +31,7 @@ import { AppState, AppStateStatus } from 'react-native';
 
 // Import navigation components
 import TabNavigator from './src/components/navigation/TabNavigator';
+import FluidTabNavigator from './src/components/navigation/FluidTabNavigator';
 import IndexScreen from './src/screens/index';
 
 // Import individual screens for quick actions
@@ -138,7 +140,7 @@ function AppContent() {
         >
           <Stack.Screen
             name="MainTabs"
-            component={TabNavigator}
+            component={FluidTabNavigator}
             options={{ headerShown: false }}
           />
           <Stack.Screen
@@ -290,18 +292,20 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <AuthProvider>
-            <FamilyProvider>
-              <ReminderProvider>
-                <SettingsProvider>
-                    <ToastProvider>
-                      <StatusBar barStyle="dark-content" />
-                      <AppContent />
-                    </ToastProvider>
-                </SettingsProvider>
-              </ReminderProvider>
-            </FamilyProvider>
-          </AuthProvider>
+          <FluidThemeProvider>
+            <AuthProvider>
+              <FamilyProvider>
+                <ReminderProvider>
+                  <SettingsProvider>
+                      <ToastProvider>
+                        <StatusBar barStyle="dark-content" />
+                        <AppContent />
+                      </ToastProvider>
+                  </SettingsProvider>
+                </ReminderProvider>
+              </FamilyProvider>
+            </AuthProvider>
+          </FluidThemeProvider>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

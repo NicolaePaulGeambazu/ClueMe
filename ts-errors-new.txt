@@ -1,0 +1,1315 @@
+App.tsx(11,37): error TS7016: Could not find a declaration file for module '@react-navigation/native'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native';`
+App.tsx(12,44): error TS7016: Could not find a declaration file for module '@react-navigation/native-stack'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native-stack/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native-stack` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native-stack';`
+App.tsx(13,40): error TS2307: Cannot find module 'react-native-gesture-handler' or its corresponding type declarations.
+App.tsx(21,10): error TS2305: Module '"react-native"' has no exported member 'StatusBar'.
+App.tsx(24,34): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+App.tsx(28,10): error TS2305: Module '"react-native"' has no exported member 'AppState'.
+App.tsx(28,20): error TS2305: Module '"react-native"' has no exported member 'AppStateStatus'.
+__tests__/AddReminderRedesign.test.tsx(3,10): error TS2305: Module '"react-native"' has no exported member 'Text'.
+__tests__/AddReminderRedesign.test.tsx(3,16): error TS2305: Module '"react-native"' has no exported member 'View'.
+__tests__/AddReminderRedesign.test.tsx(3,22): error TS2305: Module '"react-native"' has no exported member 'NativeModules'.
+src/components/FamilyInvitationModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/FamilyInvitationModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/FamilyInvitationModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/FamilyInvitationModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/FamilyInvitationModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/FamilyInvitationModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/FamilyInvitationModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/FamilyInvitationModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/FamilyInvitationModal.tsx(112,26): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/FamilyInvitationModal.tsx(122,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/FamilyInvitationModal.tsx(160,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/FamilyInvitationModal.tsx(172,45): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/FamilyInvitationModal.tsx(188,46): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/FamilyInvitationModal.tsx(202,46): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/InfoModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/InfoModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/InfoModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/InfoModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/InfoModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/InfoModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/InfoModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/InfoModal.tsx(40,38): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/InfoModal.tsx(42,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/InfoModal.tsx(44,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/InfoModal.tsx(46,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/InfoModal.tsx(98,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/LanguageSelector.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/LanguageSelector.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/LanguageSelector.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/LanguageSelector.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/LanguageSelector.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/LanguageSelector.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/LanguageSelector.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/LanguageSelector.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/LanguageSelector.tsx(121,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/LanguageSelector.tsx(141,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/Planner/TimeBlock.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/Planner/TimeBlock.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/Planner/TimeBlock.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/Planner/TimeBlock.tsx(96,27): error TS2322: Type '{ size: number; color: any; fill: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(118,29): error TS2322: Type '{ size: number; color: any; fill: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(125,32): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(132,33): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(139,33): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(160,29): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimeBlock.tsx(174,36): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/Planner/TimelineGrid.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/Planner/TimelineGrid.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/Planner/TimelineGrid.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/Planner/TimelineGrid.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/Planner/TimelineGrid.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/Planner/TimelineGrid.tsx(100,37): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/PrivacySettings.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/PrivacySettings.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/PrivacySettings.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/PrivacySettings.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/PrivacySettings.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Switch'.
+src/components/PrivacySettings.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/PrivacySettings.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/PrivacySettings.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Linking'.
+src/components/PrivacySettings.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'ActivityIndicator'.
+src/components/PrivacySettings.tsx(154,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(174,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(194,29): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(220,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(229,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(235,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(244,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(256,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(265,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(271,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(280,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(286,29): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(295,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(306,27): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(316,26): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/PrivacySettings.tsx(326,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,59): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(2,69): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(71,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(77,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(86,39): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(93,36): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(109,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/CustomDateTimePicker.tsx(118,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'Switch'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(61,27): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(81,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/NotificationTimingSelector.tsx(95,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatModal.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ReminderForm/RepeatModal.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ReminderForm/RepeatModal.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/ReminderForm/RepeatModal.tsx(2,29): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/ReminderForm/RepeatModal.tsx(2,47): error TS2305: Module '"react-native"' has no exported member 'Switch'.
+src/components/ReminderForm/RepeatModal.tsx(2,55): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/ReminderForm/RepeatModal.tsx(2,66): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/ReminderForm/RepeatModal.tsx(2,78): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ReminderForm/RepeatModal.tsx(120,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(143,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(166,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(209,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(232,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(338,39): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatModal.tsx(385,31): error TS7006: Parameter 'v' implicitly has an 'any' type.
+src/components/ReminderForm/RepeatModal.tsx(411,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatModal.tsx(445,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ReminderForm/RepeatOptions.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ReminderForm/RepeatOptions.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ReminderForm/RepeatOptions.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/ReminderForm/RepeatOptions.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/ReminderForm/RepeatOptions.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/ReminderForm/RepeatOptions.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/ReminderForm/RepeatOptions.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/ReminderForm/RepeatOptions.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/ReminderForm/RepeatOptions.tsx(334,19): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(351,38): error TS2322: Type '{ size: number; color: string; fill: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(478,38): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(495,31): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(499,35): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(544,29): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(563,26): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ReminderForm/RepeatOptions.tsx(569,29): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/ads/BannerAdComponent.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ads/BannerAdComponent.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ads/BannerAdComponent.tsx(2,28): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ads/RewardedAdComponent.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/ads/RewardedAdComponent.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/ads/RewardedAdComponent.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/ads/RewardedAdComponent.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/ads/RewardedAdComponent.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/auth/LoginPrompt.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/auth/LoginPrompt.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/auth/LoginPrompt.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/auth/LoginPrompt.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/auth/LoginPrompt.tsx(2,45): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/auth/LoginPrompt.tsx(2,63): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/auth/LoginPrompt.tsx(2,70): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/auth/LoginPrompt.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/auth/LoginPrompt.tsx(97,26): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/auth/LoginPrompt.tsx(124,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/auth/LoginPrompt.tsx(129,34): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/auth/LoginPrompt.tsx(137,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/auth/LoginPrompt.tsx(142,32): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/auth/LoginPrompt.tsx(151,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/auth/LoginPrompt.tsx(156,32): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/components/auth/LoginPrompt.tsx(167,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/auth/LoginPrompt.tsx(169,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/calendar/SimpleCalendar.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/calendar/SimpleCalendar.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/calendar/SimpleCalendar.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/calendar/SimpleCalendar.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/calendar/SimpleCalendar.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/calendar/SimpleCalendar.tsx(2,59): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/calendar/SimpleCalendar.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/calendar/SimpleCalendar.tsx(4,10): error TS2305: Module '"react-native-big-calendar"' has no exported member 'Calendar'.
+src/components/calendar/SimpleCalendar.tsx(137,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/calendar/SimpleCalendar.tsx(189,25): error TS7031: Binding element 'start' implicitly has an 'any' type.
+src/components/calendar/SimpleCalendar.tsx(210,25): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/calendar/WeekView.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/calendar/WeekView.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/calendar/WeekView.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/calendar/WeekView.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/calendar/WeekView.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/calendar/WeekView.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/common/CustomSwitch.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/CustomSwitch.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/common/CustomSwitch.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/common/CustomSwitch.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/CustomSwitch.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'ViewStyle'.
+src/components/common/DatePickerModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/DatePickerModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/common/DatePickerModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/DatePickerModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/common/DatePickerModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/common/DatePickerModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/common/DatePickerModal.tsx(66,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DateTimePickerWrapper.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/common/DateTimePickerWrapper.tsx(2,20): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/DeleteConfirmationModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/DeleteConfirmationModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/common/DeleteConfirmationModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/DeleteConfirmationModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/common/DeleteConfirmationModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/common/DeleteConfirmationModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/common/DeleteConfirmationModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/common/DeleteConfirmationModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/common/DeleteConfirmationModal.tsx(90,41): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(92,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(94,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(96,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(164,25): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/common/DeleteConfirmationModal.tsx(172,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(203,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(228,46): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(239,41): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/DeleteConfirmationModal.tsx(264,41): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/GracePopup.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/GracePopup.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/common/GracePopup.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/common/GracePopup.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/common/GracePopup.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/GracePopup.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/common/GracePopup.tsx(169,13): error TS2322: Type '{ size: number; color: string; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/GracePopup.tsx(191,26): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/GridIcon.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/GridIcon.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/ToastNotification.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/common/ToastNotification.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/common/ToastNotification.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/common/ToastNotification.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/common/ToastNotification.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/common/ToastNotification.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/common/ToastNotification.tsx(11,35): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/common/ToastNotification.tsx(136,27): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/common/ToastNotification.tsx(150,22): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/lists/QuickAddListModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/lists/QuickAddListModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/lists/QuickAddListModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/lists/QuickAddListModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/lists/QuickAddListModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/lists/QuickAddListModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/lists/QuickAddListModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/lists/QuickAddListModal.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/components/lists/QuickAddListModal.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/lists/QuickAddListModal.tsx(13,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/lists/QuickAddListModal.tsx(14,3): error TS2305: Module '"react-native"' has no exported member 'ActivityIndicator'.
+src/components/lists/QuickAddListModal.tsx(15,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/lists/QuickAddListModal.tsx(36,35): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/lists/QuickAddListModal.tsx(274,42): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(279,52): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(302,43): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(307,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(335,24): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/lists/QuickAddListModal.tsx(336,30): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/lists/QuickAddListModal.tsx(337,29): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/lists/QuickAddListModal.tsx(338,32): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/lists/QuickAddListModal.tsx(351,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(443,38): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(476,48): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/lists/QuickAddListModal.tsx(511,48): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/navigation/TabNavigator.tsx(2,42): error TS7016: Could not find a declaration file for module '@react-navigation/bottom-tabs'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/bottom-tabs/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__bottom-tabs` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/bottom-tabs';`
+src/components/navigation/TabNavigator.tsx(3,44): error TS7016: Could not find a declaration file for module '@react-navigation/native-stack'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native-stack/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native-stack` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native-stack';`
+src/components/navigation/TabNavigator.tsx(4,10): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/navigation/TabNavigator.tsx(59,26): error TS7031: Binding element 'color' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(59,33): error TS7031: Binding element 'size' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(60,31): error TS2322: Type '{ size: any; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/navigation/TabNavigator.tsx(69,26): error TS7031: Binding element 'color' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(69,33): error TS7031: Binding element 'size' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(70,31): error TS2322: Type '{ size: any; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/navigation/TabNavigator.tsx(79,26): error TS7031: Binding element 'color' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(79,33): error TS7031: Binding element 'size' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(80,31): error TS2322: Type '{ size: any; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/navigation/TabNavigator.tsx(89,26): error TS7031: Binding element 'color' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(89,33): error TS7031: Binding element 'size' implicitly has an 'any' type.
+src/components/navigation/TabNavigator.tsx(90,35): error TS2322: Type '{ size: any; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/CancellationModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/CancellationModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/CancellationModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/CancellationModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/CancellationModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/CancellationModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/CancellationModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/premium/CancellationModal.tsx(12,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/premium/CancellationModal.tsx(246,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(254,17): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(276,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(283,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(290,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/CancellationModal.tsx(304,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/DisabledFeature.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/DisabledFeature.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/DisabledFeature.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/DisabledFeature.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/DisabledFeature.tsx(48,42): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/DisabledFeature.tsx(56,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/FullScreenPaywall.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/FullScreenPaywall.tsx(2,17): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/premium/FullScreenPaywall.tsx(3,26): error TS2307: Cannot find module 'react-native-purchases-ui' or its corresponding type declarations.
+src/components/premium/PlanSelectionModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/PlanSelectionModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/PlanSelectionModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/PlanSelectionModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/PlanSelectionModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/PlanSelectionModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/PlanSelectionModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/PlanSelectionModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/premium/PlanSelectionModal.tsx(12,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/premium/PlanSelectionModal.tsx(295,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(297,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(316,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(370,48): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(374,48): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(378,48): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(382,48): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PlanSelectionModal.tsx(386,48): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/PremiumUpgradeModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/PremiumUpgradeModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/PremiumUpgradeModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/PremiumUpgradeModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/PremiumUpgradeModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/PremiumUpgradeModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/PremiumUpgradeModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/premium/PremiumUpgradeModal.tsx(95,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(97,36): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(99,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(101,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(103,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(105,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(136,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(218,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PremiumUpgradeModal.tsx(229,26): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/ProUpgradeModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/ProUpgradeModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/ProUpgradeModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/ProUpgradeModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/ProUpgradeModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/premium/ProUpgradeModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/premium/ProUpgradeModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/ProUpgradeModal.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/ProUpgradeModal.tsx(102,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(107,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(112,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(117,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(122,29): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(127,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(163,34): error TS2322: Type '{ size: number; color: string; fill: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(203,38): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(207,38): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(211,38): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(226,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/ProUpgradeModal.tsx(250,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/PromoModal.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/PromoModal.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/PromoModal.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/PromoModal.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/PromoModal.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/PromoModal.tsx(38,29): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(44,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(50,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(56,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(78,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(84,26): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(92,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/PromoModal.tsx(109,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/RevenueCatDashboardPaywall.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/RevenueCatDashboardPaywall.tsx(3,26): error TS2307: Cannot find module 'react-native-purchases-ui' or its corresponding type declarations.
+src/components/premium/RevenueCatPaywall.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/RevenueCatPaywall.tsx(3,26): error TS2307: Cannot find module 'react-native-purchases-ui' or its corresponding type declarations.
+src/components/premium/SmallPaywallModal.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/SmallPaywallModal.tsx(3,26): error TS2307: Cannot find module 'react-native-purchases-ui' or its corresponding type declarations.
+src/components/premium/SubscriptionManagementModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/premium/SubscriptionManagementModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/premium/SubscriptionManagementModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/premium/SubscriptionManagementModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/premium/SubscriptionManagementModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/premium/SubscriptionManagementModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/premium/SubscriptionManagementModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/components/premium/SubscriptionManagementModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/premium/SubscriptionManagementModal.tsx(12,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/premium/SubscriptionManagementModal.tsx(300,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(310,40): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(368,43): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(379,41): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(389,44): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(400,41): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/premium/SubscriptionManagementModal.tsx(406,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,63): error TS2305: Module '"react-native"' has no exported member 'FlatList'.
+src/components/reminders/AddReminderBottomSheet.tsx(2,73): error TS2305: Module '"react-native"' has no exported member 'Switch'.
+src/components/reminders/AddReminderBottomSheet.tsx(77,24): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/reminders/AddReminderBottomSheet.tsx(77,27): error TS7006: Parameter 'idx' implicitly has an 'any' type.
+src/components/reminders/AddReminderBottomSheet.tsx(78,24): error TS7031: Binding element 'item' implicitly has an 'any' type.
+src/components/reminders/AddReminderBottomSheet.tsx(78,30): error TS7031: Binding element 'index' implicitly has an 'any' type.
+src/components/reminders/AddReminderBottomSheet.tsx(84,29): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/components/reminders/AddReminderBottomSheet.tsx(103,21): error TS2322: Type '{ color: string; size: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/AddReminderBottomSheet.tsx(108,17): error TS2322: Type '{ color: string; size: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/AddReminderBottomSheet.tsx(119,19): error TS2322: Type '{ color: string; size: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/AddReminderBottomSheet.tsx(124,18): error TS2322: Type '{ color: string; size: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/AddReminderTab.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/AddReminderTab.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/AddReminderTab.tsx(3,47): error TS7016: Could not find a declaration file for module '@react-navigation/native'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native';`
+src/components/reminders/AddReminderTab.tsx(4,41): error TS7016: Could not find a declaration file for module '@react-navigation/bottom-tabs'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/bottom-tabs/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__bottom-tabs` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/bottom-tabs';`
+src/components/reminders/CategorySelector.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/CategorySelector.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/CategorySelector.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/CategorySelector.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/reminders/CategorySelector.tsx(2,47): error TS2305: Module '"react-native"' has no exported member 'FlatList'.
+src/components/reminders/CategorySelector.tsx(2,57): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/CategorySelector.tsx(54,29): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/components/reminders/CategorySelector.tsx(55,30): error TS7031: Binding element 'item' implicitly has an 'any' type.
+src/components/reminders/EditReminderModal.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/EditReminderModal.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/EditReminderModal.tsx(2,28): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/EditReminderModal.tsx(3,31): error TS7016: Could not find a declaration file for module '@react-navigation/native'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native';`
+src/components/reminders/NotificationTimingModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/NotificationTimingModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/NotificationTimingModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/NotificationTimingModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/NotificationTimingModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/reminders/NotificationTimingModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/reminders/NotificationTimingModal.tsx(130,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/NotificationTimingModal.tsx(156,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/NotificationTimingSelector.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/NotificationTimingSelector.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/NotificationTimingSelector.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/NotificationTimingSelector.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/NotificationTimingSelector.tsx(73,25): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/NotificationTimingSelector.tsx(102,27): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/NotificationTimingSelector.tsx(111,36): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'SafeAreaView'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'StatusBar'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(13,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(14,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(15,3): error TS2305: Module '"react-native"' has no exported member 'Easing'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(19,35): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(306,30): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(326,37): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(330,34): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(352,37): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(370,34): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(411,55): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(424,46): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(456,48): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/DateTimeSelectionModal.tsx(469,46): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(2,33): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(2,45): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(136,33): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(142,30): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(159,29): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(169,27): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(179,28): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(190,33): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(199,31): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(221,31): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(230,29): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(239,30): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddForm.tsx(248,33): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'ActivityIndicator'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(35,22): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(43,32): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(73,32): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddHeader.tsx(75,31): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddSelector.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/QuickAddSelector.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/QuickAddModal/QuickAddSelector.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/QuickAddSelector.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/components/reminders/QuickAddModal/QuickAddSelector.tsx(33,31): error TS2322: Type '{ size: number; color: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/QuickAddSheets.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/QuickAddSheets.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/components/reminders/QuickAddModal/QuickAddSheets.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/QuickAddSheets.tsx(4,35): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/components/reminders/QuickAddModal/QuickAddSheets.tsx(150,34): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/components/reminders/QuickAddModal/index.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/components/reminders/QuickAddModal/index.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/components/reminders/QuickAddModal/index.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/components/reminders/QuickAddModal/index.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/components/reminders/QuickAddModal/index.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/components/reminders/QuickAddModal/index.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Keyboard'.
+src/components/reminders/QuickAddModal/index.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Easing'.
+src/components/reminders/QuickAddModal/index.tsx(379,26): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/reminders/QuickAddModal/index.tsx(380,32): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/reminders/QuickAddModal/index.tsx(381,31): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/reminders/QuickAddModal/index.tsx(382,34): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/components/reminders/QuickAddModal/styles.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/constants/Fonts.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/examples/RevenueCatPaywallUsage.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/examples/RevenueCatPaywallUsage.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/examples/RevenueCatPaywallUsage.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/examples/RevenueCatPaywallUsage.tsx(2,40): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/hooks/useNotifications.ts(4,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/i18n/index.ts(3,10): error TS2305: Module '"react-native"' has no exported member 'NativeModules'.
+src/i18n/index.ts(3,25): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/NotificationTestScreen.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/NotificationTestScreen.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/NotificationTestScreen.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/NotificationTestScreen.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/NotificationTestScreen.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/NotificationTestScreen.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/_layout.tsx(2,44): error TS7016: Could not find a declaration file for module '@react-navigation/native-stack'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native-stack/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native-stack` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native-stack';`
+src/screens/add-countdown.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/add-countdown.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/add-countdown.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/add-countdown.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/add-countdown.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/add-countdown.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/add-countdown.tsx(2,75): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/add-countdown.tsx(2,82): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/screens/add-countdown.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/add-countdown.tsx(188,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/add-countdown.tsx(198,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/add-countdown.tsx(209,28): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/screens/add-countdown.tsx(220,28): error TS7006: Parameter 'text' implicitly has an 'any' type.
+src/screens/add-countdown.tsx(234,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/add-countdown.tsx(241,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/add-countdown.tsx(251,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/add-countdown.tsx(258,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/calendar.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/calendar.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/calendar.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/calendar.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/calendar.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/calendar.tsx(2,76): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/calendar.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/calendar.tsx(322,51): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(326,54): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(334,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(342,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(384,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(415,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(433,30): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(435,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(443,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/calendar.tsx(554,25): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/categories.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/categories.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/categories.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/categories.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/categories.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/categories.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/categories.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/categories.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/categories.tsx(97,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/categories.tsx(100,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/categories.tsx(141,46): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/categories.tsx(171,43): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/countdown.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/countdown.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/countdown.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/countdown.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/countdown.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/countdown.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/countdown.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/screens/countdown.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/countdown.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/countdown.tsx(13,3): error TS2305: Module '"react-native"' has no exported member 'Pressable'.
+src/screens/countdown.tsx(14,3): error TS2305: Module '"react-native"' has no exported member 'ActivityIndicator'.
+src/screens/countdown.tsx(16,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/countdown.tsx(457,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(487,42): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(496,44): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(503,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(517,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(543,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(545,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(556,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(563,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(567,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(571,39): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(636,47): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(648,43): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(654,45): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(664,52): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(697,43): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(701,45): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(715,50): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(717,48): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/countdown.tsx(736,25): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/family.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/family.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/family.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/family.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/family.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/family.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/family.tsx(344,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(351,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(427,43): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(513,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(528,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/family.tsx(543,27): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/forgot-password.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/forgot-password.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/forgot-password.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/forgot-password.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/forgot-password.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/forgot-password.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'SafeAreaView'.
+src/screens/forgot-password.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/screens/forgot-password.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/forgot-password.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/forgot-password.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/forgot-password.tsx(14,31): error TS7016: Could not find a declaration file for module '@react-navigation/native'. '/home/ubuntu/ClueMe/node_modules/@react-navigation/native/lib/commonjs/index.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-navigation__native` if it exists or add a new declaration (.d.ts) file containing `declare module '@react-navigation/native';`
+src/screens/forgot-password.tsx(68,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/forgot-password.tsx(78,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/forgot-password.tsx(100,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(3,3): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/index.tsx(4,3): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/index.tsx(5,3): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/index.tsx(6,3): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/index.tsx(7,3): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/index.tsx(8,3): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/index.tsx(9,3): error TS2305: Module '"react-native"' has no exported member 'Image'.
+src/screens/index.tsx(10,3): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/index.tsx(11,3): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/index.tsx(12,3): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/screens/index.tsx(13,3): error TS2305: Module '"react-native"' has no exported member 'ActivityIndicator'.
+src/screens/index.tsx(15,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/index.tsx(46,42): error TS2307: Cannot find module 'react-native-gesture-handler' or its corresponding type declarations.
+src/screens/index.tsx(51,53): error TS2307: Cannot find module 'react-native-gesture-handler' or its corresponding type declarations.
+src/screens/index.tsx(481,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(505,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(556,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(572,35): error TS2322: Type '{ size: number; color: string; style: { marginRight: number; }; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(639,60): error TS2694: Namespace '"/home/ubuntu/ClueMe/node_modules/react-native/types/index"' has no exported member 'ImageStyle'.
+src/screens/index.tsx(670,35): error TS2322: Type '{ size: number; color: string; style: any; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(706,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(722,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(738,38): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(753,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(810,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(818,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(826,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/index.tsx(833,34): error TS7006: Parameter 'event' implicitly has an 'any' type.
+src/screens/list-detail.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/list-detail.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/list-detail.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/list-detail.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/list-detail.tsx(2,52): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/list-detail.tsx(2,59): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/list-detail.tsx(2,70): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/screens/list-detail.tsx(2,77): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/list-detail.tsx(2,89): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/list-detail.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/list-detail.tsx(367,53): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(429,31): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(435,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(452,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(474,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(497,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(511,27): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(531,47): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(566,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(581,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/list-detail.tsx(604,35): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/lists.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/lists.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/lists.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/lists.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/lists.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/lists.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/lists.tsx(2,87): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/lists.tsx(2,98): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/screens/lists.tsx(2,105): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/lists.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/lists.tsx(264,27): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(271,29): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(285,28): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(358,43): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(364,41): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(378,25): error TS2322: Type '{ size: number; color: string; fill: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(388,43): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(394,45): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(422,43): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/lists.tsx(442,33): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/login.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/login.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/login.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/login.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/login.tsx(2,45): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/login.tsx(2,63): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/login.tsx(2,70): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/screens/login.tsx(2,92): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/login.tsx(2,102): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/login.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/login.tsx(116,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/login.tsx(130,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/login.tsx(146,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/login.tsx(148,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/login.tsx(169,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/planner.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/planner.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/planner.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/planner.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/planner.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/planner.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/planner.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/planner.tsx(2,87): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/planner.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/planner.tsx(122,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/planner.tsx(139,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/planner.tsx(175,29): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders-detail.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/reminders-detail.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/reminders-detail.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/reminders-detail.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/reminders-detail.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/reminders-detail.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/reminders-detail.tsx(59,34): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders-detail.tsx(76,32): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders-detail.tsx(88,55): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders-detail.tsx(98,36): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders-detail.tsx(114,42): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/reminders.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/reminders.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/reminders.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/reminders.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/reminders.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/reminders.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'FlatList'.
+src/screens/reminders.tsx(2,90): error TS2305: Module '"react-native"' has no exported member 'Animated'.
+src/screens/reminders.tsx(2,100): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/reminders.tsx(2,107): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/screens/reminders.tsx(2,114): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/reminders.tsx(2,126): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/reminders.tsx(3,42): error TS2307: Cannot find module 'react-native-gesture-handler' or its corresponding type declarations.
+src/screens/reminders.tsx(4,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/reminders.tsx(252,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(270,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(289,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(291,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(324,19): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(347,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(349,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(360,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(397,25): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(452,23): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(478,36): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(498,37): error TS2322: Type '{ size: number; color: string; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(746,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(782,21): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ size: number; color: any; strokeWidth: number; }' is not assignable to parameter of type 'Attributes & LucideProps'.
+      Object literal may only specify known properties, and 'color' does not exist in type 'Attributes & LucideProps'.
+src/screens/reminders.tsx(797,41): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(802,39): error TS2322: Type '{ size: number; color: any; fill: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(807,46): error TS2322: Type '{ size: number; color: any; fill: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(817,37): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(831,38): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(855,34): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(864,37): error TS2322: Type '{ size: number; color: any; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/reminders.tsx(931,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/screens/search.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/search.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/search.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/search.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/search.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/search.tsx(2,64): error TS2305: Module '"react-native"' has no exported member 'RefreshControl'.
+src/screens/search.tsx(2,80): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/search.tsx(2,87): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/search.tsx(46,29): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/search.tsx(57,28): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/search.tsx(63,29): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/settings.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/settings.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/settings.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/settings.tsx(2,46): error TS2305: Module '"react-native"' has no exported member 'Switch'.
+src/screens/settings.tsx(2,54): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/settings.tsx(2,72): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/settings.tsx(2,79): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/settings.tsx(2,90): error TS2305: Module '"react-native"' has no exported member 'Modal'.
+src/screens/settings.tsx(2,97): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/screens/settings.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/settings.tsx(1102,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1109,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1125,36): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1145,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1315,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1346,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1357,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1384,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1413,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1420,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1431,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1438,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1445,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1452,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1457,32): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1465,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1471,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1479,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1485,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1493,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1504,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1511,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1517,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1524,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1534,33): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1541,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1549,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1556,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1615,35): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1620,30): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/settings.tsx(1665,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(2,10): error TS2305: Module '"react-native"' has no exported member 'View'.
+src/screens/signup.tsx(2,16): error TS2305: Module '"react-native"' has no exported member 'Text'.
+src/screens/signup.tsx(2,22): error TS2305: Module '"react-native"' has no exported member 'StyleSheet'.
+src/screens/signup.tsx(2,34): error TS2305: Module '"react-native"' has no exported member 'TextInput'.
+src/screens/signup.tsx(2,45): error TS2305: Module '"react-native"' has no exported member 'TouchableOpacity'.
+src/screens/signup.tsx(2,63): error TS2305: Module '"react-native"' has no exported member 'Alert'.
+src/screens/signup.tsx(2,70): error TS2305: Module '"react-native"' has no exported member 'KeyboardAvoidingView'.
+src/screens/signup.tsx(2,92): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/screens/signup.tsx(2,102): error TS2305: Module '"react-native"' has no exported member 'ScrollView'.
+src/screens/signup.tsx(3,30): error TS2307: Cannot find module 'react-native-safe-area-context' or its corresponding type declarations.
+src/screens/signup.tsx(136,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(149,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(163,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(179,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(181,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(187,31): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(203,37): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(205,34): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/screens/signup.tsx(219,39): error TS2322: Type '{ size: number; color: string; strokeWidth: number; }' is not assignable to type 'IntrinsicAttributes & LucideProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & LucideProps'.
+src/services/firebaseService.ts(11,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/firebaseService.ts(799,31): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(831,35): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(868,37): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(986,25): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1023,32): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(1025,27): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1045,11): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(1075,61): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(1077,27): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1096,11): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(1101,57): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(1103,27): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1122,11): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(1155,10): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1183,10): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(1369,67): error TS2345: Argument of type '{ updatedAt: Date; id: string; userId: string; title: string; description?: string | undefined; type: ReminderType; priority: ReminderPriority; status: ReminderStatus; ... 32 more ...; coOwners?: string[] | undefined; }' is not assignable to parameter of type 'ReminderData'.
+  Types of property 'dueDate' are incompatible.
+    Type 'string | Date | undefined' is not assignable to type 'string | undefined'.
+      Type 'Date' is not assignable to type 'string'.
+src/services/firebaseService.ts(1589,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1774,39): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1789,37): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1805,31): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1833,25): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1864,25): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(1963,19): error TS7006: Parameter 'reminder' implicitly has an 'any' type.
+src/services/firebaseService.ts(2019,52): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2029,50): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2039,54): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2073,38): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2082,35): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2091,39): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2172,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2175,28): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/services/firebaseService.ts(2175,31): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/services/firebaseService.ts(2301,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2431,12): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(2436,33): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2456,12): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(2480,12): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(2485,33): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2524,12): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(2586,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2766,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2845,32): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(2847,27): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(2862,11): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(3306,34): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3335,40): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3602,23): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(3604,30): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3629,25): error TS7006: Parameter 'snapshot' implicitly has an 'any' type.
+src/services/firebaseService.ts(3631,32): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3652,17): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(3681,12): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3705,12): error TS7006: Parameter 'error' implicitly has an 'any' type.
+src/services/firebaseService.ts(3893,46): error TS7006: Parameter 'doc' implicitly has an 'any' type.
+src/services/firebaseService.ts(3896,41): error TS7006: Parameter 'member' implicitly has an 'any' type.
+src/services/iOSNotificationBridge.ts(6,10): error TS2305: Module '"react-native"' has no exported member 'NativeModules'.
+src/services/iOSNotificationBridge.ts(6,25): error TS2305: Module '"react-native"' has no exported member 'NativeEventEmitter'.
+src/services/iOSNotificationBridge.ts(6,45): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/monetizationService.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/notificationService.ts(8,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/premiumService.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/premiumService.ts(174,5): error TS2741: Property 'timezoneSupport' is missing in type '{ noAds: false; unlimitedReminders: false; advancedRecurring: false; multipleNotifications: false; familySharing: false; customThemes: false; prioritySupport: false; customIntervals: false; multipleDays: false; endConditions: false; unlimitedLists: false; }' but required in type 'PremiumFeatures'.
+src/services/premiumService.ts(192,5): error TS2741: Property 'timezoneSupport' is missing in type '{ noAds: true; unlimitedReminders: true; advancedRecurring: true; multipleNotifications: true; familySharing: true; customThemes: true; prioritySupport: true; customIntervals: true; multipleDays: true; endConditions: true; unlimitedLists: true; }' but required in type 'PremiumFeatures'.
+src/services/premiumStatusManager.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/revenueCatService.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/services/revenueCatService.ts(1,20): error TS2305: Module '"react-native"' has no exported member 'Linking'.
+src/services/secureKeyService.ts(1,27): error TS2307: Cannot find module 'react-native-keychain' or its corresponding type declarations.
+src/services/secureKeyService.ts(2,10): error TS2305: Module '"react-native"' has no exported member 'Platform'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(53,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+  Types of property 'dueDate' are incompatible.
+    Type 'string | Date | undefined' is not assignable to type 'Date | undefined'.
+      Type 'string' is not assignable to type 'Date'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(65,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(77,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(89,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(205,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(214,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(224,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(235,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(248,53): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(261,53): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(272,53): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(286,47): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(300,47): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(313,47): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(325,34): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(333,34): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(344,58): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(355,58): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.jest.test.ts(369,58): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(130,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(142,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(154,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(166,43): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(259,41): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(268,41): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(278,41): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(289,41): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(301,51): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(314,51): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(325,51): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(338,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(352,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(365,45): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(376,32): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(384,32): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(393,56): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(403,56): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/__tests__/recurringReminderUtils.test.ts(416,56): error TS2345: Argument of type 'import("/home/ubuntu/ClueMe/src/services/firebaseService").Reminder' is not assignable to parameter of type 'import("/home/ubuntu/ClueMe/src/design-system/reminders/types").Reminder'.
+src/utils/reminderTestSuite.ts(1198,31): error TS2554: Expected 4-5 arguments, but got 1.
+src/utils/reminderTestSuite.ts(1211,31): error TS2554: Expected 4-5 arguments, but got 1.
+src/utils/reminderTestSuite.ts(1225,13): error TS2554: Expected 4-5 arguments, but got 1.
+src/utils/reminderTestSuite.ts(1239,31): error TS2554: Expected 4-5 arguments, but got 1.
+src/utils/textScaling.ts(1,10): error TS2305: Module '"react-native"' has no exported member 'Dimensions'.
+src/utils/textScaling.ts(2,15): error TS2305: Module '"react-native"' has no exported member 'TextStyle'.
