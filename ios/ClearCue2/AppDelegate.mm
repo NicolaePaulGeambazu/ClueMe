@@ -1,8 +1,9 @@
 #import "AppDelegate.h"
+#import "ClearCue2-Swift.h"
 
 #import <React/RCTBundleURLProvider.h>
 #import <Firebase.h>
-// #import <BackgroundTasks/BackgroundTasks.h>
+#import <UserNotifications/UserNotifications.h>
 
 @implementation AppDelegate
 
@@ -11,14 +12,8 @@
   // Initialize Firebase
   [FIRApp configure];
   
-  // Register background tasks
-  // [self registerBackgroundTasks];
-  
-  // Schedule initial background tasks
-  // [self scheduleBackgroundFetch];
-  // [self scheduleBackgroundProcessing];
-  // [self scheduleReminderProcessing];
-  // [self scheduleNotificationProcessing];
+  // Initialize the new iOS notification system
+  [self setupNotificationSystem];
   
   self.moduleName = @"ClearCue2";
   // You can add your custom initial props in the dictionary below.
@@ -26,6 +21,48 @@
   self.initialProps = @{};
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
+}
+
+- (void)setupNotificationSystem
+{
+  // Initialize the pure iOS notification manager
+  NotificationManager *notificationManager = [NotificationManager shared];
+  
+  // Request notification permissions
+  [notificationManager requestPermissions:^(BOOL granted) {
+    if (granted) {
+      NSLog(@"[AppDelegate] Notification permissions granted");
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [[UIApplication sharedApplication] registerForRemoteNotifications];
+      });
+    } else {
+      NSLog(@"[AppDelegate] Notification permissions denied");
+    }
+  }];
+  
+  NSLog(@"[AppDelegate] iOS notification system initialized");
+}
+
+// MARK: - Remote Notifications
+
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+  NSLog(@"[AppDelegate] Successfully registered for remote notifications");
+  // Firebase will handle the token automatically
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+{
+  NSLog(@"[AppDelegate] Failed to register for remote notifications: %@", error);
+}
+
+// Handle remote notification received while app is running
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
+{
+  NSLog(@"[AppDelegate] Received remote notification: %@", userInfo);
+  
+  // Firebase messaging will handle this automatically
+  completionHandler(UIBackgroundFetchResultNewData);
 }
 
 /*

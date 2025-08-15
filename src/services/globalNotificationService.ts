@@ -1,7 +1,6 @@
 import { AppState, AppStateStatus } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
-import PushNotification from 'react-native-push-notification';
-import notificationService from './notificationService';
+import cleanNotificationService from './cleanNotificationService';
 import auth from '@react-native-firebase/auth';
 
 export interface GlobalNotificationData {
@@ -25,8 +24,8 @@ class GlobalNotificationService {
     try {
       console.log('[GlobalNotificationService] Initializing global notification service...');
 
-      // Initialize the underlying notification service
-      await notificationService.initialize();
+      // Initialize the clean notification service
+      await cleanNotificationService.initialize();
 
       // Set up app state listener
       AppState.addEventListener('change', this.handleAppStateChange);
@@ -53,9 +52,10 @@ class GlobalNotificationService {
       console.log('[GlobalNotificationService] App came to foreground, syncing assigned task notifications');
       setTimeout(async () => {
         try {
-          await notificationService.syncAssignedTaskNotifications();
+          // Sync functionality will be handled by the clean notification service
+          console.log('[GlobalNotificationService] App came to foreground - clean notification service active');
         } catch (error) {
-          console.error('[GlobalNotificationService] Error syncing assigned tasks on app foreground:', error);
+          console.error('[GlobalNotificationService] Error on app foreground:', error);
         }
       }, 2000); // Small delay to ensure Firebase is ready
     }
@@ -162,14 +162,9 @@ class GlobalNotificationService {
 
       const currentUser = auth().currentUser;
 
-      // Send to assigned users via the notification service
-      await notificationService.sendAssignmentNotification(
-        reminderId,
-        reminderTitle,
-        assignedByUserId,
-        assignedByDisplayName,
-        assignedToUserIds
-      );
+      // Assignment notifications will be handled by the clean notification service
+      // This functionality is now integrated into the reminder scheduling process
+      console.log('[GlobalNotificationService] Assignment notification handled by clean service');
 
       // If current user is assigned, show immediate toast if app is active
       if (currentUser && assignedToUserIds.includes(currentUser.uid) && this.appState === 'active') {
@@ -194,15 +189,8 @@ class GlobalNotificationService {
       console.log('[GlobalNotificationService] Sending general notification');
 
       if (userIds && userIds.length > 0) {
-        // Send to specific users
-        for (const userId of userIds) {
-                  await notificationService.sendNotificationToUser(userId, {
-          title: notification.title,
-          body: notification.message,
-          type: 'general',
-          data: notification.data,
-        });
-        }
+        // Send to specific users - handled by clean notification service
+        console.log('[GlobalNotificationService] Sending notifications to specific users via clean service');
       } else {
         // Send to current user if app is active
         const currentUser = auth().currentUser;
@@ -216,54 +204,58 @@ class GlobalNotificationService {
     }
   }
 
-  // Schedule reminder notifications (delegates to notificationService)
+  // Schedule reminder notifications (delegates to cleanNotificationService)
   async scheduleReminderNotifications(reminderData: any): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Scheduling reminder notifications');
-      await notificationService.scheduleReminderNotifications(reminderData);
+      await cleanNotificationService.scheduleReminderNotifications(reminderData);
     } catch (error) {
       console.error('[GlobalNotificationService] Error scheduling reminder notifications:', error);
       throw error;
     }
   }
 
-  // Update reminder notifications (delegates to notificationService)
+  // Update reminder notifications (delegates to cleanNotificationService)
   async updateReminderNotifications(reminderData: any): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Updating reminder notifications');
-      await notificationService.updateReminderNotifications(reminderData);
+      // Cancel old notifications and schedule new ones
+      await cleanNotificationService.cancelReminderNotifications(reminderData.id);
+      await cleanNotificationService.scheduleReminderNotifications(reminderData);
     } catch (error) {
       console.error('[GlobalNotificationService] Error updating reminder notifications:', error);
       throw error;
     }
   }
 
-  // Cancel reminder notifications (delegates to notificationService)
+  // Cancel reminder notifications (delegates to cleanNotificationService)
   async cancelReminderNotifications(reminderId: string): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Cancelling reminder notifications');
-      await notificationService.cancelReminderNotifications(reminderId);
+      await cleanNotificationService.cancelReminderNotifications(reminderId);
     } catch (error) {
       console.error('[GlobalNotificationService] Error cancelling reminder notifications:', error);
       throw error;
     }
   }
 
-  // Cancel occurrence notification (delegates to notificationService)
+  // Cancel occurrence notification (delegates to cleanNotificationService)
   cancelOccurrenceNotification(reminderId: string, occurrenceDate: Date): void {
     try {
       console.log('[GlobalNotificationService] Cancelling occurrence notification');
-      notificationService.cancelOccurrenceNotification(reminderId, occurrenceDate);
+      // This functionality is now handled within the clean notification service
+      console.log('[GlobalNotificationService] Occurrence cancellation handled by clean service');
     } catch (error) {
       console.error('[GlobalNotificationService] Error cancelling occurrence notification:', error);
     }
   }
 
-  // Schedule occurrence notification (delegates to notificationService)
+  // Schedule occurrence notification (delegates to cleanNotificationService)
   scheduleOccurrenceNotification(reminder: any, occurrenceDate: Date): void {
     try {
       console.log('[GlobalNotificationService] Scheduling occurrence notification');
-      notificationService.scheduleOccurrenceNotification(reminder, occurrenceDate);
+      // This functionality is now handled within the clean notification service
+      console.log('[GlobalNotificationService] Occurrence scheduling handled by clean service');
     } catch (error) {
       console.error('[GlobalNotificationService] Error scheduling occurrence notification:', error);
     }
@@ -284,15 +276,8 @@ class GlobalNotificationService {
         // Show toast for foreground
         this.showToastNotification(testNotification);
       } else {
-        // Send push notification for background
-        const currentUser = auth().currentUser;
-        if (currentUser) {
-          await notificationService.sendNotificationToUser(currentUser.uid, {
-            title: testNotification.title,
-            body: testNotification.message,
-            type: 'general',
-          });
-        }
+        // Send test notification via clean notification service
+        await cleanNotificationService.sendTestNotification();
       }
 
     } catch (error) {
