@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import ToastNotification from '../components/common/ToastNotification';
-import globalNotificationService, { GlobalNotificationData } from '../services/globalNotificationService';
+interface GlobalNotificationData {
+  title: string;
+  message: string;
+  type?: 'success' | 'error' | 'warning' | 'info' | 'assignment';
+  data?: Record<string, any>;
+  reminderId?: string;
+  assignedBy?: string;
+  assignedByDisplayName?: string;
+}
 
 interface ToastContextType {
   showToast: (notification: GlobalNotificationData) => void;
@@ -48,15 +56,8 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     hideToast();
   }, [toastNotification, hideToast]);
 
-  useEffect(() => {
-    // Register with global notification service
-    globalNotificationService.registerToastCallback(showToast);
-
-    // Cleanup on unmount
-    return () => {
-      globalNotificationService.unregisterToastCallback(showToast);
-    };
-  }, [showToast]);
+  // Note: Toast callbacks are now handled directly by components
+  // No need for global notification service registration
 
   const contextValue: ToastContextType = {
     showToast,

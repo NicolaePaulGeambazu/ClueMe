@@ -15,6 +15,4 @@ jest.mock('react-native-permissions', () => ({
   PERMISSIONS: {},
   RESULTS: {},
 }));
-jest.mock('react-native-push-notification', () => ({
-  localNotificationSchedule: jest.fn(),
-}));
+// Push notification mock removed - using iOS native notifications now
