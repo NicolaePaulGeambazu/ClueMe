@@ -312,7 +312,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             <View style={styles.taskTimeContainer}>
               <Clock size={14} color={colors.textSecondary} />
               <Text style={[styles.taskTime, { color: colors.textSecondary }]}>
-                {reminder.dueTime || (reminder.dueDate ? formatTimeOnly(new Date(reminder.dueDate)) : '')}
+                {reminder.dueTime || ''}
               </Text>
             </View>
           </View>
@@ -692,20 +692,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingTop: 8,
-  },
-  greeting: {
-    ...TextStyles.title1,
-    marginBottom: 4,
-  },
-  subtitle: {
-    ...TextStyles.body,
-  } as any,
+  
+
   headerButton: {
     padding: 12,
     borderRadius: 12,
@@ -724,10 +712,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
-  sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+
   sectionTitle: {
     ...TextStyles.title2,
     marginLeft: 8,
@@ -989,6 +974,15 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  greeting: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: '400',
+  },
   familyButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1005,13 +999,7 @@ const styles = StyleSheet.create({
     ...TextStyles.caption1,
     marginLeft: 8,
   },
-  greeting: {
-    ...TextStyles.title1,
-    marginBottom: 4,
-  },
-  subtitle: {
-    ...TextStyles.body,
-  } as any,
+
 
   section: {
     marginBottom: 32,
@@ -1025,10 +1013,6 @@ const styles = StyleSheet.create({
   sectionTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  sectionTitle: {
-    ...TextStyles.title2,
-    marginLeft: 8,
   },
   sectionButton: {
     flexDirection: 'row',

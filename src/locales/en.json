@@ -49,8 +49,13 @@
     "assignToFamilyMembers": "Assign to family members",
     "assigned": "Assigned",
     "notAssigned": "Not assigned",
+    "tapToAssign": "Tap to assign family members",
+    "unknownMembers": "{{count}} unknown members",
+    "unknownMember": "Unknown member",
+    "others": "others",
     "assignedToMultiple": "Assigned to {count} people",
     "assignedTo1": "Assigned to {{name}}",
+    "assignedCount": "{{count}} assigned",
     "location": "Location",
     "locationPlaceholder": "Add location",
     "noNotifications": "No notifications",
@@ -494,7 +499,10 @@
       "reminder_completed": "Reminder completed",
       "reminder_shared": "Reminder shared",
       "family_updated": "Family updated"
-    }
+    },
+    "noMembers": "No family members",
+    "inviteMembersToAssign": "Invite family members to assign tasks to them",
+    "unknownMember": "Unknown Member"
   },
   "upgrade": {
     "title": "Upgrade to Pro",

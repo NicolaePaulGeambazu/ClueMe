@@ -25,6 +25,8 @@ interface QuickAddFormProps {
   getTimeOptions: () => any[];
   getRecurringDescriptionText: () => string;
   getAssignedMembersText: () => string;
+  getAssignedMembersDetails: (members: any[]) => string;
+  members: any[];
   onDatePress: () => void;
   onRecurringPress: () => void;
   onNotificationPress: () => void;
@@ -54,6 +56,8 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   getTimeOptions,
   getRecurringDescriptionText,
   getAssignedMembersText,
+  getAssignedMembersDetails,
+  members,
   onDatePress,
   onRecurringPress,
   onNotificationPress,
@@ -238,7 +242,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
           <View style={[styles.statusChip, { backgroundColor: colors.primary + '20' }]}>
             <Users size={12} color={colors.primary} />
             <Text style={[styles.statusChipText, { color: colors.primary }]}>
-              {assignedTo.length} assigned
+              {getAssignedMembersDetails(members)}
             </Text>
           </View>
         )}

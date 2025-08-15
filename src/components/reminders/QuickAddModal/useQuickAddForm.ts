@@ -296,6 +296,33 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     return t('quickAdd.assignedToMultiple', { count: assignedTo.length });
   };
 
+  const getAssignedMembersDetails = (members: any[]) => {
+    if (assignedTo.length === 0) {
+      return t('quickAdd.tapToAssign');
+    }
+    
+    const assignedMembers = members.filter(member => assignedTo.includes(member.userId));
+    if (assignedMembers.length === 0) {
+      return t('quickAdd.unknownMembers', { count: assignedTo.length });
+    }
+    
+    if (assignedMembers.length === 1) {
+      const member = assignedMembers[0];
+      const displayName = member.name || (member.email ? member.email.split('@')[0] : t('quickAdd.unknownMember'));
+      return displayName;
+    }
+    
+    const names = assignedMembers
+      .slice(0, 2)
+      .map(member => member.name || (member.email ? member.email.split('@')[0] : t('quickAdd.unknownMember')));
+    
+    if (assignedMembers.length === 2) {
+      return names.join(' & ');
+    }
+    
+    return `${names[0]} & ${assignedMembers.length - 1} ${t('quickAdd.others')}`;
+  };
+
   const handleDateSelect = (value: string) => {
     setSelectedDate(value);
     setShowDateSheet(false);
@@ -496,6 +523,7 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     getTimeFromSelection,
     getRecurringDescriptionText,
     getAssignedMembersText,
+    getAssignedMembersDetails,
     handleDateSelect,
     handleTimeSelect,
     handleFamilyMemberToggle,

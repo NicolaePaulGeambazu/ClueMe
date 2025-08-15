@@ -135,7 +135,7 @@ export const AddReminderBottomSheet = () => {
               style={[styles.assigneeBtn, assignees.includes(member.userId) && styles.assigneeSelected]}
               onPress={() => handleToggleAssignee(member.userId)}
             >
-              <Text>{member.name || member.email || 'Family Member'}</Text>
+              <Text>{member.name || (member.email ? member.email.split('@')[0] : 'Family Member')}</Text>
             </TouchableOpacity>
           ))}
         </View>

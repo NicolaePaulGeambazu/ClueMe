@@ -27,6 +27,7 @@ import InterstitialAdTrigger from '../../ads/InterstitialAdTrigger';
 import { QuickAddHeader } from './QuickAddHeader';
 import { QuickAddForm } from './QuickAddForm';
 import { QuickAddSheets } from './QuickAddSheets';
+import { FamilyMemberDrawer } from '../FamilyMemberDrawer';
 import { DateTimeSelectionModal } from './DateTimeSelectionModal';
 import { useQuickAddForm, ReminderData } from './useQuickAddForm';
 import { createStyles } from './styles';
@@ -85,8 +86,6 @@ export default function QuickAddModal({
   // Animation
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const blurAnim = useRef(new Animated.Value(0)).current;
 
   // Form state
   const form = useQuickAddForm(prefillData, prefillDate, prefillTime);
@@ -111,62 +110,43 @@ export default function QuickAddModal({
   // Animation effects
   useEffect(() => {
     if (visible) {
-      // Reset animations
-      scaleAnim.setValue(0.8);
-      blurAnim.setValue(0);
-
-      // Beautiful entrance animation with multiple phases
-      Animated.sequence([
-        // Phase 1: Fade in overlay with blur effect
+      // Clean entrance animation with just slide and fade
+      Animated.parallel([
+        // Fade in overlay
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 400,
+          duration: 300,
           useNativeDriver: true,
           easing: Easing.out(Easing.cubic),
         }),
-        // Phase 2: Modal appears with spring effect
+        // Modal slides up smoothly
         Animated.spring(slideAnim, {
           toValue: 1,
           useNativeDriver: true,
-          tension: 65,
+          tension: 80,
           friction: 8,
-          restDisplacementThreshold: 0.01,
-          restSpeedThreshold: 0.01,
-        }),
-        // Phase 3: Scale up with bounce
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 100,
-          friction: 7,
           restDisplacementThreshold: 0.01,
           restSpeedThreshold: 0.01,
         }),
       ]).start();
     } else {
-      // Elegant exit animation
+      // Clean exit animation
       Animated.parallel([
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 300,
+          duration: 250,
           useNativeDriver: true,
           easing: Easing.in(Easing.cubic),
         }),
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 250,
-          useNativeDriver: true,
-          easing: Easing.in(Easing.cubic),
-        }),
-        Animated.timing(scaleAnim, {
-          toValue: 0.8,
-          duration: 250,
+          duration: 200,
           useNativeDriver: true,
           easing: Easing.in(Easing.cubic),
         }),
       ]).start();
     }
-  }, [visible, slideAnim, opacityAnim, scaleAnim, blurAnim]);
+  }, [visible, slideAnim, opacityAnim]);
 
   // Handlers
   const handleSave = async () => {
@@ -366,11 +346,8 @@ export default function QuickAddModal({
                   {
                     translateY: slideAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [600, 0], // Slide up from further below for dramatic effect
+                      outputRange: [400, 0], // Clean slide up animation
                     }),
-                  },
-                  {
-                    scale: scaleAnim,
                   },
                 ],
               },
@@ -410,6 +387,8 @@ export default function QuickAddModal({
                 getTimeOptions={form.getTimeOptions}
                 getRecurringDescriptionText={form.getRecurringDescriptionText}
                 getAssignedMembersText={form.getAssignedMembersText}
+                getAssignedMembersDetails={form.getAssignedMembersDetails}
+                members={members}
                 onDatePress={() => {
                   setTempDate(form.selectedDate);
                   setTempTime(form.selectedTime);
@@ -432,7 +411,7 @@ export default function QuickAddModal({
         <QuickAddSheets
           showDateSheet={form.showDateSheet}
           showTimeSheet={form.showTimeSheet}
-          showFamilyPicker={form.showFamilyPicker}
+          showFamilyPicker={false} // Disabled - using drawer instead
           dateOptions={form.dateOptions}
           timeOptions={form.getTimeOptions()}
           members={members}
@@ -445,6 +424,16 @@ export default function QuickAddModal({
           onCloseFamilyPicker={() => form.setShowFamilyPicker(false)}
           colors={colors}
           styles={styles}
+        />
+
+        {/* Family Member Drawer - Vaul-style */}
+        <FamilyMemberDrawer
+          visible={form.showFamilyPicker}
+          onClose={() => form.setShowFamilyPicker(false)}
+          members={members}
+          assignedTo={form.assignedTo}
+          onToggleMember={form.handleFamilyMemberToggle}
+          colors={colors}
         />
 
         {/* Date Picker Modal */}
