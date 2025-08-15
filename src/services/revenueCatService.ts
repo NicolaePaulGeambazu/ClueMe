@@ -563,10 +563,6 @@ class RevenueCatService {
 
         // If all URLs fail, provide manual instructions
         throw new Error('Unable to open subscription management automatically. Please follow these steps:\n\n1. Open Settings app\n2. Tap your Apple ID at the top\n3. Tap "Subscriptions"\n4. Find ClearCue and tap "Cancel Subscription"');
-      } else if (Platform.OS === 'android') {
-        // For Android, open Google Play subscription management
-        const url = 'https://play.google.com/store/account/subscriptions';
-        await Linking.openURL(url);
       }
     } catch (error) {
       console.error('[RevenueCatService] Failed to open subscription management:', error);
@@ -617,18 +613,6 @@ class RevenueCatService {
           success: false,
           manualInstructions: '1. Open Settings app\n2. Tap your Apple ID at the top\n3. Tap "Subscriptions"\n4. Find ClearCue and tap "Cancel Subscription"',
         };
-      } else if (Platform.OS === 'android') {
-        // For Android, use the Google Play Store subscription management
-        const playStoreUrl = 'https://play.google.com/store/account/subscriptions';
-        try {
-          await Linking.openURL(playStoreUrl);
-          return { success: true };
-        } catch (error) {
-          // Fallback to Google Play Store main page
-          const fallbackUrl = 'https://play.google.com/store';
-          await Linking.openURL(fallbackUrl);
-          return { success: true };
-        }
       }
 
       return { success: false };

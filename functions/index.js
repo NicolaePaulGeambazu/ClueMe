@@ -33,15 +33,7 @@ async function sendFCMViaLegacy(fcmToken, notification, data = {}) {
         ...data,
         timestamp: Date.now().toString(),
       },
-      android: {
-        priority: 'high',
-        notification: {
-          channelId: 'reminders',
-          priority: 'high',
-          defaultSound: true,
-          defaultVibrateTimings: true,
-        },
-      },
+      // iOS-only app - no Android configuration needed
       apns: {
         headers: {
           'apns-priority': '10',
@@ -128,15 +120,7 @@ exports.sendFCMNotification = functions
           type: type || 'general',
           timestamp: Date.now().toString(),
         },
-        android: {
-          priority: 'high',
-          notification: {
-            channelId: 'reminders',
-            priority: 'high',
-            defaultSound: true,
-            defaultVibrateTimings: true,
-          },
-        },
+        // iOS-only app - no Android configuration needed
         apns: {
           headers: {
             'apns-topic': apnsConfig.bundleId,

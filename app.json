@@ -21,7 +21,7 @@
     "calendar",
     "tasks"
   ],
-  "platforms": ["ios", "android"],
+  "platforms": ["ios"],
   "expo": {
     "name": "ClearCue",
     "slug": "clearcue",
@@ -54,21 +54,7 @@
         ]
       }
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "package": "org.reactjs.native.example.clueme2",
-      "versionCode": 1,
-      "permissions": [
-        "android.permission.INTERNET",
-        "android.permission.VIBRATE",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.SCHEDULE_EXACT_ALARM",
-        "android.permission.POST_NOTIFICATIONS"
-      ]
-    },
+
     "web": {
       "favicon": "./src/assets/images/favicon.png"
     },

@@ -1,59 +1,53 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  StyleSheet,
   Animated,
   TouchableOpacity,
-  StyleSheet,
-  Dimensions,
+  Platform,
 } from 'react-native';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { X, Bell } from 'lucide-react-native';
 
 interface ToastNotificationProps {
-  visible: boolean;
   title: string;
   message: string;
-  type?: 'success' | 'error' | 'warning' | 'info' | 'assignment';
+  type?: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
-  onClose: () => void;
   onPress?: () => void;
+  onDismiss?: () => void;
+  visible: boolean;
 }
 
-const { width } = Dimensions.get('window');
-
-export default function ToastNotification({
-  visible,
+const ToastNotification: React.FC<ToastNotificationProps> = ({
   title,
   message,
   type = 'info',
-  duration = 5000,
-  onClose,
+  duration = 4000,
   onPress,
-}: ToastNotificationProps) {
-  const { colors } = useTheme();
-  const insets = useSafeAreaInsets();
-  const slideAnim = useRef(new Animated.Value(-100)).current;
-  const opacityAnim = useRef(new Animated.Value(0)).current;
+  onDismiss,
+  visible,
+}) => {
+  const [fadeAnim] = useState(new Animated.Value(0));
+  const [slideAnim] = useState(new Animated.Value(-100));
 
   useEffect(() => {
     if (visible) {
-      // Slide in from top
+      // Show animation
       Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
         Animated.timing(slideAnim, {
           toValue: 0,
           duration: 300,
           useNativeDriver: true,
         }),
-        Animated.timing(opacityAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
       ]).start();
 
-      // Auto hide after duration
+      // Auto dismiss
       const timer = setTimeout(() => {
         hideToast();
       }, duration);
@@ -66,118 +60,97 @@ export default function ToastNotification({
 
   const hideToast = () => {
     Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
       Animated.timing(slideAnim, {
         toValue: -100,
         duration: 300,
         useNativeDriver: true,
       }),
-      Animated.timing(opacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
     ]).start(() => {
-      onClose();
+      onDismiss?.();
     });
   };
 
   const getTypeStyles = () => {
     switch (type) {
       case 'success':
-        return {
-          backgroundColor: colors.success,
-          iconColor: '#ffffff',
-        };
+        return { backgroundColor: '#4CAF50', icon: '✅' };
       case 'error':
-        return {
-          backgroundColor: colors.error,
-          iconColor: '#ffffff',
-        };
+        return { backgroundColor: '#F44336', icon: '❌' };
       case 'warning':
-        return {
-          backgroundColor: colors.warning,
-          iconColor: '#ffffff',
-        };
-      case 'assignment':
-        return {
-          backgroundColor: colors.primary,
-          iconColor: '#ffffff',
-        };
+        return { backgroundColor: '#FF9800', icon: '⚠️' };
       default:
-        return {
-          backgroundColor: colors.surface,
-          iconColor: colors.text,
-        };
+        return { backgroundColor: '#2196F3', icon: '📋' };
     }
   };
 
   const typeStyles = getTypeStyles();
 
-  if (!visible) {return null;}
+  if (!visible) return null;
 
   return (
     <Animated.View
       style={[
         styles.container,
         {
+          opacity: fadeAnim,
           transform: [{ translateY: slideAnim }],
-          opacity: opacityAnim,
           backgroundColor: typeStyles.backgroundColor,
-          paddingTop: insets.top + 10,
         },
       ]}
     >
       <TouchableOpacity
         style={styles.content}
-        onPress={onPress}
-        activeOpacity={onPress ? 0.7 : 1}
+        onPress={onPress || hideToast}
+        activeOpacity={0.8}
       >
         <View style={styles.iconContainer}>
-          <Bell size={20} color={typeStyles.iconColor} />
+          <Text style={styles.icon}>{typeStyles.icon}</Text>
         </View>
-
         <View style={styles.textContainer}>
-          <Text style={[styles.title, { color: typeStyles.iconColor }]}>
+          <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
-          <Text style={[styles.message, { color: typeStyles.iconColor }]}>
+          <Text style={styles.message} numberOfLines={2}>
             {message}
           </Text>
         </View>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.closeButton} onPress={hideToast}>
-        <X size={20} color={typeStyles.iconColor} />
-      </TouchableOpacity>
     </Animated.View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 9999,
+    top: Platform.OS === 'ios' ? 60 : 40,
+    left: 16,
+    right: 16,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 9999,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 60,
+    padding: 16,
   },
   iconContainer: {
     marginRight: 12,
+  },
+  icon: {
+    fontSize: 24,
   },
   textContainer: {
     flex: 1,
@@ -185,16 +158,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   message: {
     fontSize: 14,
+    color: '#FFFFFF',
     opacity: 0.9,
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 16,
-    padding: 4,
+    lineHeight: 18,
   },
 });
+
+export default ToastNotification;

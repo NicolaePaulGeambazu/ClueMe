@@ -1,20 +1,23 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import notificationService, { NotificationData, TaskNotificationData } from '../services/notificationService';
+import notificationService, { NotificationData } from '../services/notificationService';
 import messaging from '@react-native-firebase/messaging';
 import { Platform } from 'react-native';
-import { useAuth } from '../contexts/AuthContext';
-import { useFamily } from './useFamily';
 
 export const useNotifications = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-  const { family } = useFamily();
 
   // Initialize notifications
   const initialize = useCallback(async () => {
+    if (Platform.OS !== 'ios') {
+      setError('This app only supports iOS notifications');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -33,6 +36,11 @@ export const useNotifications = () => {
 
   // Request permissions
   const requestPermissions = useCallback(async () => {
+    if (Platform.OS !== 'ios') {
+      setError('This app only supports iOS notifications');
+      return false;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -41,7 +49,6 @@ export const useNotifications = () => {
       setIsEnabled(granted);
 
       if (granted) {
-        // Re-initialize after permission is granted
         await initialize();
       }
 
@@ -53,60 +60,6 @@ export const useNotifications = () => {
       setIsLoading(false);
     }
   }, [initialize]);
-
-  // Register device for remote messages
-  const registerDeviceForRemoteMessages = useCallback(async () => {
-    try {
-      if (Platform.OS === 'ios') {
-        const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
-
-        if (!isRegistered) {
-          await messaging().registerDeviceForRemoteMessages();
-
-          // Wait a moment for registration to complete
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          // Check registration status again
-          const newStatus = await messaging().isDeviceRegisteredForRemoteMessages;
-
-          if (!newStatus) {
-            // In iOS simulator, registration might fail, but we can still try to get token
-            return true;
-          }
-        }
-        return true;
-      }
-      return true;
-    } catch (err) {
-      // Even if registration fails, we can try to get token
-      return true;
-    }
-  }, []);
-
-  // Send notification to user
-  const sendNotificationToUser = useCallback(async (
-    userId: string,
-    notification: NotificationData
-  ) => {
-    try {
-      await notificationService.sendNotificationToUser(userId, notification);
-    } catch (err) {
-      throw err;
-    }
-  }, []);
-
-  // Send notification to family
-  const sendNotificationToFamily = useCallback(async (
-    familyId: string,
-    notification: NotificationData,
-    excludeUserId?: string
-  ) => {
-    try {
-      await notificationService.sendNotificationToFamily(familyId, notification, excludeUserId);
-    } catch (err) {
-      throw err;
-    }
-  }, []);
 
   // Send test notification
   const sendTestNotification = useCallback(async () => {
@@ -120,122 +73,17 @@ export const useNotifications = () => {
   // Get FCM token
   const getFCMToken = useCallback(async () => {
     try {
-      // Try to register device first
-      await registerDeviceForRemoteMessages();
-
-      // Try to get token with error handling
-      try {
-        const token = await messaging().getToken();
-        return token;
-      } catch (tokenError) {
-        // If first attempt fails, try registering again and retry
-        if (Platform.OS === 'ios') {
-          try {
-            await messaging().registerDeviceForRemoteMessages();
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            const retryToken = await messaging().getToken();
-            return retryToken;
-          } catch (retryError) {
-            throw retryError;
-          }
-        }
-
-        throw tokenError;
-      }
+      return await notificationService.getFCMToken();
     } catch (err) {
-      // Note: We'll let the actual FCM token generation attempt even on iOS simulator
-      // as modern simulators can generate real tokens
+      console.error('Error getting FCM token:', err);
       return null;
     }
-  }, [registerDeviceForRemoteMessages]);
+  }, []);
 
   // Initialize on mount
   useEffect(() => {
     initialize();
   }, [initialize]);
-
-  // Enhanced notification methods for tasks
-  const notifyTaskCreated = async (
-    taskData: TaskNotificationData,
-    excludeCurrentUser: boolean = true
-  ) => {
-    try {
-      if (!family) {
-        return;
-      }
-
-      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
-      await notificationService.notifyTaskCreated(
-        family.id,
-        taskData,
-        excludeUserId
-      );
-    } catch (error) {
-    }
-  };
-
-  const notifyTaskAssigned = async (
-    taskData: TaskNotificationData,
-    excludeCurrentUser: boolean = true
-  ) => {
-    try {
-      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
-      await notificationService.notifyTaskAssigned(taskData, excludeUserId);
-    } catch (error) {
-    }
-  };
-
-  const notifyTaskUpdated = async (
-    taskData: TaskNotificationData,
-    updateType: 'due_date' | 'priority' | 'description' | 'general',
-    excludeCurrentUser: boolean = true
-  ) => {
-    try {
-      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
-      await notificationService.notifyTaskUpdated(
-        taskData,
-        updateType,
-        excludeUserId
-      );
-    } catch (error) {
-    }
-  };
-
-  const notifyTaskCompleted = async (
-    taskData: TaskNotificationData,
-    completedByDisplayName: string,
-    excludeCurrentUser: boolean = true
-  ) => {
-    try {
-      const excludeUserId = excludeCurrentUser ? user?.uid : undefined;
-      await notificationService.notifyTaskCompleted(
-        taskData,
-        user?.uid || '',
-        completedByDisplayName,
-        excludeUserId
-      );
-    } catch (error) {
-    }
-  };
-
-  const sendTaskReminder = async (
-    taskData: TaskNotificationData,
-    reminderType: 'due_soon' | 'overdue' | 'daily_digest'
-  ) => {
-    try {
-      await notificationService.sendTaskReminder(taskData, reminderType);
-    } catch (error) {
-    }
-  };
-
-  // Start background reminder checking
-  const startBackgroundReminderChecking = useCallback(() => {
-    try {
-      notificationService.startBackgroundReminderChecking();
-    } catch (error) {
-    }
-  }, []);
 
   return {
     isInitialized,
@@ -244,16 +92,7 @@ export const useNotifications = () => {
     error,
     initialize,
     requestPermissions,
-    registerDeviceForRemoteMessages,
-    sendNotificationToUser,
-    sendNotificationToFamily,
     sendTestNotification,
     getFCMToken,
-    notifyTaskCreated,
-    notifyTaskAssigned,
-    notifyTaskUpdated,
-    notifyTaskCompleted,
-    sendTaskReminder,
-    startBackgroundReminderChecking,
   };
 };

@@ -7,14 +7,16 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Colors } from '../../constants/Colors';
 import { Fonts } from '../../constants/Fonts';
 
-// Import screen components
-import HomeScreen from '../../screens/index';
+// Import fluid screen components
+import HomeFluid from '../../screens/HomeFluid';
 import CountdownScreen from '../../screens/countdown';
 import AddReminderTab from '../reminders/AddReminderTab';
-import SettingsScreen from '../../screens/settings';
+import SettingsFluid from '../../screens/SettingsFluid';
 import AddCountdownScreen from '../../screens/add-countdown';
-import ListsScreen from '../../screens/lists';
-import RemindersScreen from '../../screens/reminders';
+import ListsFluid from '../../screens/ListsFluid';
+import RemindersFluid from '../../screens/RemindersFluid';
+import CalendarFluid from '../../screens/CalendarFluid';
+import FamilyFluid from '../../screens/FamilyFluid';
 
 
 const Tab = createBottomTabNavigator();
@@ -23,11 +25,12 @@ const Stack = createNativeStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="HomeMain" component={HomeFluid} />
       <Stack.Screen name="Countdown" component={CountdownScreen} />
       <Stack.Screen name="AddCountdown" component={AddCountdownScreen} />
-      <Stack.Screen name="Reminders" component={RemindersScreen} />
-      
+      <Stack.Screen name="Reminders" component={RemindersFluid} />
+      <Stack.Screen name="Calendar" component={CalendarFluid} />
+      <Stack.Screen name="Family" component={FamilyFluid} />
     </Stack.Navigator>
   );
 }
@@ -74,7 +77,7 @@ export default function TabLayout() {
       />
       <Tab.Screen
         name="Lists"
-        component={ListsScreen}
+        component={ListsFluid}
         options={{
           tabBarIcon: ({ color, size }) => (
             <List size={size} color={color} strokeWidth={2} />
@@ -84,7 +87,7 @@ export default function TabLayout() {
       />
       <Tab.Screen
         name="Settings"
-        component={SettingsScreen}
+        component={SettingsFluid}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Settings size={size} color={color} strokeWidth={2} />

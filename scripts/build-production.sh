@@ -70,21 +70,7 @@ yarn clean
 print_status "Generating app icons..."
 yarn generate:icons
 
-# Build for Android
-if [ "$1" = "android" ] || [ "$1" = "all" ] || [ -z "$1" ]; then
-    print_status "Building Android app..."
-    
-    # Check if Android SDK is available
-    if ! command -v adb &> /dev/null; then
-        print_warning "Android SDK not found. Skipping Android build."
-    else
-        cd android
-        ./gradlew clean
-        ./gradlew assembleRelease
-        print_success "Android build completed: android/app/build/outputs/apk/release/app-release.apk"
-        cd ..
-    fi
-fi
+# iOS-only app - no Android build needed
 
 # Build for iOS
 if [ "$1" = "ios" ] || [ "$1" = "all" ] || [ -z "$1" ]; then
@@ -123,11 +109,7 @@ fi
 # Create build artifacts directory
 mkdir -p build-artifacts
 
-# Copy build outputs
-if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-    cp android/app/build/outputs/apk/release/app-release.apk build-artifacts/ClearCue-android-release.apk
-    print_success "Android APK copied to build-artifacts/"
-fi
+# Copy build outputs (iOS only)
 
 if [ -d "ios/ClearCue2.xcarchive" ]; then
     print_status "iOS archive created. Use Xcode to export IPA file."

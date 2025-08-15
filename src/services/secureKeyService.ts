@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // Key identifiers for secure storage
 export const SECURE_KEYS = {
   REVENUECAT_IOS_API_KEY: 'clearcue_revenuecat_ios_api_key',
-  REVENUECAT_ANDROID_API_KEY: 'clearcue_revenuecat_android_api_key',
+
   ADMOB_APP_ID: 'clearcue_admob_app_id',
   ADMOB_BANNER_ID: 'clearcue_admob_banner_id',
   ADMOB_INTERSTITIAL_ID: 'clearcue_admob_interstitial_id',

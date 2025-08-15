@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 interface SettingsContextType {
   fabPosition: 'left' | 'right';
   setFabPosition: (position: 'left' | 'right') => void;
+  settings: SettingsData;
+  updateSettings: (newSettings: Partial<SettingsData>) => void;
   isLoading: boolean;
 }
 
@@ -52,9 +54,26 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const updateSettings = async (newSettings: Partial<SettingsData>) => {
+    try {
+      const currentSettings: SettingsData = { fabPosition };
+      const updatedSettings = { ...currentSettings, ...newSettings };
+      
+      if (updatedSettings.fabPosition !== fabPosition) {
+        setFabPositionState(updatedSettings.fabPosition);
+      }
+      
+      await AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updatedSettings));
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  };
+
   const value: SettingsContextType = {
     fabPosition,
     setFabPosition,
+    settings: { fabPosition },
+    updateSettings,
     isLoading,
   };
 

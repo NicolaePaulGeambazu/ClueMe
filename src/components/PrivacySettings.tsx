@@ -301,7 +301,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Privacy Information</Text>
 
-      <View style={styles.infoCard}>
+      <View style={styles.infoContainer}>
         <View style={styles.infoHeader}>
           <Lock size={16} color={colors.success} strokeWidth={2} />
           <Text style={styles.infoTitle}>Data Security</Text>
@@ -311,7 +311,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
         </Text>
       </View>
 
-      <View style={styles.infoCard}>
+      <View style={styles.infoContainer}>
         <View style={styles.infoHeader}>
           <Eye size={16} color={colors.primary} strokeWidth={2} />
           <Text style={styles.infoTitle}>Data Transparency</Text>
@@ -321,7 +321,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
         </Text>
       </View>
 
-      <View style={styles.infoCard}>
+      <View style={styles.infoContainer}>
         <View style={styles.infoHeader}>
           <Users size={16} color={colors.secondary} strokeWidth={2} />
           <Text style={styles.infoTitle}>Family Privacy</Text>
@@ -456,13 +456,16 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textSecondary,
     lineHeight: 16,
   },
-  infoCard: {
+  infoContainer: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   infoHeader: {
     flexDirection: 'row',

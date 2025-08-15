@@ -1,285 +1,333 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from 'react-native';
-import { Bell, Plus, X, ChevronRight } from 'lucide-react-native';
-import { useTranslation } from 'react-i18next';
-import { Colors } from '../../constants/Colors';
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
-import { NotificationTiming, DEFAULT_NOTIFICATION_TIMINGS } from '../../services/notificationService';
-import { DisabledFeature } from '../premium/DisabledFeature';
-import { canUseMultipleNotifications, getMaxNotificationTimes } from '../../services/featureFlags';
 
-interface NotificationTimingSelectorProps {
-  hasNotification: boolean;
-  onNotificationChange: (enabled: boolean) => void;
-  notificationTimings: NotificationTiming[];
-  onNotificationTimingsChange: (timings: NotificationTiming[]) => void;
-  colors: typeof Colors.light;
-  showTimingSelector?: boolean;
-  onShowTimingSelectorChange?: (show: boolean) => void;
-  onUpgradePress?: () => void;
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Platform,
+} from 'react-native';
+import { getDefaultNotificationTimings, getTimingDescription, isNotificationPlatformSupported } from '../../utils/notificationUtils';
+
+interface NotificationTiming {
+  type: 'before' | 'exact' | 'after';
+  value: number;
+  label: string;
 }
 
-export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProps> = ({
-  hasNotification,
-  onNotificationChange,
-  notificationTimings,
-  onNotificationTimingsChange,
-  colors,
-  showTimingSelector = false,
-  onShowTimingSelectorChange,
-  onUpgradePress,
-}) => {
-  const { t } = useTranslation();
+interface NotificationTimingSelectorProps {
+  selectedTimings: NotificationTiming[];
+  onTimingsChange: (timings: NotificationTiming[]) => void;
+  disabled?: boolean;
+}
 
-  const addTiming = (timing: NotificationTiming) => {
-    const exists = notificationTimings.some(
-      t => t.type === timing.type && t.value === timing.value
+const NotificationTimingSelector: React.FC<NotificationTimingSelectorProps> = ({
+  selectedTimings,
+  onTimingsChange,
+  disabled = false,
+}) => {
+  const [modalVisible, setModalVisible] = useState(false);
+  const availableTimings = getDefaultNotificationTimings();
+
+  if (!isNotificationPlatformSupported()) {
+    return (
+      <View style={styles.unsupportedContainer}>
+        <Text style={styles.unsupportedText}>
+          Notifications are only supported on iOS
+        </Text>
+      </View>
     );
-    if (!exists) {
-      // Check if user can add more notifications
-      const maxNotifications = getMaxNotificationTimes();
-      if (notificationTimings.length >= maxNotifications) {
-        onUpgradePress?.();
-        return;
-      }
-      onNotificationTimingsChange([...notificationTimings, timing]);
+  }
+
+  const toggleTiming = (timing: NotificationTiming) => {
+    const isSelected = selectedTimings.some(
+      (selected) => selected.type === timing.type && selected.value === timing.value
+    );
+
+    if (isSelected) {
+      const newTimings = selectedTimings.filter(
+        (selected) => !(selected.type === timing.type && selected.value === timing.value)
+      );
+      onTimingsChange(newTimings);
+    } else {
+      onTimingsChange([...selectedTimings, timing]);
     }
   };
 
-  const removeTiming = (index: number) => {
-    const newTimings = notificationTimings.filter((_, i) => i !== index);
-    onNotificationTimingsChange(newTimings);
+  const getSelectedTimingsText = () => {
+    if (selectedTimings.length === 0) {
+      return 'No notifications';
+    }
+    
+    if (selectedTimings.length === 1) {
+      return selectedTimings[0].label;
+    }
+    
+    return `${selectedTimings.length} notifications selected`;
   };
-
-  const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
-      {/* Main notification toggle */}
-      <View style={styles.switchRow}>
-        <View style={styles.switchLabelContainer}>
-          <Bell size={20} color={colors.primary} />
-          <Text style={styles.switchLabel}>{t('add.notifications')}</Text>
-        </View>
-        <Switch
-          value={hasNotification}
-          onValueChange={onNotificationChange}
-          trackColor={{ false: colors.border, true: colors.primary + '40' }}
-          thumbColor={hasNotification ? colors.primary : colors.textSecondary}
-        />
-      </View>
+      <Text style={styles.label}>Notification Timing</Text>
+      
+      <TouchableOpacity
+        style={[styles.selector, disabled && styles.selectorDisabled]}
+        onPress={() => !disabled && setModalVisible(true)}
+        disabled={disabled}
+      >
+        <Text style={[styles.selectorText, disabled && styles.selectorTextDisabled]}>
+          {getSelectedTimingsText()}
+        </Text>
+        <Text style={[styles.arrow, disabled && styles.arrowDisabled]}>▼</Text>
+      </TouchableOpacity>
 
-      {/* Notification timing options */}
-      {hasNotification && (
-        <View style={styles.timingContainer}>
-          <View style={styles.timingHeader}>
-            <Text style={styles.timingLabel}>{t('add.notificationTiming')}</Text>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
             <TouchableOpacity
-              style={styles.addTimingButton}
-              onPress={() => onShowTimingSelectorChange?.(!showTimingSelector)}
+              style={styles.cancelButton}
+              onPress={() => setModalVisible(false)}
             >
-              <Plus size={16} color={colors.primary} />
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <Text style={styles.modalTitle}>Notification Timing</Text>
+            
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Selected timings */}
-          {notificationTimings.length > 0 && (
-            <View style={styles.selectedTimings}>
-              {notificationTimings.map((timing, index) => (
-                <View key={`${timing.type}-${timing.value}`} style={styles.timingChip}>
-                  <Text style={styles.timingChipText}>{timing.label}</Text>
-                  <TouchableOpacity
-                    onPress={() => removeTiming(index)}
-                    style={styles.removeTimingButton}
-                  >
-                    <X size={12} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
+          <ScrollView style={styles.modalContent}>
+            <Text style={styles.modalDescription}>
+              Choose when you'd like to be notified about this reminder. 
+              All times are in UK timezone.
+            </Text>
+
+            {availableTimings.map((timing, index) => {
+              const isSelected = selectedTimings.some(
+                (selected) => selected.type === timing.type && selected.value === timing.value
+              );
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.timingOption, isSelected && styles.timingOptionSelected]}
+                  onPress={() => toggleTiming(timing)}
+                >
+                  <View style={styles.timingOptionContent}>
+                    <Text style={[styles.timingOptionText, isSelected && styles.timingOptionTextSelected]}>
+                      {timing.label}
+                    </Text>
+                    <Text style={[styles.timingOptionDescription, isSelected && styles.timingOptionDescriptionSelected]}>
+                      {getTimingDescription(timing.type, timing.value)}
+                    </Text>
+                  </View>
+                  
+                  <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+                    {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+
+            <View style={styles.selectedSummary}>
+              <Text style={styles.selectedSummaryTitle}>
+                Selected: {selectedTimings.length} notification{selectedTimings.length !== 1 ? 's' : ''}
+              </Text>
+              {selectedTimings.map((timing, index) => (
+                <Text key={index} style={styles.selectedSummaryItem}>
+                  • {timing.label}
+                </Text>
               ))}
             </View>
-          )}
-
-          {/* Default timing options */}
-          {showTimingSelector && (
-            <View style={styles.timingOptions}>
-              <ScrollView showsVerticalScrollIndicator={false}>
-                {DEFAULT_NOTIFICATION_TIMINGS.map((timing) => {
-                  const isSelected = notificationTimings.some(
-                    t => t.type === timing.type && t.value === timing.value
-                  );
-
-                  return (
-                    <TouchableOpacity
-                      key={`${timing.type}-${timing.value}`}
-                      style={[
-                        styles.timingOption,
-                        isSelected && styles.timingOptionSelected,
-                      ]}
-                      onPress={() => addTiming(timing)}
-                      disabled={isSelected}
-                    >
-                      <Text style={[
-                        styles.timingOptionText,
-                        isSelected && styles.timingOptionTextSelected,
-                      ]}>
-                        {timing.label}
-                      </Text>
-                      {isSelected && (
-                        <View style={styles.selectedIndicator}>
-                          <Text style={styles.selectedIndicatorText}>✓</Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-
-              {/* Premium features */}
-              {!canUseMultipleNotifications() && (
-                <View style={styles.premiumSection}>
-                  <DisabledFeature
-                    featureName={t('premium.features.multipleNotifications.title')}
-                    onUpgradePress={onUpgradePress || (() => {})}
-                    colors={colors}
-                    size="small"
-                    variant="subtle"
-                  />
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Help text */}
-          {notificationTimings.length === 0 && hasNotification && (
-            <Text style={styles.helpText}>
-              {t('add.notificationTimingHelp')}
-            </Text>
-          )}
+          </ScrollView>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
 
-const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginVertical: 8,
   },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-  },
-  switchLabelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  switchLabel: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    lineHeight: LineHeights.body,
-    color: colors.text,
-  },
-  timingContainer: {
-    marginTop: 8,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  timingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 8,
   },
-  timingLabel: {
-    fontFamily: Fonts.text.medium,
-    fontSize: FontSizes.footnote,
-    lineHeight: LineHeights.footnote,
-    color: colors.textSecondary,
-  },
-  addTimingButton: {
-    padding: 4,
-  },
-  selectedTimings: {
+  selector: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
-  },
-  timingChip: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.primary + '15',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-  },
-  timingChipText: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.footnote,
-    lineHeight: LineHeights.footnote,
-    color: colors.primary,
-  },
-  removeTimingButton: {
-    padding: 2,
-  },
-  timingOptions: {
-    maxHeight: 200,
-    backgroundColor: colors.background,
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 16,
+    minHeight: 50,
+  },
+  selectorDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E0E0E0',
+  },
+  selectorText: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  selectorTextDisabled: {
+    color: '#999',
+  },
+  arrow: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 8,
+  },
+  arrowDisabled: {
+    color: '#CCC',
+  },
+  unsupportedContainer: {
+    backgroundColor: '#FFF3CD',
+    borderWidth: 1,
+    borderColor: '#FFEAA7',
+    borderRadius: 8,
+    padding: 16,
+    marginVertical: 8,
+  },
+  unsupportedText: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'ios' ? 50 : 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  cancelButton: {
+    padding: 8,
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  doneButton: {
+    padding: 8,
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  modalDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    lineHeight: 20,
   },
   timingOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   timingOptionSelected: {
-    backgroundColor: colors.primary + '10',
+    borderColor: '#007AFF',
+    backgroundColor: '#F0F8FF',
+  },
+  timingOptionContent: {
+    flex: 1,
   },
   timingOptionText: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.body,
-    lineHeight: LineHeights.body,
-    color: colors.text,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
   },
   timingOptionTextSelected: {
-    color: colors.primary,
+    color: '#007AFF',
   },
-  selectedIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
+  timingOptionDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  timingOptionDescriptionSelected: {
+    color: '#007AFF',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
     alignItems: 'center',
     justifyContent: 'center',
+    marginLeft: 12,
   },
-  selectedIndicatorText: {
-    fontFamily: Fonts.text.medium,
-    fontSize: FontSizes.footnote,
-    lineHeight: LineHeights.footnote,
-    color: colors.background,
+  checkboxSelected: {
+    borderColor: '#007AFF',
+    backgroundColor: '#007AFF',
   },
-  helpText: {
-    fontFamily: Fonts.text.regular,
-    fontSize: FontSizes.footnote,
-    lineHeight: LineHeights.footnote,
-    color: colors.textTertiary,
-    fontStyle: 'italic',
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
-  premiumSection: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  selectedSummary: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  selectedSummaryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  selectedSummaryItem: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
   },
 });
+
+export default NotificationTimingSelector;

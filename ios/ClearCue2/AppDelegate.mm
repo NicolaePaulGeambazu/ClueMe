@@ -1,8 +1,12 @@
-#import "AppDelegate.h"
 
+#import "AppDelegate.h"
 #import <React/RCTBundleURLProvider.h>
 #import <Firebase.h>
-// #import <BackgroundTasks/BackgroundTasks.h>
+#import <UserNotifications/UserNotifications.h>
+#import <RNCPushNotificationIOS.h>
+
+@interface AppDelegate () <UNUserNotificationCenterDelegate>
+@end
 
 @implementation AppDelegate
 
@@ -11,157 +15,71 @@
   // Initialize Firebase
   [FIRApp configure];
   
-  // Register background tasks
-  // [self registerBackgroundTasks];
+  // Set up notification center delegate
+  UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+  center.delegate = self;
   
-  // Schedule initial background tasks
-  // [self scheduleBackgroundFetch];
-  // [self scheduleBackgroundProcessing];
-  // [self scheduleReminderProcessing];
-  // [self scheduleNotificationProcessing];
+  // Request notification permissions
+  [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge)
+                        completionHandler:^(BOOL granted, NSError * _Nullable error) {
+    if (granted) {
+      NSLog(@"Notification permissions granted");
+      dispatch_async(dispatch_get_main_queue(), ^{
+        [application registerForRemoteNotifications];
+      });
+    } else {
+      NSLog(@"Notification permissions denied: %@", error);
+    }
+  }];
   
   self.moduleName = @"ClearCue2";
-  // You can add your custom initial props in the dictionary below.
-  // They will be passed down to the ViewController used by React Native.
   self.initialProps = @{};
 
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 
-/*
-- (void)registerBackgroundTasks {
-  // Register background fetch task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.background-fetch"
-                                                         usingQueue:nil
-                                                      launchHandler:^(__kindof BGTask * _Nonnull task) {
-    [self handleBackgroundFetch:task];
-  }];
-  
-  // Register background processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.background-processing"
-                                                         usingQueue:nil
-                                                      launchHandler:^(__kindof BGTask * _Nonnull task) {
-    [self handleBackgroundProcessing:task];
-  }];
-  
-  // Register reminder processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.reminder-processing"
-                                                         usingQueue:nil
-                                                      launchHandler:^(__kindof BGTask * _Nonnull task) {
-    [self handleReminderProcessing:task];
-  }];
-  
-  // Register notification processing task
-  [[BGTaskScheduler sharedScheduler] registerForTaskWithIdentifier:@"org.reactjs.native.example.clueme2.notification-processing"
-                                                         usingQueue:nil
-                                                      launchHandler:^(__kindof BGTask * _Nonnull task) {
-    [self handleNotificationProcessing:task];
-  }];
+// Handle remote notification registration
+- (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken
+{
+  [RNCPushNotificationIOS didRegisterForRemoteNotificationsWithDeviceToken:deviceToken];
 }
 
-- (void)handleBackgroundFetch:(BGTask *)task {
-  // Schedule the next background fetch
-  [self scheduleBackgroundFetch];
-  
-  // Perform background fetch operations
-  // This will be handled by React Native background job
-  task.expirationHandler = ^{
-    [task setTaskCompletedWithSuccess:NO];
-  };
-  
-  // Mark task as completed
-  [task setTaskCompletedWithSuccess:YES];
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error
+{
+  [RNCPushNotificationIOS didFailToRegisterForRemoteNotificationsWithError:error];
 }
 
-- (void)handleBackgroundProcessing:(BGTask *)task {
-  // Schedule the next background processing
-  [self scheduleBackgroundProcessing];
-  
-  // Perform background processing operations
-  // This will be handled by React Native background job
-  task.expirationHandler = ^{
-    [task setTaskCompletedWithSuccess:NO];
-  };
-  
-  // Mark task as completed
-  [task setTaskCompletedWithSuccess:YES];
+// Handle remote notifications
+- (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler
+{
+  [RNCPushNotificationIOS didReceiveRemoteNotification:userInfo fetchCompletionHandler:completionHandler];
 }
 
-- (void)handleReminderProcessing:(BGTask *)task {
-  // Schedule the next reminder processing
-  [self scheduleReminderProcessing];
-  
-  // Perform reminder processing operations
-  // This will be handled by React Native background job
-  task.expirationHandler = ^{
-    [task setTaskCompletedWithSuccess:NO];
-  };
-  
-  // Mark task as completed
-  [task setTaskCompletedWithSuccess:YES];
+// Handle local notifications
+- (void)application:(UIApplication *)application didReceiveLocalNotification:(UILocalNotification *)notification
+{
+  [RNCPushNotificationIOS didReceiveLocalNotification:notification];
 }
 
-- (void)handleNotificationProcessing:(BGTask *)task {
-  // Schedule the next notification processing
-  [self scheduleNotificationProcessing];
-  
-  // Perform notification processing operations
-  // This will be handled by React Native background job
-  task.expirationHandler = ^{
-    [task setTaskCompletedWithSuccess:NO];
-  };
-  
-  // Mark task as completed
-  [task setTaskCompletedWithSuccess:YES];
+// UNUserNotificationCenterDelegate methods for iOS 10+
+
+// Handle notification when app is in foreground
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+       willPresentNotification:(UNNotification *)notification
+         withCompletionHandler:(void (^)(UNNotificationPresentationOptions options))completionHandler
+{
+  // Show notification even when app is in foreground
+  completionHandler(UNNotificationPresentationOptionAlert | UNNotificationPresentationOptionBadge | UNNotificationPresentationOptionSound);
 }
 
-- (void)scheduleBackgroundFetch {
-      BGAppRefreshTaskRequest *request = [[BGAppRefreshTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.background-fetch"];
-  request.earliestBeginDate = [NSDate dateWithTimeIntervalSinceNow:15 * 60]; // 15 minutes from now
-  
-  NSError *error = nil;
-  [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
-  if (error) {
-    NSLog(@"Could not schedule background fetch: %@", error);
-  }
+// Handle notification tap
+- (void)userNotificationCenter:(UNUserNotificationCenter *)center
+didReceiveNotificationResponse:(UNNotificationResponse *)response
+         withCompletionHandler:(void(^)(void))completionHandler
+{
+  [RNCPushNotificationIOS didReceiveNotificationResponse:response];
+  completionHandler();
 }
-
-- (void)scheduleBackgroundProcessing {
-      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.background-processing"];
-  request.requiresNetworkConnectivity = YES;
-  request.requiresExternalPower = NO;
-  
-  NSError *error = nil;
-  [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
-  if (error) {
-    NSLog(@"Could not schedule background processing: %@", error);
-  }
-}
-
-- (void)scheduleReminderProcessing {
-      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.reminder-processing"];
-  request.requiresNetworkConnectivity = YES;
-  request.requiresExternalPower = NO;
-  
-  NSError *error = nil;
-  [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
-  if (error) {
-    NSLog(@"Could not schedule reminder processing: %@", error);
-  }
-}
-
-- (void)scheduleNotificationProcessing {
-      BGProcessingTaskRequest *request = [[BGProcessingTaskRequest alloc] initWithIdentifier:@"org.reactjs.native.example.clueme2.notification-processing"];
-  request.requiresNetworkConnectivity = YES;
-  request.requiresExternalPower = NO;
-  
-  NSError *error = nil;
-  [[BGTaskScheduler sharedScheduler] submitTaskRequest:request error:&error];
-  if (error) {
-    NSLog(@"Could not schedule notification processing: %@", error);
-  }
-}
-*/
 
 - (NSURL *)sourceURLForBridge:(RCTBridge *)bridge
 {

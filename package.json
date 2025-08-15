@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -11,22 +10,15 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "generate:icons": "node scripts/generate-icons.js && node scripts/generate-android-icons.js",
-    "generate:ios-icons": "node scripts/generate-icons.js",
-    "generate:android-icons": "node scripts/generate-android-icons.js",
-    "build:android": "cd android && ./gradlew assembleRelease",
-    "build:android:bundle": "cd android && ./gradlew bundleRelease",
+    "generate:icons": "node scripts/generate-icons.js",
     "build:ios": "cd ios && xcodebuild -workspace ClearCue2.xcworkspace -scheme ClearCue -configuration Release -destination generic/platform=iOS -archivePath ClearCue.xcarchive archive",
     "build:ios:simulator": "cd ios && xcodebuild -workspace ClearCue2.xcworkspace -scheme ClearCue -configuration Release -destination 'platform=iOS Simulator,name=iPhone 15' build",
-    "clean:android": "cd android && ./gradlew clean",
     "clean:ios": "cd ios && xcodebuild clean -workspace ClearCue2.xcworkspace -scheme ClearCue",
-    "clean": "npm run clean:android && npm run clean:ios",
+    "clean": "npm run clean:ios",
     "pod:install": "cd ios && pod install",
     "pod:update": "cd ios && pod update",
     "typecheck": "tsc --noEmit",
     "prebuild": "npm run lint && npm run typecheck",
-    "build:production": "./scripts/build-production.sh",
-    "build:production:android": "./scripts/build-production.sh android",
     "build:production:ios": "./scripts/build-production.sh ios",
     "validate:translations": "node scripts/validate-translations.js",
     "fix:translations": "node scripts/fix-translations.js",
@@ -98,7 +90,7 @@
     "prettier": "2.8.8",
     "react-test-renderer": "18.3.1",
     "sharp": "^0.34.2",
-    "typescript": "5.0.4"
+    "typescript": "^5.0.4"
   },
   "engines": {
     "node": ">=18"

@@ -26,21 +26,14 @@ export const DateTimePickerWrapper: React.FC<DateTimePickerWrapperProps> = ({
   maximumDate,
   style,
 }) => {
-  // For iOS, use 'default' display mode which has better text visibility
+  // iOS-only app - use 'default' display mode for better text visibility
   const getDisplayMode = () => {
-    if (Platform.OS === 'ios') {
-      return 'default';
-    }
-    return display;
+    return 'default';
   };
 
-  // Ensure text color is visible on iOS
+  // Use black text for better visibility on iOS
   const getTextColor = () => {
-    if (Platform.OS === 'ios') {
-      // Use black text for better visibility on iOS
-      return '#000000';
-    }
-    return undefined; // Let the system handle it on Android
+    return '#000000';
   };
 
   const getAccentColor = () => {
@@ -58,7 +51,7 @@ export const DateTimePickerWrapper: React.FC<DateTimePickerWrapperProps> = ({
       maximumDate={maximumDate}
       style={[
         styles.picker,
-        Platform.OS === 'ios' && styles.iosPicker,
+        styles.iosPicker,
         style,
       ]}
     />

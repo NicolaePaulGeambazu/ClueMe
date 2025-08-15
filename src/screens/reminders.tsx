@@ -955,7 +955,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    paddingTop: Platform.OS === 'android' ? 16 : 8,
+    paddingTop: 8,
   },
   backButton: {
     marginRight: 16,

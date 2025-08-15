@@ -20,8 +20,8 @@ import { ReminderProvider } from './src/contexts/ReminderContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
-import notificationService from './src/services/notificationService';
-import globalNotificationService from './src/services/globalNotificationService';
+import NotificationService from './src/services/NotificationService';
+import ToastContainer from './src/components/common/ToastContainer';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import secureKeyService from './src/services/secureKeyService';
 import { migrateKeysToKeychain } from './src/utils/migrateKeys';
@@ -40,13 +40,13 @@ import CategoriesScreen from './src/screens/categories';
 import FamilyScreen from './src/screens/family';
 import ListsScreen from './src/screens/lists';
 import ListDetailScreen from './src/screens/list-detail';
-import RemindersDetailScreen from './src/screens/reminders-detail';
+import RemindersDetailScreen from './src/screens/RemindersFluid';
 import EditReminderScreen from './src/screens/edit-reminder';
 import CountdownScreen from './src/screens/countdown';
 import LoginScreen from './src/screens/login';
 import SignupScreen from './src/screens/signup';
 import ForgotPasswordScreen from './src/screens/forgot-password';
-import NotificationTestScreen from './src/screens/NotificationTestScreen';
+import IOSNotificationTestScreen from './src/screens/IOSNotificationTestScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -72,53 +72,25 @@ function AppContent() {
           setTimeout(() => reject(new Error('Notification initialization timeout')), 30000); // Increased to 30 seconds
         });
 
-        await Promise.race([
-          notificationService.initialize(),
-          timeoutPromise,
-        ]);
-
-        // Initialize global notification service
-        await globalNotificationService.initialize();
-
-        // Start background reminder checking
-        notificationService.startBackgroundReminderChecking();
-
-        // Sync assigned task notifications when app starts
-        // This ensures that if the user was assigned tasks while the app was closed,
-        // notifications are properly scheduled when they open the app
-        setTimeout(async () => {
-          try {
-            await notificationService.syncAssignedTaskNotifications();
-          } catch (error) {
-            console.error('Error syncing assigned task notifications:', error);
-          }
-        }, 5000); // Delay sync to ensure user is authenticated and data is loaded
-      } catch (error) {
-        // Failed to initialize push notifications
-
-        // Try to initialize local notifications only (without FCM)
-        try {
-          notificationService.initializeLocalNotificationsOnly();
-          await globalNotificationService.initialize();
-        } catch (localError) {
-          // Failed to initialize local notifications
+        // Request notification permissions
+        const permissionsGranted = await NotificationService.requestPermissions();
+        if (permissionsGranted) {
+          console.log('iOS notification permissions granted');
+          // Test notification to verify setup
+          await NotificationService.sendTestNotification();
+        } else {
+          console.warn('iOS notification permissions denied');
         }
 
+        console.log('iOS notification service initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize iOS notifications:', error);
         // Continue anyway - notifications are not critical for app functionality
       }
     };
 
-    // Delay initialization slightly to ensure Firebase is ready
-    const initTimer = setTimeout(() => {
-      initNotifications();
-    }, 2000);
-
-    // Cleanup on unmount
-    return () => {
-      clearTimeout(initTimer);
-      notificationService.cleanup();
-      globalNotificationService.cleanup();
-    };
+    // Initialize immediately
+    initNotifications();
   }, []);
 
   return (
@@ -239,9 +211,9 @@ function AppContent() {
           />
           <Stack.Screen
             name="NotificationTest"
-            component={NotificationTestScreen}
+            component={IOSNotificationTestScreen}
             options={{
-              title: 'Test Notifications',
+              title: 'iOS Notification Test',
               headerBackTitle: 'Back',
               headerShadowVisible: false,
             }}
@@ -287,6 +259,7 @@ function AppContent() {
         </Stack.Navigator>
       )}
       </ModalProvider>
+      <ToastContainer />
     </NavigationContainer>
   );
 }
