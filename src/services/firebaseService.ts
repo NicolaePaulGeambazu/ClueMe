@@ -613,7 +613,7 @@ export const reminderService = {
       // Always schedule a default notification at the due time, even if no custom timings are set
       try {
         // Check if notification service is available
-        if (!globalNotificationService) {
+        if (!notificationService) {
           return reminderId;
         }
 

@@ -21,7 +21,6 @@ import { SettingsProvider } from './src/contexts/SettingsContext';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
 import notificationService from './src/services/notificationService';
-import globalNotificationService from './src/services/globalNotificationService';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import secureKeyService from './src/services/secureKeyService';
 import { migrateKeysToKeychain } from './src/utils/migrateKeys';
@@ -77,9 +76,6 @@ function AppContent() {
           timeoutPromise,
         ]);
 
-        // Initialize global notification service
-        await globalNotificationService.initialize();
-
         // Start background reminder checking
         notificationService.startBackgroundReminderChecking();
 
@@ -99,7 +95,6 @@ function AppContent() {
         // Try to initialize local notifications only (without FCM)
         try {
           notificationService.initializeLocalNotificationsOnly();
-          await globalNotificationService.initialize();
         } catch (localError) {
           // Failed to initialize local notifications
         }
@@ -117,7 +112,6 @@ function AppContent() {
     return () => {
       clearTimeout(initTimer);
       notificationService.cleanup();
-      globalNotificationService.cleanup();
     };
   }, []);
 
