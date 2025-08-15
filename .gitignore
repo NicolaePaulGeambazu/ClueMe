@@ -27,6 +27,10 @@ DerivedData
 ios/ClearCue2.xcarchive/
 ios/build/
 ios/DerivedData/
+# Large iOS framework files that exceed GitHub limits
+**/FirebaseFirestoreInternal.framework.dSYM/
+**/grpc.framework.dSYM/
+**/*.dSYM/Contents/Resources/DWARF/*
 
 # Android/IntelliJ
 #
