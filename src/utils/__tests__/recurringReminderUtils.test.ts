@@ -1,4 +1,4 @@
-import { 
+import {
   parseRecurringPattern,
   calculateNextOccurrenceDate,
   shouldGenerateNextOccurrence,
@@ -8,7 +8,7 @@ import {
   getRecurringPatternDescription,
   validateRecurringPattern,
   RecurringPattern,
-  RecurringOccurrence
+  RecurringOccurrence,
 } from '../recurringReminderUtils';
 import { Reminder } from '../../services/firebaseService';
 
@@ -39,15 +39,15 @@ const createMockReminder = (overrides: Partial<Reminder> = {}): Reminder => ({
   customFrequencyType: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
-  ...overrides
+  ...overrides,
 } as Reminder);
 
 // Simple test runner
 const runTests = () => {
-  
+
   let passedTests = 0;
   let failedTests = 0;
-  
+
   const test = (name: string, fn: () => void) => {
     try {
       fn();
@@ -56,7 +56,7 @@ const runTests = () => {
       failedTests++;
     }
   };
-  
+
   const expect = (actual: any) => ({
     toBe: (expected: any) => {
       if (actual !== expected) {
@@ -117,16 +117,16 @@ const runTests = () => {
       if (actual) {
         throw new Error(`Expected falsy value, got ${actual}`);
       }
-    }
+    },
   });
 
   // Test parseRecurringPattern
   test('parseRecurringPattern should parse daily pattern', () => {
     const reminder = createMockReminder({
       repeatPattern: 'daily',
-      isRecurring: true
+      isRecurring: true,
     });
-    
+
     const pattern = parseRecurringPattern(reminder);
     expect(pattern.type).toBe('daily');
     expect(pattern.interval).toBeUndefined();
@@ -136,9 +136,9 @@ const runTests = () => {
     const reminder = createMockReminder({
       repeatPattern: 'weekly',
       isRecurring: true,
-      repeatDays: [1, 3, 5] // Monday, Wednesday, Friday
+      repeatDays: [1, 3, 5], // Monday, Wednesday, Friday
     });
-    
+
     const pattern = parseRecurringPattern(reminder);
     expect(pattern.type).toBe('weekly');
     expect(pattern.daysOfWeek).toEqual([1, 3, 5]);
@@ -148,9 +148,9 @@ const runTests = () => {
     const reminder = createMockReminder({
       repeatPattern: 'daily',
       customInterval: 3,
-      isRecurring: true
+      isRecurring: true,
     });
-    
+
     const pattern = parseRecurringPattern(reminder);
     expect(pattern.type).toBe('daily');
     expect(pattern.interval).toBe(3);
@@ -160,9 +160,9 @@ const runTests = () => {
     const reminder = createMockReminder({
       repeatPattern: 'daily',
       recurringEndDate: new Date('2024-12-31'),
-      isRecurring: true
+      isRecurring: true,
     });
-    
+
     const pattern = parseRecurringPattern(reminder);
     expect(pattern.type).toBe('daily');
     expect(pattern.endDate).toEqual(new Date('2024-12-31'));
@@ -172,7 +172,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should calculate next daily occurrence', () => {
     const currentDate = new Date('2024-01-15');
     const pattern: RecurringPattern = { type: 'daily' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getDate()).toBe(16); // Next day
@@ -180,11 +180,11 @@ const runTests = () => {
 
   test('calculateNextOccurrenceDate should calculate next weekly occurrence', () => {
     const currentDate = new Date('2024-01-15'); // Monday
-    const pattern: RecurringPattern = { 
+    const pattern: RecurringPattern = {
       type: 'weekly',
-      daysOfWeek: [3] // Wednesday
+      daysOfWeek: [3], // Wednesday
     };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getDay()).toBe(3); // Wednesday
@@ -192,16 +192,16 @@ const runTests = () => {
 
   test('calculateNextOccurrenceDate should respect end date', () => {
     const currentDate = new Date('2024-01-15');
-    const pattern: RecurringPattern = { 
+    const pattern: RecurringPattern = {
       type: 'daily',
-      endDate: new Date('2024-01-16')
+      endDate: new Date('2024-01-16'),
     };
-    
+
     // Should get next occurrence
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getDate()).toBe(16);
-    
+
     // Should return null after end date
     const afterEndDate = new Date('2024-01-17');
     const noNextDate = calculateNextOccurrenceDate(afterEndDate, pattern);
@@ -211,7 +211,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle weekdays pattern', () => {
     const currentDate = new Date('2024-01-15'); // Monday
     const pattern: RecurringPattern = { type: 'weekdays' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getDay()).toBeGreaterThanOrEqual(1); // Tuesday or later
@@ -221,7 +221,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle weekends pattern', () => {
     const currentDate = new Date('2024-01-15'); // Monday
     const pattern: RecurringPattern = { type: 'weekends' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect([0, 6]).toContain(nextDate!.getDay()); // Sunday or Saturday
@@ -230,7 +230,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle monthly pattern', () => {
     const currentDate = new Date('2024-01-15');
     const pattern: RecurringPattern = { type: 'monthly' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getMonth()).toBe(1); // February
@@ -240,7 +240,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle yearly pattern', () => {
     const currentDate = new Date('2024-01-15');
     const pattern: RecurringPattern = { type: 'yearly' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getFullYear()).toBe(2025);
@@ -253,18 +253,18 @@ const runTests = () => {
     const reminder = createMockReminder({
       isRecurring: true,
       repeatPattern: 'daily',
-      completed: false
+      completed: false,
     });
-    
+
     expect(shouldGenerateNextOccurrence(reminder)).toBeTruthy();
   });
 
   test('shouldGenerateNextOccurrence should return false for non-recurring reminders', () => {
     const reminder = createMockReminder({
       isRecurring: false,
-      completed: false
+      completed: false,
     });
-    
+
     expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
   });
 
@@ -272,9 +272,9 @@ const runTests = () => {
     const reminder = createMockReminder({
       isRecurring: true,
       repeatPattern: 'daily',
-      completed: true
+      completed: true,
     });
-    
+
     expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
   });
 
@@ -283,9 +283,9 @@ const runTests = () => {
       isRecurring: true,
       repeatPattern: 'daily',
       recurringEndDate: new Date('2024-01-01'), // Past date
-      completed: false
+      completed: false,
     });
-    
+
     expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
   });
 
@@ -295,9 +295,9 @@ const runTests = () => {
       isRecurring: true,
       repeatPattern: 'daily',
       dueDate: new Date('2024-01-15'),
-      completed: false
+      completed: false,
     });
-    
+
     const nextOccurrence = generateNextOccurrence(reminder);
     expect(nextOccurrence).toBeInstanceOf(Object);
     expect(nextOccurrence!.dueDate).toBeInstanceOf(Date);
@@ -308,9 +308,9 @@ const runTests = () => {
   test('generateNextOccurrence should return null for non-recurring reminders', () => {
     const reminder = createMockReminder({
       isRecurring: false,
-      completed: false
+      completed: false,
     });
-    
+
     const nextOccurrence = generateNextOccurrence(reminder);
     expect(nextOccurrence).toBeNull();
   });
@@ -319,9 +319,9 @@ const runTests = () => {
     const reminder = createMockReminder({
       isRecurring: true,
       repeatPattern: 'daily',
-      completed: true
+      completed: true,
     });
-    
+
     const nextOccurrence = generateNextOccurrence(reminder);
     expect(nextOccurrence).toBeNull();
   });
@@ -332,9 +332,9 @@ const runTests = () => {
       isRecurring: true,
       repeatPattern: 'daily',
       dueDate: new Date('2024-01-15'),
-      completed: false
+      completed: false,
     });
-    
+
     const occurrences = generateOccurrences(reminder, 5);
     expect(occurrences).toHaveLength(5);
     expect(occurrences[0].dueDate.getDate()).toBe(16); // First occurrence
@@ -346,9 +346,9 @@ const runTests = () => {
       isRecurring: true,
       repeatPattern: 'daily',
       dueDate: new Date('2024-01-15'),
-      completed: false
+      completed: false,
     });
-    
+
     const occurrences = generateOccurrences(reminder, 3);
     expect(occurrences).toHaveLength(3);
   });
@@ -359,9 +359,9 @@ const runTests = () => {
       repeatPattern: 'daily',
       dueDate: new Date('2024-01-15'),
       recurringEndDate: new Date('2024-01-17'), // Only 2 more days
-      completed: false
+      completed: false,
     });
-    
+
     const occurrences = generateOccurrences(reminder, 10);
     expect(occurrences).toHaveLength(2); // Should stop at end date
   });
@@ -370,26 +370,26 @@ const runTests = () => {
   test('isRecurringReminder should return true for recurring reminders', () => {
     const reminder = createMockReminder({
       isRecurring: true,
-      repeatPattern: 'daily'
+      repeatPattern: 'daily',
     });
-    
+
     expect(isRecurringReminder(reminder)).toBeTruthy();
   });
 
   test('isRecurringReminder should return false for non-recurring reminders', () => {
     const reminder = createMockReminder({
-      isRecurring: false
+      isRecurring: false,
     });
-    
+
     expect(isRecurringReminder(reminder)).toBeFalsy();
   });
 
   // Test getRecurringPatternDescription
   test('getRecurringPatternDescription should describe daily pattern', () => {
     const reminder = createMockReminder({
-      repeatPattern: 'daily'
+      repeatPattern: 'daily',
     });
-    
+
     const description = getRecurringPatternDescription(reminder);
     expect(description).toContain('Daily');
   });
@@ -397,9 +397,9 @@ const runTests = () => {
   test('getRecurringPatternDescription should describe weekly pattern', () => {
     const reminder = createMockReminder({
       repeatPattern: 'weekly',
-      repeatDays: [1, 3, 5]
+      repeatDays: [1, 3, 5],
     });
-    
+
     const description = getRecurringPatternDescription(reminder);
     expect(description).toContain('Weekly');
     expect(description).toContain('Monday');
@@ -410,9 +410,9 @@ const runTests = () => {
   test('getRecurringPatternDescription should describe custom interval', () => {
     const reminder = createMockReminder({
       repeatPattern: 'daily',
-      customInterval: 3
+      customInterval: 3,
     });
-    
+
     const description = getRecurringPatternDescription(reminder);
     expect(description).toContain('Every 3 days');
   });
@@ -420,9 +420,9 @@ const runTests = () => {
   // Test validateRecurringPattern
   test('validateRecurringPattern should validate valid pattern', () => {
     const pattern: RecurringPattern = {
-      type: 'daily'
+      type: 'daily',
     };
-    
+
     const result = validateRecurringPattern(pattern);
     expect(result.isValid).toBeTruthy();
     expect(result.errors).toHaveLength(0);
@@ -430,9 +430,9 @@ const runTests = () => {
 
   test('validateRecurringPattern should catch invalid pattern type', () => {
     const pattern: RecurringPattern = {
-      type: 'invalid' as any
+      type: 'invalid' as any,
     };
-    
+
     const result = validateRecurringPattern(pattern);
     expect(result.isValid).toBeFalsy();
     expect(result.errors.length).toBeGreaterThan(0);
@@ -441,9 +441,9 @@ const runTests = () => {
   test('validateRecurringPattern should catch invalid interval', () => {
     const pattern: RecurringPattern = {
       type: 'daily',
-      interval: 0
+      interval: 0,
     };
-    
+
     const result = validateRecurringPattern(pattern);
     expect(result.isValid).toBeFalsy();
     expect(result.errors.length).toBeGreaterThan(0);
@@ -453,7 +453,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle leap year', () => {
     const currentDate = new Date('2024-02-29'); // Leap year
     const pattern: RecurringPattern = { type: 'yearly' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getFullYear()).toBe(2025);
@@ -464,7 +464,7 @@ const runTests = () => {
   test('calculateNextOccurrenceDate should handle month end dates', () => {
     const currentDate = new Date('2024-01-31'); // January 31st
     const pattern: RecurringPattern = { type: 'monthly' };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date);
     expect(nextDate!.getMonth()).toBe(1); // February
@@ -473,11 +473,11 @@ const runTests = () => {
 
   test('calculateNextOccurrenceDate should handle invalid end date', () => {
     const currentDate = new Date('2024-01-15');
-    const pattern: RecurringPattern = { 
+    const pattern: RecurringPattern = {
       type: 'daily',
-      endDate: 'invalid-date' as any
+      endDate: 'invalid-date' as any,
     };
-    
+
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     expect(nextDate).toBeInstanceOf(Date); // Should still work, just ignore invalid end date
   });
@@ -485,20 +485,20 @@ const runTests = () => {
   // Performance tests
   test('calculateNextOccurrenceDate should not exceed max iterations', () => {
     const currentDate = new Date('2024-01-15');
-    const pattern: RecurringPattern = { 
+    const pattern: RecurringPattern = {
       type: 'daily',
-      endDate: new Date('2025-01-15') // Far future
+      endDate: new Date('2025-01-15'), // Far future
     };
-    
+
     const startTime = Date.now();
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern, 5); // Max 5 iterations
     const endTime = Date.now();
-    
+
     expect(nextDate).toBeInstanceOf(Date);
     expect(endTime - startTime).toBeLessThanOrEqual(100); // Should be fast
   });
 
-  
+
   if (failedTests > 0) {
     process.exit(1);
   } else {
@@ -510,4 +510,4 @@ if (require.main === module) {
   runTests();
 }
 
-export { runTests }; 
+export { runTests };

@@ -52,7 +52,17 @@
     "assignedToMultiple": "Assigned to {count} people",
     "assignedTo1": "Assigned to {{name}}",
     "location": "Location",
-    "locationPlaceholder": "Add location"
+    "locationPlaceholder": "Add location",
+    "noNotifications": "No notifications",
+    "date": "Date",
+    "time": "Time",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "create": "Create",
+    "update": "Update",
+    "enterTitleToContinue": "Enter a title to continue",
+    "tapToCreateReminder": "Tap to create reminder",
+    "quickAddHint": "Quick add your reminder"
   },
   "taskChunking": {
     "sectionTitle": "Break Down Task",
@@ -1102,6 +1112,9 @@
         "yearly": "Yearly",
         "save": "Save {{percent}}%",
         "unlimited": "Unlimited",
+        "individualDescription": "Perfect for individual users",
+        "familyDescription": "Share premium features with family",
+        "maybeLater": "Maybe Later",
         "features": {
           "unlimitedReminders": "Unlimited reminders",
           "advancedRecurring": "Advanced recurring patterns",

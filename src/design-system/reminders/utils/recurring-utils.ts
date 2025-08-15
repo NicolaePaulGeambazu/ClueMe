@@ -1,13 +1,13 @@
 /**
  * Recurring Utilities for Reminders
- * 
- * Handles all recurring reminder logic with proper edge case handling and timezone support
+ *
+ * Handles all recurring reminder logic with proper edge case handling (UK timezone only)
  */
 
-import { 
-  Reminder, 
-  RepeatPattern, 
-  RecurringOccurrence 
+import {
+  Reminder,
+  RepeatPattern,
+  RecurringOccurrence,
 } from '../types';
 import {
   normalizeDate,
@@ -24,12 +24,6 @@ import {
   getStartOfDay,
   getEndOfDay,
 } from './date-utils';
-import {
-  createTimezoneAwareDate,
-  convertToTimezone,
-  convertFromTimezone,
-  getCurrentTimezone
-} from '../../../utils/timezoneUtils';
 
 /**
  * Advanced recurring pattern configuration
@@ -41,11 +35,10 @@ export interface AdvancedRecurringConfig {
   endCondition?: 'never' | 'after_occurrences' | 'until_date';
   endAfterOccurrences?: number;
   endDate?: Date;
-  timezone?: string;
 }
 
 /**
- * Generate occurrences for a recurring reminder with timezone support
+ * Generate occurrences for a recurring reminder (UK timezone)
  * This is the main function that handles all recurring patterns
  */
 export const generateOccurrences = (
@@ -62,7 +55,6 @@ export const generateOccurrences = (
     return [];
   }
 
-  const timezone = reminder.timezone || getCurrentTimezone();
   const startDate = startFromDate || new Date();
   const occurrences: RecurringOccurrence[] = [];
   let currentDate = new Date(baseDate);
@@ -70,7 +62,7 @@ export const generateOccurrences = (
 
   // If the base date is in the past, find the next occurrence
   if (isPast(currentDate)) {
-    const nextDate = getNextOccurrenceDate(reminder, startDate, timezone);
+    const nextDate = getNextOccurrenceDate(reminder, startDate);
     if (!nextDate) {
       return [];
     }
@@ -83,7 +75,7 @@ export const generateOccurrences = (
     if (reminder.recurringEndDate) {
       const endDate = normalizeDate(reminder.recurringEndDate);
       const currentDateNormalized = normalizeDate(currentDate);
-      
+
       if (endDate && currentDateNormalized && currentDateNormalized > endDate) {
         break;
       }
@@ -98,22 +90,21 @@ export const generateOccurrences = (
     if (isFuture(currentDate) || isSameDay(currentDate, new Date())) {
       const occurrence: RecurringOccurrence = {
         date: new Date(currentDate),
-        reminder: { 
-          ...reminder, 
+        reminder: {
+          ...reminder,
           dueDate: new Date(currentDate),
-          timezone: timezone // Ensure timezone is preserved
         },
-        isNext: occurrenceCount === 0
+        isNext: occurrenceCount === 0,
       };
       occurrences.push(occurrence);
     }
 
     // Get the next occurrence date
-    const nextDate = getNextOccurrenceDate(reminder, currentDate, timezone);
+    const nextDate = getNextOccurrenceDate(reminder, currentDate);
     if (!nextDate) {
       break;
     }
-    
+
     if (nextDate <= currentDate) {
       break;
     }
@@ -126,19 +117,16 @@ export const generateOccurrences = (
 };
 
 /**
- * Get the next occurrence date for a recurring reminder with timezone support
+ * Get the next occurrence date for a recurring reminder (UK timezone)
  */
 export const getNextOccurrenceDate = (
   reminder: Reminder,
-  fromDate: Date,
-  timezone?: string
+  fromDate: Date
 ): Date | null => {
-  if (!reminder.repeatPattern) return null;
+  if (!reminder.repeatPattern) {return null;}
 
   const baseDate = normalizeDate(reminder.dueDate);
-  if (!baseDate) return null;
-
-  const targetTimezone = timezone || reminder.timezone || getCurrentTimezone();
+  if (!baseDate) {return null;}
 
   switch (reminder.repeatPattern) {
     case RepeatPattern.DAILY:
@@ -163,7 +151,7 @@ export const getNextOccurrenceDate = (
       return getNextLastFriday(fromDate);
 
     case RepeatPattern.CUSTOM:
-      return getNextCustomOccurrence(reminder, fromDate, targetTimezone);
+      return getNextCustomOccurrence(reminder, fromDate);
 
     default:
       return null;
@@ -176,14 +164,14 @@ export const getNextOccurrenceDate = (
 const getNextWeekday = (fromDate: Date, interval: number = 1): Date => {
   let nextDate = addDays(fromDate, interval);
   const dayOfWeek = getDayOfWeek(nextDate);
-  
+
   // Skip weekends (0 = Sunday, 6 = Saturday)
   if (dayOfWeek === 0) {
     nextDate = addDays(nextDate, 1); // Monday
   } else if (dayOfWeek === 6) {
     nextDate = addDays(nextDate, 2); // Monday
   }
-  
+
   return nextDate;
 };
 
@@ -192,13 +180,13 @@ const getNextWeekday = (fromDate: Date, interval: number = 1): Date => {
  */
 const getNextFirstMonday = (fromDate: Date): Date => {
   const firstMonday = getFirstMondayOfMonth(fromDate);
-  
+
   // If the first Monday is in the past or today, get the first Monday of next month
   if (firstMonday <= fromDate) {
     const nextMonth = addMonths(fromDate, 1);
     return getFirstMondayOfMonth(nextMonth);
   }
-  
+
   return firstMonday;
 };
 
@@ -207,62 +195,68 @@ const getNextFirstMonday = (fromDate: Date): Date => {
  */
 const getNextLastFriday = (fromDate: Date): Date => {
   const lastFriday = getLastFridayOfMonth(fromDate);
-  
+
   // If the last Friday is in the past or today, get the last Friday of next month
   if (lastFriday <= fromDate) {
     const nextMonth = addMonths(fromDate, 1);
     return getLastFridayOfMonth(nextMonth);
   }
-  
+
   return lastFriday;
 };
 
 /**
- * Get the next custom occurrence based on interval and days with timezone support
+ * Get the next custom occurrence based on repeat days
  */
 const getNextCustomOccurrence = (
-  reminder: Reminder, 
-  fromDate: Date, 
-  timezone: string
+  reminder: Reminder,
+  fromDate: Date
 ): Date | null => {
-  if (!reminder.customInterval) {
+  if (!reminder.repeatDays || reminder.repeatDays.length === 0) {
     return null;
   }
 
-  const interval = reminder.customInterval;
-  const repeatDays = reminder.repeatDays || [];
-  
-  // If repeatDays is specified, find the next occurrence on one of those days
-  if (repeatDays.length > 0) {
-    // Find the next occurrence within the interval
-    for (let i = 1; i <= interval; i++) {
-      const candidateDate = addDays(fromDate, i);
-      const dayOfWeek = getDayOfWeek(candidateDate);
-      
-      if (repeatDays.includes(dayOfWeek)) {
-        // Convert to timezone-aware date if timezone is specified
-        if (timezone && timezone !== getCurrentTimezone()) {
-          const result = createTimezoneAwareDate(candidateDate, reminder.dueTime, timezone);
-          return result;
-        }
-        return candidateDate;
+  const baseDate = normalizeDate(reminder.dueDate);
+  if (!baseDate) {return null;}
+
+  // Create a date with the same time as the base reminder
+  const createDateWithTime = (date: Date): Date => {
+    const result = new Date(date);
+    if (reminder.dueTime) {
+      const [hours, minutes] = reminder.dueTime.split(':').map(Number);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        result.setHours(hours, minutes, 0, 0);
       }
     }
-    
-    // If no occurrence found in the interval, move to the next interval
-    const nextIntervalStart = addDays(fromDate, interval);
-    return getNextCustomOccurrence(reminder, nextIntervalStart, timezone);
-  } else {
-    // For simple interval patterns (every X days), just add the interval
-    const nextDate = addDays(fromDate, interval);
-    
-    // Convert to timezone-aware date if timezone is specified
-    if (timezone && timezone !== getCurrentTimezone()) {
-      const result = createTimezoneAwareDate(nextDate, reminder.dueTime, timezone);
-      return result;
+    return result;
+  };
+
+  // Sort repeat days to ensure we check them in order
+  const sortedRepeatDays = [...reminder.repeatDays].sort((a, b) => a - b);
+
+  // Check each repeat day starting from the current date
+  for (let i = 0; i < 7; i++) {
+    const checkDate = addDays(fromDate, i);
+    const dayOfWeek = getDayOfWeek(checkDate);
+
+    if (sortedRepeatDays.includes(dayOfWeek)) {
+      const result = createDateWithTime(checkDate);
+      if (result > fromDate) {
+        return result;
+      }
     }
-    return nextDate;
   }
+
+  // If no match found in the next 7 days, look further ahead
+  const nextWeekDate = addDays(fromDate, 7);
+  for (const dayOfWeek of sortedRepeatDays) {
+    const targetDate = getNextDayOfWeek(dayOfWeek, nextWeekDate);
+    if (targetDate) {
+      return createDateWithTime(targetDate);
+    }
+  }
+
+  return null;
 };
 
 /**
@@ -274,42 +268,58 @@ export const isValidOccurrence = (reminder: Reminder, date: Date): boolean => {
   }
 
   const baseDate = normalizeDate(reminder.dueDate);
-  if (!baseDate) return false;
+  if (!baseDate) {return false;}
 
+  const checkDate = normalizeDate(date);
+  if (!checkDate) {return false;}
+
+  // Check if the date is before the recurring start date
+  if (reminder.recurringStartDate) {
+    const startDate = normalizeDate(reminder.recurringStartDate);
+    if (startDate && checkDate < startDate) {
+      return false;
+    }
+  }
+
+  // Check if the date is after the recurring end date
+  if (reminder.recurringEndDate) {
+    const endDate = normalizeDate(reminder.recurringEndDate);
+    if (endDate && checkDate > endDate) {
+      return false;
+    }
+  }
+
+  // Check if the date matches the pattern
   switch (reminder.repeatPattern) {
     case RepeatPattern.DAILY:
       return true; // Any date is valid for daily
 
     case RepeatPattern.WEEKDAYS:
-      const dayOfWeek = getDayOfWeek(date);
-      return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday-Friday
+      const dayOfWeek = getDayOfWeek(checkDate);
+      return dayOfWeek >= 1 && dayOfWeek <= 5; // Monday to Friday
 
     case RepeatPattern.WEEKLY:
-      return getDayOfWeek(date) === getDayOfWeek(baseDate);
+      return getDayOfWeek(checkDate) === getDayOfWeek(baseDate);
 
     case RepeatPattern.MONTHLY:
-      return date.getDate() === baseDate.getDate();
+      return checkDate.getDate() === baseDate.getDate();
 
     case RepeatPattern.YEARLY:
-      return date.getMonth() === baseDate.getMonth() && date.getDate() === baseDate.getDate();
+      return checkDate.getMonth() === baseDate.getMonth() &&
+             checkDate.getDate() === baseDate.getDate();
 
     case RepeatPattern.FIRST_MONDAY:
-      const firstMonday = getFirstMondayOfMonth(date);
-      return isSameDay(date, firstMonday);
+      return getDayOfWeek(checkDate) === 1 && checkDate.getDate() <= 7;
 
     case RepeatPattern.LAST_FRIDAY:
-      const lastFriday = getLastFridayOfMonth(date);
-      return isSameDay(date, lastFriday);
+      const lastFriday = getLastFridayOfMonth(checkDate);
+      return isSameDay(checkDate, lastFriday);
 
     case RepeatPattern.CUSTOM:
-      // For custom patterns with specific days, check if the date matches one of those days
-      if (reminder.repeatDays && reminder.repeatDays.length > 0) {
-        const customDayOfWeek = getDayOfWeek(date);
-        return reminder.repeatDays.includes(customDayOfWeek);
+      if (!reminder.repeatDays || reminder.repeatDays.length === 0) {
+        return false;
       }
-      // For custom patterns with intervals (every X days), any date is valid
-      // The actual validation happens in the generation logic
-      return true;
+      return reminder.repeatDays.includes(getDayOfWeek(checkDate));
 
     default:
       return false;
@@ -317,27 +327,14 @@ export const isValidOccurrence = (reminder: Reminder, date: Date): boolean => {
 };
 
 /**
- * Get the next occurrence that matches the recurring pattern
+ * Get the next matching occurrence from a given date
  */
 export const getNextMatchingOccurrence = (reminder: Reminder, fromDate: Date = new Date()): Date | null => {
   if (!reminder.isRecurring || !reminder.repeatPattern) {
     return null;
   }
 
-  let currentDate = new Date(fromDate);
-  let attempts = 0;
-  const maxAttempts = 100; // Prevent infinite loops
-
-  while (attempts < maxAttempts) {
-    if (isValidOccurrence(reminder, currentDate)) {
-      return currentDate;
-    }
-    
-    currentDate = addDays(currentDate, 1);
-    attempts++;
-  }
-
-  return null;
+  return getNextOccurrenceDate(reminder, fromDate);
 };
 
 /**
@@ -352,46 +349,31 @@ const isSameDay = (date1: Date, date2: Date): boolean => {
 };
 
 /**
- * Get human-readable description of recurring pattern
+ * Get a human-readable description of the recurring pattern
  */
 export const getRecurringDescription = (reminder: Reminder): string => {
   if (!reminder.isRecurring || !reminder.repeatPattern) {
-    return 'Not recurring';
+    return '';
   }
 
-  const timezone = reminder.timezone || getCurrentTimezone();
-  const timezoneAbbr = getTimezoneAbbreviation(timezone);
+  const interval = reminder.customInterval || 1;
+  const intervalText = interval === 1 ? '' : ` every ${interval}`;
 
   switch (reminder.repeatPattern) {
     case RepeatPattern.DAILY:
-      if (reminder.customInterval && reminder.customInterval > 1) {
-        return `Every ${reminder.customInterval} days`;
-      }
-      return 'Daily';
+      return `Daily${intervalText}`;
 
     case RepeatPattern.WEEKDAYS:
-      if (reminder.customInterval && reminder.customInterval > 1) {
-        return `Every ${reminder.customInterval} weekdays`;
-      }
-      return 'Weekdays (Mon-Fri)';
+      return `Weekdays${intervalText}`;
 
     case RepeatPattern.WEEKLY:
-      if (reminder.customInterval && reminder.customInterval > 1) {
-        return `Every ${reminder.customInterval} weeks`;
-      }
-      return 'Weekly';
+      return `Weekly${intervalText}`;
 
     case RepeatPattern.MONTHLY:
-      if (reminder.customInterval && reminder.customInterval > 1) {
-        return `Every ${reminder.customInterval} months`;
-      }
-      return 'Monthly';
+      return `Monthly${intervalText}`;
 
     case RepeatPattern.YEARLY:
-      if (reminder.customInterval && reminder.customInterval > 1) {
-        return `Every ${reminder.customInterval} years`;
-      }
-      return 'Yearly';
+      return `Yearly${intervalText}`;
 
     case RepeatPattern.FIRST_MONDAY:
       return 'First Monday of each month';
@@ -400,36 +382,14 @@ export const getRecurringDescription = (reminder: Reminder): string => {
       return 'Last Friday of each month';
 
     case RepeatPattern.CUSTOM:
-      if (reminder.repeatDays && reminder.repeatDays.length > 0) {
-        const dayNames = reminder.repeatDays.map(day => getDayName(day)).join(', ');
-        if (reminder.customInterval && reminder.customInterval > 1) {
-          return `Every ${reminder.customInterval} weeks on ${dayNames}`;
-        }
-        return `Weekly on ${dayNames}`;
+      if (!reminder.repeatDays || reminder.repeatDays.length === 0) {
+        return 'Custom';
       }
-      return 'Custom pattern';
+      const dayNames = reminder.repeatDays.map(getDayName);
+      return `Every ${dayNames.join(', ')}`;
 
     default:
-      return 'Unknown pattern';
-  }
-};
-
-/**
- * Get timezone abbreviation
- */
-const getTimezoneAbbreviation = (timezone: string): string => {
-  try {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-CA', {
-      timeZone: timezone,
-      timeZoneName: 'short',
-    });
-    
-    const parts = formatter.formatToParts(now);
-    const timezonePart = parts.find(part => part.type === 'timeZoneName');
-    return timezonePart?.value || timezone;
-  } catch (error) {
-    return timezone;
+      return 'Custom';
   }
 };
 
@@ -459,84 +419,63 @@ export const validateRecurringConfig = (reminder: Reminder): { isValid: boolean;
     errors.push('Due date is required for recurring reminders');
   }
 
-  // Validate custom pattern
   if (reminder.repeatPattern === RepeatPattern.CUSTOM) {
     if (!reminder.repeatDays || reminder.repeatDays.length === 0) {
-      errors.push('Repeat days are required for custom patterns');
+      errors.push('Repeat days are required for custom recurring patterns');
     } else {
-      // Validate day numbers
-      const invalidDays = reminder.repeatDays.filter(day => day < 0 || day > 6);
-      if (invalidDays.length > 0) {
-        errors.push('Invalid day numbers in repeat days');
+      for (const day of reminder.repeatDays) {
+        if (day < 0 || day > 6) {
+          errors.push(`Invalid day of week: ${day}`);
+        }
       }
     }
-
-    if (!reminder.customInterval || reminder.customInterval < 1) {
-      errors.push('Custom interval must be at least 1');
-    }
   }
 
-  // Validate end conditions
-  if (reminder.recurringEndDate && reminder.recurringEndAfter) {
-    errors.push('Cannot specify both end date and end after occurrences');
+  if (reminder.customInterval !== undefined && reminder.customInterval < 1) {
+    errors.push('Custom interval must be at least 1');
   }
 
-  if (reminder.recurringEndAfter && reminder.recurringEndAfter < 1) {
+  if (reminder.recurringEndAfter !== undefined && reminder.recurringEndAfter < 1) {
     errors.push('End after occurrences must be at least 1');
   }
 
-  // Validate timezone
-  if (reminder.timezone && !isValidTimezone(reminder.timezone)) {
-    errors.push('Invalid timezone specified');
+  if (reminder.recurringStartDate && reminder.recurringEndDate) {
+    const startDate = normalizeDate(reminder.recurringStartDate);
+    const endDate = normalizeDate(reminder.recurringEndDate);
+    if (startDate && endDate && startDate >= endDate) {
+      errors.push('Recurring start date must be before end date');
+    }
   }
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
 /**
- * Check if timezone is valid
- */
-const isValidTimezone = (timezone: string): boolean => {
-  try {
-    Intl.DateTimeFormat(undefined, { timeZone: timezone });
-    return true;
-  } catch (error) {
-    return false;
-  }
-};
-
-/**
- * Get the estimated number of occurrences for a recurring reminder
+ * Estimate the number of occurrences in a given time period
  */
 export const getEstimatedOccurrences = (reminder: Reminder, daysAhead: number = 365): number => {
   if (!reminder.isRecurring || !reminder.repeatPattern) {
     return 0;
   }
 
-  const startDate = new Date();
-  const endDate = addDays(startDate, daysAhead);
-  let count = 0;
-  let currentDate = new Date(startDate);
+  const baseDate = normalizeDate(reminder.dueDate);
+  if (!baseDate) {return 0;}
 
-  while (currentDate <= endDate && count < 1000) { // Safety limit
-    if (isValidOccurrence(reminder, currentDate)) {
-      count++;
-    }
-    currentDate = addDays(currentDate, 1);
-  }
+  const endDate = addDays(new Date(), daysAhead);
+  const occurrences = generateOccurrences(reminder, 1000, new Date());
 
-  return count;
+  return occurrences.filter(occ => occ.date <= endDate).length;
 };
 
 /**
- * Check if a recurring reminder should end
+ * Check if recurring should end based on conditions
  */
 export const shouldEndRecurring = (reminder: Reminder, occurrenceCount: number): boolean => {
   if (!reminder.isRecurring) {
-    return false;
+    return true;
   }
 
   // Check end after occurrences
@@ -545,31 +484,33 @@ export const shouldEndRecurring = (reminder: Reminder, occurrenceCount: number):
   }
 
   // Check end date
-  if (reminder.recurringEndDate && new Date() > reminder.recurringEndDate) {
-    return true;
+  if (reminder.recurringEndDate) {
+    const endDate = normalizeDate(reminder.recurringEndDate);
+    if (endDate && new Date() > endDate) {
+      return true;
+    }
   }
 
   return false;
 };
 
 /**
- * Get advanced recurring configuration
+ * Get advanced recurring configuration from a reminder
  */
 export const getAdvancedRecurringConfig = (reminder: Reminder): AdvancedRecurringConfig => {
   return {
     type: reminder.repeatPattern || RepeatPattern.DAILY,
     interval: reminder.customInterval,
     repeatDays: reminder.repeatDays,
-    endCondition: reminder.recurringEndAfter ? 'after_occurrences' : 
+    endCondition: reminder.recurringEndAfter ? 'after_occurrences' :
                   reminder.recurringEndDate ? 'until_date' : 'never',
     endAfterOccurrences: reminder.recurringEndAfter,
     endDate: reminder.recurringEndDate,
-    timezone: reminder.timezone
   };
 };
 
 /**
- * Create a recurring reminder with advanced configuration
+ * Create a recurring reminder from base reminder and advanced config
  */
 export const createAdvancedRecurringReminder = (
   baseReminder: Partial<Reminder>,
@@ -583,6 +524,5 @@ export const createAdvancedRecurringReminder = (
     repeatDays: config.repeatDays,
     recurringEndAfter: config.endAfterOccurrences,
     recurringEndDate: config.endDate,
-    timezone: config.timezone || getCurrentTimezone(),
   } as Reminder;
-}; 
+};

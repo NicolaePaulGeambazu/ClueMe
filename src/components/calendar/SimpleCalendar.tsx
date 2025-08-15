@@ -11,9 +11,9 @@ import { useReminders } from '../../hooks/useReminders';
 import { LoginPrompt } from '../auth/LoginPrompt';
 import { Colors } from '../../constants/Colors';
 import { Fonts, FontSizes } from '../../constants/Fonts';
-import { 
-  getAllCalendarEvents, 
-  getEventTypeColor
+import {
+  getAllCalendarEvents,
+  getEventTypeColor,
 } from '../../utils/calendarUtils';
 import { Mode } from 'react-native-big-calendar';
 
@@ -46,18 +46,18 @@ export default function SimpleCalendar({ navigation }: any) {
   }, [loadReminders]);
 
   const events = useMemo((): BigCalendarEvent[] => {
-    if (!reminders || reminders.length === 0) return [];
-    
+    if (!reminders || reminders.length === 0) {return [];}
+
     const appEvents = getAllCalendarEvents(reminders);
     return appEvents.map(event => {
       const start = new Date(event.date);
       const end = new Date(event.date);
-      
+
       if (event.startTime) {
         const [hours, minutes] = event.startTime.split(':').map(Number);
         start.setHours(hours, minutes, 0, 0);
       }
-      
+
       if (event.endTime) {
         const [hours, minutes] = event.endTime.split(':').map(Number);
         end.setHours(hours, minutes, 0, 0);
@@ -136,7 +136,7 @@ export default function SimpleCalendar({ navigation }: any) {
         >
           <ChevronLeft size={24} color={colors.primary} strokeWidth={2.5} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             {t('calendar.title')}
@@ -151,35 +151,35 @@ export default function SimpleCalendar({ navigation }: any) {
           <TouchableOpacity
             style={[
               styles.viewButton,
-              view === 'month' && { backgroundColor: colors.primary }
+              view === 'month' && { backgroundColor: colors.primary },
             ]}
             onPress={() => setView('month')}
           >
             <Text style={[
               styles.viewButtonText,
-              view === 'month' && { color: colors.background }
+              view === 'month' && { color: colors.background },
             ]}>
               {t('calendar.month')}
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
               styles.viewButton,
-              view === 'schedule' && { backgroundColor: colors.primary }
+              view === 'schedule' && { backgroundColor: colors.primary },
             ]}
             onPress={() => setView('schedule')}
           >
             <Text style={[
               styles.viewButtonText,
-              view === 'schedule' && { color: colors.background }
+              view === 'schedule' && { color: colors.background },
             ]}>
               {t('calendar.agenda')}
             </Text>
           </TouchableOpacity>
         </View>
       </View>
-      
+
       {/* Calendar Component */}
       <Calendar
         events={events}
@@ -203,8 +203,8 @@ export default function SimpleCalendar({ navigation }: any) {
       />
 
       {/* Floating Action Button */}
-      <TouchableOpacity 
-        onPress={handleAddReminder} 
+      <TouchableOpacity
+        onPress={handleAddReminder}
         style={[styles.fab, { backgroundColor: colors.primary }]}
       >
         <Plus size={24} color={colors.background} strokeWidth={2.5} />
@@ -276,4 +276,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
-}); 
+});

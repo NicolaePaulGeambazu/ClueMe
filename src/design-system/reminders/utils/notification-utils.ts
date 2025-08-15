@@ -1,12 +1,12 @@
 /**
  * Notification Utilities for Reminders
- * 
- * Handles notification scheduling with timezone support and edge case handling
+ *
+ * Handles notification scheduling with edge case handling (UK timezone only)
  */
 
 import { Reminder, NotificationTiming, NotificationType } from '../types';
-import { 
-  normalizeDate, 
+import {
+  normalizeDate,
   isFuture,
 } from './date-utils';
 import { generateOccurrences } from './recurring-utils';
@@ -16,8 +16,7 @@ import { generateOccurrences } from './recurring-utils';
  */
 export function calculateNotificationTime(
   reminder: Reminder,
-  timing: NotificationTiming,
-  timezone: string = Intl.DateTimeFormat().resolvedOptions().timeZone
+  timing: NotificationTiming
 ): Date {
   try {
     let baseTime: Date;
@@ -27,7 +26,7 @@ export function calculateNotificationTime(
       if (timeParts.length >= 2) {
         const hours = parseInt(timeParts[0], 10);
         const minutes = parseInt(timeParts[1], 10);
-        
+
         if (reminder.dueDate) {
           const baseDate = new Date(reminder.dueDate);
           baseTime = new Date(baseDate);
@@ -44,7 +43,7 @@ export function calculateNotificationTime(
     }
 
     const notificationTime = new Date(baseTime);
-    
+
     switch (timing.type) {
       case 'before':
         notificationTime.setMinutes(notificationTime.getMinutes() - timing.value);
@@ -90,7 +89,7 @@ export const generateNotificationTimes = (
     if (notificationTimes.length > 0) {
       result.push({
         occurrenceDate: occurrence.date,
-        notificationTimes: notificationTimes.sort((a, b) => a.getTime() - b.getTime())
+        notificationTimes: notificationTimes.sort((a, b) => a.getTime() - b.getTime()),
       });
     }
   }
@@ -109,7 +108,7 @@ export const getNextNotificationTime = (reminder: Reminder): Date | null => {
   if (reminder.isRecurring) {
     const notificationTimes = generateNotificationTimes(reminder, 10); // Check next 10 occurrences
     const now = new Date();
-    
+
     for (const { notificationTimes: times } of notificationTimes) {
       for (const time of times) {
         if (isFuture(time)) {
@@ -117,7 +116,7 @@ export const getNextNotificationTime = (reminder: Reminder): Date | null => {
         }
       }
     }
-    
+
     return null;
   } else {
     // For non-recurring reminders, check all notification timings
@@ -150,11 +149,11 @@ export const hasUpcomingNotifications = (reminder: Reminder): boolean => {
  */
 export const getNotificationTitle = (reminder: Reminder, timing: NotificationTiming): string => {
   const baseTitle = reminder.title;
-  
+
   switch (timing.type) {
     case NotificationType.EXACT:
       return baseTitle;
-    
+
     case NotificationType.BEFORE:
       if (timing.value >= 60) {
         const hours = Math.floor(timing.value / 60);
@@ -167,7 +166,7 @@ export const getNotificationTitle = (reminder: Reminder, timing: NotificationTim
       } else {
         return `${baseTitle} (in ${timing.value}m)`;
       }
-    
+
     case NotificationType.AFTER:
       if (timing.value >= 60) {
         const hours = Math.floor(timing.value / 60);
@@ -180,7 +179,7 @@ export const getNotificationTitle = (reminder: Reminder, timing: NotificationTim
       } else {
         return `${baseTitle} (${timing.value}m ago)`;
       }
-    
+
     default:
       return baseTitle;
   }
@@ -192,23 +191,23 @@ export const getNotificationTitle = (reminder: Reminder, timing: NotificationTim
 export const getNotificationMessage = (reminder: Reminder, timing: NotificationTiming): string => {
   const now = new Date();
   const dueDate = normalizeDate(reminder.dueDate);
-  
+
   if (!dueDate) {
     return reminder.description || 'No description available';
   }
 
   const timeString = reminder.dueTime ? ` at ${reminder.dueTime}` : '';
-  
+
   switch (timing.type) {
     case NotificationType.EXACT:
       return `Due now${timeString}`;
-    
+
     case NotificationType.BEFORE:
       return `Due soon${timeString}`;
-    
+
     case NotificationType.AFTER:
       return `Was due${timeString}`;
-    
+
     default:
       return reminder.description || 'No description available';
   }
@@ -218,17 +217,17 @@ export const getNotificationMessage = (reminder: Reminder, timing: NotificationT
  * Create a unique notification ID
  */
 export const createNotificationId = (
-  reminderId: string, 
+  reminderId: string,
   timing: NotificationTiming,
   occurrenceDate?: Date
 ): string => {
   const baseId = `${reminderId}-${timing.type}-${timing.value}`;
-  
+
   if (occurrenceDate) {
     const dateString = occurrenceDate.toISOString().split('T')[0];
     return `${baseId}-${dateString}`;
   }
-  
+
   return baseId;
 };
 
@@ -270,7 +269,7 @@ export const validateNotificationConfig = (reminder: Reminder): { isValid: boole
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -282,8 +281,8 @@ export const getDefaultNotificationTimings = (): NotificationTiming[] => {
     {
       type: NotificationType.BEFORE,
       value: 15,
-      label: '15 minutes before'
-    }
+      label: '15 minutes before',
+    },
   ];
 };
 
@@ -298,33 +297,33 @@ export const getNotificationTimingPresets = (): Array<{
     {
       label: 'Just in time',
       timings: [
-        { type: NotificationType.EXACT, value: 0, label: 'Exactly on time' }
-      ]
+        { type: NotificationType.EXACT, value: 0, label: 'Exactly on time' },
+      ],
     },
     {
       label: 'Early warning',
       timings: [
-        { type: NotificationType.BEFORE, value: 15, label: '15 minutes before' }
-      ]
+        { type: NotificationType.BEFORE, value: 15, label: '15 minutes before' },
+      ],
     },
     {
       label: 'Well prepared',
       timings: [
         { type: NotificationType.BEFORE, value: 60, label: '1 hour before' },
-        { type: NotificationType.BEFORE, value: 15, label: '15 minutes before' }
-      ]
+        { type: NotificationType.BEFORE, value: 15, label: '15 minutes before' },
+      ],
     },
     {
       label: 'Day ahead',
       timings: [
         { type: NotificationType.BEFORE, value: 1440, label: '1 day before' },
-        { type: NotificationType.BEFORE, value: 60, label: '1 hour before' }
-      ]
+        { type: NotificationType.BEFORE, value: 60, label: '1 hour before' },
+      ],
     },
     {
       label: 'Custom',
-      timings: []
-    }
+      timings: [],
+    },
   ];
 };
 
@@ -335,7 +334,7 @@ export const formatNotificationTiming = (timing: NotificationTiming): string => 
   switch (timing.type) {
     case NotificationType.EXACT:
       return 'Exactly on time';
-    
+
     case NotificationType.BEFORE:
       if (timing.value >= 1440) {
         const days = Math.floor(timing.value / 1440);
@@ -346,7 +345,7 @@ export const formatNotificationTiming = (timing: NotificationTiming): string => 
       } else {
         return `${timing.value} minute${timing.value > 1 ? 's' : ''} before`;
       }
-    
+
     case NotificationType.AFTER:
       if (timing.value >= 1440) {
         const days = Math.floor(timing.value / 1440);
@@ -357,8 +356,8 @@ export const formatNotificationTiming = (timing: NotificationTiming): string => 
       } else {
         return `${timing.value} minute${timing.value > 1 ? 's' : ''} after`;
       }
-    
+
     default:
       return 'Unknown timing';
   }
-}; 
+};

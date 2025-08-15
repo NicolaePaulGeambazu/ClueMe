@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { reminderService, Reminder as FirebaseReminder, FamilyMember, addFamilyNotification } from '../services/firebaseService';
 import notificationService from '../services/notificationService';
 import globalNotificationService from '../services/globalNotificationService';
@@ -7,7 +7,7 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useFamily } from './FamilyContext';
 import { measurePerformance, performanceMonitor } from '../utils/performanceUtils';
 import analyticsService from '../services/analyticsService';
-import { cleanReminderForFirestore } from '../utils/reminderUtils';
+import { cleanReminderForFirestore, filterReminders } from '../utils/reminderUtils';
 import { ReminderStatus, ReminderPriority } from '../design-system/reminders/types';
 import { userUsageService } from '../services/userUsageService';
 
@@ -20,7 +20,7 @@ const convertToUIReminder = (firebaseReminder: FirebaseReminder) => {
 
   // Helper function to safely convert date to ISO string
   const safeDateToISO = (date: any): string | undefined => {
-    if (!date) return undefined;
+    if (!date) {return undefined;}
     try {
       // Handle Firestore Timestamp objects
       if (date && typeof date.toDate === 'function') {
@@ -86,10 +86,17 @@ interface ReminderContextType {
   reminders: any[];
   isLoading: boolean;
   isInitialized: boolean;
+  isDataFullyLoaded: boolean;
   error: string | null;
   hasMore: boolean;
   totalCount: number;
   currentPage: number;
+  stats: {
+    total: number;
+    pending: number;
+    favorites: number;
+    overdue: number;
+  };
   loadReminders: (page?: number, useCache?: boolean) => Promise<void>;
   loadMoreReminders: () => Promise<void>;
   refreshReminders: () => Promise<void>;
@@ -128,16 +135,17 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   const { user, isLoading: authLoading } = useAuth();
   const { family } = useFamily();
   const { notifyTaskCreated, notifyTaskAssigned } = useNotifications();
-  
+
   // State management
   const [reminders, setReminders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isDataFullyLoaded, setIsDataFullyLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
-  
+
   // Refs for cleanup and optimization
   const unsubscribeRef = useRef<null | (() => void)>(null);
   const lastUpdateRef = useRef<number>(0);
@@ -147,7 +155,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   const debouncedSetReminders = useCallback(
     debounce((newReminders: any[]) => {
       setReminders(newReminders);
-    }, 100),
+    }, 300), // Increased from 100ms to 300ms for more stability
     []
   );
 
@@ -155,16 +163,16 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   const updateRemindersOptimized = useCallback((newReminders: any[]) => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateRef.current;
-    
+
     // If updates are too frequent, debounce them
-    if (timeSinceLastUpdate < 100) {
+    if (timeSinceLastUpdate < 300) { // Increased from 100ms to 300ms
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
       updateTimeoutRef.current = setTimeout(() => {
         debouncedSetReminders(newReminders);
         lastUpdateRef.current = Date.now();
-      }, 100);
+      }, 300); // Increased from 100ms to 300ms
     } else {
       // Direct update if enough time has passed
       debouncedSetReminders(newReminders);
@@ -173,7 +181,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   }, [debouncedSetReminders]);
 
   const loadReminders = useCallback(async (page: number = 0, useCache: boolean = true) => {
-    if (!user || authLoading) return;
+    if (!user || authLoading) {return;}
 
     try {
       // Only show loading on initial load or manual refresh
@@ -184,7 +192,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
       let result;
       let cacheHit = false;
-      
+
       // If user is in a family, load family reminders with proper permissions
       if (family) {
         // Check cache first
@@ -193,21 +201,21 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
           const cacheKey = `${user.uid}_${family.id}`;
           cacheHit = cached.cacheKeys.includes(cacheKey);
         }
-        
+
         // Use getRemindersWithFamilyPermissions to get all reminders the user should see
         const allReminders = await measurePerformance(
           () => reminderService.getRemindersWithFamilyPermissions(user.uid, family.id),
           family.memberCount
         );
-        
+
         const uiReminders = allReminders.map(convertToUIReminder).filter(Boolean);
-        
+
         // Simple pagination for now (can be enhanced later)
         const pageSize = 50;
         const startIndex = page * pageSize;
         const endIndex = startIndex + pageSize;
         const pageReminders = uiReminders.slice(startIndex, endIndex);
-        
+
         if (page === 0) {
           updateRemindersOptimized(pageReminders);
           // Schedule notifications for assigned tasks on initial load
@@ -215,7 +223,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         } else {
           setReminders(prev => [...prev, ...pageReminders]);
         }
-        
+
         setHasMore(endIndex < uiReminders.length);
         setTotalCount(uiReminders.length);
         setCurrentPage(page);
@@ -227,16 +235,21 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         );
         const uiReminders = firebaseReminders.map(convertToUIReminder).filter(Boolean);
         updateRemindersOptimized(uiReminders);
-        
+
         // Schedule notifications for assigned tasks on initial load
         scheduleNotificationsForAssignedTasks(uiReminders);
-        
+
         setHasMore(false);
         setTotalCount(uiReminders.length);
         setCurrentPage(0);
       }
-      
+
       setIsInitialized(true);
+
+      // Set a timeout to mark data as fully loaded after all background operations complete
+      setTimeout(() => {
+        setIsDataFullyLoaded(true);
+      }, 2000); // 2 second delay to allow all async operations to complete
     } catch (err) {
       setError('Failed to load reminders');
     } finally {
@@ -246,19 +259,19 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
   // Load more reminders (for pagination)
   const loadMoreReminders = useCallback(async () => {
-    if (!hasMore || isLoading) return;
-    
+    if (!hasMore || isLoading) {return;}
+
     await loadReminders(currentPage + 1, false); // Don't use cache for pagination
   }, [hasMore, isLoading, currentPage, loadReminders]);
 
   // Refresh reminders (clear cache and reload)
   const refreshReminders = useCallback(async () => {
-    if (!user) return;
-    
+    if (!user) {return;}
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Clear cache and force fresh data
       reminderService.clearReminderCache(user.uid);
       await loadReminders(0, false);
@@ -273,12 +286,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
     if (!user) {throw new Error('User not authenticated');}
 
     try {
-      // Check usage limits before creating reminder
-      const canCreate = await userUsageService.canCreateReminder(user.uid);
-      if (!canCreate.allowed) {
-        throw new Error(canCreate.reason || 'Reminder creation limit reached');
-      }
-
+      // UI layer should check usage limits and show paywall before calling this
       // Add family context if user is in a family
       const reminderWithFamily = {
         ...reminderData,
@@ -287,10 +295,14 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       };
 
       const reminderId = await reminderService.createReminder(reminderWithFamily);
-      
-      // Increment usage count after successful creation
-      await userUsageService.incrementReminderCount(user.uid);
-      
+
+      // Increment usage count after successful creation (do not throw if fails)
+      try {
+        await userUsageService.incrementReminderCount(user.uid);
+      } catch (usageError) {
+        console.warn('[ReminderContext] Failed to increment reminder count:', usageError);
+      }
+
       // Notify family members if reminder is shared
       if (family && reminderWithFamily.sharedWithFamily) {
         await addFamilyNotification({
@@ -333,7 +345,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
     try {
       const reminder = reminders.find(r => r.id === reminderId);
-      if (!reminder) return;
+      if (!reminder) {return;}
 
       const newStatus = reminder.completed ? ReminderStatus.PENDING : ReminderStatus.COMPLETED;
       await reminderService.updateReminder(reminderId, { status: newStatus });
@@ -347,7 +359,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
     try {
       const reminder = reminders.find(r => r.id === reminderId);
-      if (!reminder) return;
+      if (!reminder) {return;}
 
       await reminderService.updateReminder(reminderId, { isFavorite: !reminder.isFavorite });
     } catch (error) {
@@ -357,7 +369,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
   // Set up real-time listeners with optimization
   useEffect(() => {
-    if (!user || authLoading) return;
+    if (!user || authLoading) {return;}
 
     let unsubscribe: (() => void) | null = null;
 
@@ -371,8 +383,11 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         const userUnsubscribe = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
           try {
             userReminders = firebaseReminders.map(convertToUIReminder).filter(Boolean);
-            updateCombinedReminders();
-            setIsLoading(false);
+            // Debounce the update to prevent rapid fluctuations
+            setTimeout(() => {
+              updateCombinedReminders();
+              setIsLoading(false);
+            }, 100);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -383,12 +398,15 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
           try {
             const previousFamilyReminders = [...familyReminders];
             familyReminders = firebaseReminders.map(convertToUIReminder).filter(Boolean);
-            
+
             // Check for new assignments in real-time
             checkForNewAssignments(previousFamilyReminders, familyReminders);
-            
-            updateCombinedReminders();
-            setIsLoading(false);
+
+            // Debounce the update to prevent rapid fluctuations
+            setTimeout(() => {
+              updateCombinedReminders();
+              setIsLoading(false);
+            }, 100);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -398,15 +416,15 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         const updateCombinedReminders = () => {
           // Combine user and family reminders
           const allReminders = [...userReminders, ...familyReminders];
-          
+
           // Remove duplicates based on ID
-          const uniqueReminders = allReminders.filter((reminder, index, self) => 
+          const uniqueReminders = allReminders.filter((reminder, index, self) =>
             index === self.findIndex(r => r.id === reminder.id)
           );
-          
+
           // Only update if there are actual changes
           updateRemindersOptimized(uniqueReminders);
-          
+
           // Schedule notifications for assigned tasks
           scheduleNotificationsForAssignedTasks(uniqueReminders);
         };
@@ -435,19 +453,22 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         unsubscribe = reminderService.onUserRemindersChange(user.uid, (firebaseReminders) => {
           try {
             const uiReminders = firebaseReminders.map(convertToUIReminder).filter(Boolean);
-            
+
             // Check for new assignments in real-time
             checkForNewAssignments(previousUserReminders, uiReminders);
-            
-            updateRemindersOptimized(uiReminders);
-            
-            // Schedule notifications for assigned tasks
-            scheduleNotificationsForAssignedTasks(uiReminders);
-            
-            // Update previous reminders for next comparison
-            previousUserReminders = [...uiReminders];
-            
-            setIsLoading(false);
+
+            // Debounce the update to prevent rapid fluctuations
+            setTimeout(() => {
+              updateRemindersOptimized(uiReminders);
+
+              // Schedule notifications for assigned tasks
+              scheduleNotificationsForAssignedTasks(uiReminders);
+
+              // Update previous reminders for next comparison
+              previousUserReminders = [...uiReminders];
+
+              setIsLoading(false);
+            }, 100);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -526,14 +547,14 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
   // Schedule notifications for tasks assigned to the current user
   const scheduleNotificationsForAssignedTasks = useCallback(async (allReminders: any[]) => {
-    if (!user) return;
+    if (!user) {return;}
 
     try {
       console.log(`[ReminderContext] Checking for assigned tasks to schedule notifications for user: ${user.uid}`);
-      
+
       // Find reminders that are assigned to the current user
-      const assignedReminders = allReminders.filter(reminder => 
-        reminder.assignedTo && 
+      const assignedReminders = allReminders.filter(reminder =>
+        reminder.assignedTo &&
         reminder.assignedTo.includes(user.uid) &&
         reminder.userId !== user.uid // Exclude user's own reminders
       );
@@ -561,7 +582,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
             createdAt: reminder.createdAt,
             updatedAt: reminder.updatedAt,
             notificationTimings: reminder.notificationTimings || [
-              { type: 'before', value: 15, label: '15 minutes before' }
+              { type: 'before', value: 15, label: '15 minutes before' },
             ],
             isRecurring: reminder.isRecurring,
             repeatPattern: reminder.repeatPattern,
@@ -571,7 +592,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
           // Schedule notifications for this assigned task
           await notificationService.scheduleReminderNotifications(notificationReminder);
-          
+
           console.log(`[ReminderContext] Scheduled notifications for assigned task: ${reminder.id}`);
         } catch (error) {
           console.error(`[ReminderContext] Error scheduling notifications for assigned task ${reminder.id}:`, error);
@@ -584,24 +605,24 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
   // Check for new assignments in real-time and schedule notifications immediately
   const checkForNewAssignments = useCallback(async (previousReminders: any[], currentReminders: any[]) => {
-    if (!user) return;
+    if (!user) {return;}
 
     try {
-      console.log(`[ReminderContext] Checking for assignment changes in real-time`);
-      
+      console.log('[ReminderContext] Checking for assignment changes in real-time');
+
       // Find reminders that were previously assigned to the current user
       const previousAssignedIds = new Set(
         previousReminders
-          .filter(reminder => 
-            reminder.assignedTo && 
+          .filter(reminder =>
+            reminder.assignedTo &&
             reminder.assignedTo.includes(user.uid) &&
             reminder.userId !== user.uid
           )
           .map(reminder => reminder.id)
       );
 
-      const currentAssignedReminders = currentReminders.filter(reminder => 
-        reminder.assignedTo && 
+      const currentAssignedReminders = currentReminders.filter(reminder =>
+        reminder.assignedTo &&
         reminder.assignedTo.includes(user.uid) &&
         reminder.userId !== user.uid
       );
@@ -609,24 +630,24 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       const currentAssignedIds = new Set(currentAssignedReminders.map(reminder => reminder.id));
 
       // Find newly assigned reminders
-      const newAssignments = currentAssignedReminders.filter(reminder => 
+      const newAssignments = currentAssignedReminders.filter(reminder =>
         !previousAssignedIds.has(reminder.id)
       );
 
       // Find removed assignments
-      const removedAssignments = Array.from(previousAssignedIds).filter(id => 
+      const removedAssignments = Array.from(previousAssignedIds).filter(id =>
         !currentAssignedIds.has(id)
       );
 
       // Handle new assignments
       if (newAssignments.length > 0) {
         console.log(`[ReminderContext] Found ${newAssignments.length} new assignments in real-time`);
-        
+
         // Schedule notifications for new assignments immediately
         for (const reminder of newAssignments) {
           try {
             console.log(`[ReminderContext] Scheduling notifications for new assignment: ${reminder.id} - ${reminder.title}`);
-            
+
             // Convert to notification service format
             const notificationReminder = {
               id: reminder.id,
@@ -645,7 +666,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
               createdAt: reminder.createdAt,
               updatedAt: reminder.updatedAt,
               notificationTimings: reminder.notificationTimings || [
-                { type: 'before', value: 15, label: '15 minutes before' }
+                { type: 'before', value: 15, label: '15 minutes before' },
               ],
               isRecurring: reminder.isRecurring,
               repeatPattern: reminder.repeatPattern,
@@ -655,7 +676,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
 
             // Schedule notifications for this newly assigned task
             await notificationService.scheduleReminderNotifications(notificationReminder);
-            
+
             console.log(`[ReminderContext] Successfully scheduled notifications for new assignment: ${reminder.id}`);
           } catch (error) {
             console.error(`[ReminderContext] Error scheduling notifications for new assignment ${reminder.id}:`, error);
@@ -666,12 +687,12 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       // Handle removed assignments
       if (removedAssignments.length > 0) {
         console.log(`[ReminderContext] Found ${removedAssignments.length} removed assignments in real-time`);
-        
+
         // Cancel notifications for removed assignments
         for (const reminderId of removedAssignments) {
           try {
             console.log(`[ReminderContext] Canceling notifications for removed assignment: ${reminderId}`);
-            notificationService.cancelReminderNotifications(reminderId);
+            await notificationService.cancelReminderNotifications(reminderId);
             console.log(`[ReminderContext] Successfully canceled notifications for removed assignment: ${reminderId}`);
           } catch (error) {
             console.error(`[ReminderContext] Error canceling notifications for removed assignment ${reminderId}:`, error);
@@ -700,6 +721,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   const clearReminders = useCallback(() => {
     setReminders([]);
     setIsInitialized(false);
+    setIsDataFullyLoaded(false);
     setError(null);
     setHasMore(false);
     setTotalCount(0);
@@ -714,14 +736,31 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
     }
   }, []);
 
+  // Memoized stats calculation to prevent rapid fluctuations
+  const stats = useMemo(() => {
+    // Show loading state until all data is fully loaded
+    if (!reminders || !isInitialized || !isDataFullyLoaded) {
+      return { total: 0, pending: 0, favorites: 0, overdue: 0 };
+    }
+
+    return {
+      total: reminders.length,
+      pending: filterReminders.byCompleted(reminders, false).length,
+      favorites: filterReminders.byFavorite(reminders).length,
+      overdue: filterReminders.byOverdue(reminders).length,
+    };
+  }, [reminders, isInitialized, isDataFullyLoaded]);
+
   const contextValue: ReminderContextType = {
     reminders,
     isLoading,
     isInitialized,
+    isDataFullyLoaded,
     error,
     hasMore,
     totalCount,
     currentPage,
+    stats,
     loadReminders,
     loadMoreReminders,
     refreshReminders,
@@ -748,4 +787,4 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       {children}
     </ReminderContext.Provider>
   );
-}; 
+};

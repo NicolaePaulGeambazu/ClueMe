@@ -19,8 +19,8 @@ export const createStyles = (colors: any) => StyleSheet.create({
     backgroundColor: colors.background,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: '85%',
-    minHeight: '50%',
+    maxHeight: '75%', // Reduced from 85% to make it more compact
+    minHeight: '40%', // Reduced from 50% to make it more compact
   },
   keyboardAvoidingContainer: {
     flex: 1,
@@ -40,12 +40,26 @@ export const createStyles = (colors: any) => StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+    borderRadius: 8,
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: FontSizes.title2,
-    fontFamily: Fonts.bodyMedium,
-    flex: 1,
+    fontFamily: Fonts.bodySemibold,
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerSubtitleText: {
+    fontSize: FontSizes.caption1,
+    fontFamily: Fonts.body,
   },
   headerSpacer: {
     width: 40,
@@ -55,7 +69,7 @@ export const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 20,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 20, // Reduced from 24
   },
   sectionLabel: {
     fontSize: FontSizes.footnote,
@@ -100,6 +114,7 @@ export const createStyles = (colors: any) => StyleSheet.create({
     paddingVertical: 16,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
+    alignItems: 'center',
   },
   createButton: {
     flexDirection: 'row',
@@ -112,6 +127,27 @@ export const createStyles = (colors: any) => StyleSheet.create({
   createButtonText: {
     fontSize: FontSizes.body,
     fontFamily: Fonts.bodyMedium,
+  },
+  floatingActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 28,
+    gap: 8,
+    minWidth: 140,
+  },
+  floatingActionButtonText: {
+    fontSize: FontSizes.body,
+    fontFamily: Fonts.bodySemibold,
+    color: colors.white,
+  },
+  helperText: {
+    fontSize: FontSizes.caption1,
+    fontFamily: Fonts.body,
+    textAlign: 'center',
+    marginTop: 8,
   },
   sheet: {
     position: 'absolute',
@@ -178,4 +214,92 @@ export const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: Fonts.body,
     marginTop: 2,
   },
-}); 
+
+  // New visual design styles
+  visualDateTimeContainer: {
+    marginBottom: 20,
+  },
+  visualDateTimeCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  visualDateTimeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  visualDateTimeTitle: {
+    fontSize: FontSizes.title3,
+    fontFamily: Fonts.bodySemibold,
+    flex: 1,
+  },
+  visualDateTimeTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 32, // Align with the title text
+  },
+  visualDateTimeTimeText: {
+    fontSize: FontSizes.body,
+    fontFamily: Fonts.body,
+  },
+  quickActionBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  quickActionButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: colors.surface,
+    gap: 8,
+  },
+  locationInput: {
+    flex: 1,
+    fontSize: FontSizes.body,
+    fontFamily: Fonts.body,
+    paddingVertical: 4,
+  },
+  statusIndicators: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusChipText: {
+    fontSize: FontSizes.caption1,
+    fontFamily: Fonts.bodyMedium,
+  },
+});

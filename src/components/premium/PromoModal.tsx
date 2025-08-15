@@ -114,7 +114,7 @@ export const PromoModal: React.FC<PromoModalProps> = ({
           {/* Pricing plans */}
           <View style={styles.pricingSection}>
             <Text style={styles.sectionTitle}>{t('premium.pricing.title')}</Text>
-            
+
             {/* Plan selection */}
             <View style={styles.planContainer}>
               <TouchableOpacity
@@ -186,7 +186,7 @@ export const PromoModal: React.FC<PromoModalProps> = ({
               {t('premium.upgradeButton', { plan: selectedPlan })}
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.maybeLaterButton} onPress={onClose}>
             <Text style={styles.maybeLaterText}>{t('premium.maybeLater')}</Text>
           </TouchableOpacity>
@@ -419,4 +419,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     lineHeight: LineHeights.body,
     color: colors.textSecondary,
   },
-}); 
+});

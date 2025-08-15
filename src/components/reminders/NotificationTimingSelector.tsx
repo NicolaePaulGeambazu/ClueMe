@@ -15,7 +15,7 @@ interface NotificationTimingSelectorProps {
 export default function NotificationTimingSelector({
   value,
   onChange,
-  disabled = false
+  disabled = false,
 }: NotificationTimingSelectorProps) {
   const { t } = useTranslation();
   const { theme } = useTheme();
@@ -26,7 +26,7 @@ export default function NotificationTimingSelector({
       type: NotificationType.BEFORE,
       value: 15,
       label: '15 minutes before',
-      labelKey: 'notifications.15minBefore'
+      labelKey: 'notifications.15minBefore',
     };
     onChange([...value, newTiming]);
   };
@@ -37,20 +37,20 @@ export default function NotificationTimingSelector({
         type: NotificationType.BEFORE,
         value: 30,
         label: '30 minutes before (Gentle)',
-        labelKey: 'notifications.escalating.gentle'
+        labelKey: 'notifications.escalating.gentle',
       },
       {
         type: NotificationType.BEFORE,
         value: 15,
         label: '15 minutes before (Medium)',
-        labelKey: 'notifications.escalating.medium'
+        labelKey: 'notifications.escalating.medium',
       },
       {
         type: NotificationType.BEFORE,
         value: 5,
         label: '5 minutes before (Urgent)',
-        labelKey: 'notifications.escalating.urgent'
-      }
+        labelKey: 'notifications.escalating.urgent',
+      },
     ];
     onChange([...value, ...escalatingTimings]);
   };
@@ -193,4 +193,4 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.5,
   },
-}); 
+});

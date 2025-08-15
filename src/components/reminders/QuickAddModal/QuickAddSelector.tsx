@@ -33,4 +33,4 @@ export const QuickAddSelector: React.FC<QuickAddSelectorProps> = ({
       <ChevronRight size={16} color={colors.textTertiary} />
     </TouchableOpacity>
   </View>
-); 
+);

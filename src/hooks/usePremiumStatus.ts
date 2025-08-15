@@ -10,15 +10,15 @@ interface UsePremiumStatusReturn {
   isPro: boolean;
   isActive: boolean;
   features: PremiumFeatures;
-  
+
   // Actions
   refreshStatus: () => Promise<void>;
   forceClearStatus: () => Promise<void>;
   debugStatus: () => Promise<void>;
-  
+
   // Feature checks
   hasFeature: (feature: keyof PremiumFeatures) => boolean;
-  
+
   // Loading state
   isLoading: boolean;
 }
@@ -36,7 +36,7 @@ export const usePremiumStatus = (): UsePremiumStatusReturn => {
       setIsLoading(true);
       try {
         await premiumStatusManager.initialize();
-        
+
         // Get effective status for current user (considers family subscriptions)
         if (user?.uid) {
           const effectiveStatus = await premiumStatusManager.getEffectivePremiumStatus(user.uid);
@@ -44,7 +44,7 @@ export const usePremiumStatus = (): UsePremiumStatusReturn => {
         } else {
           setStatus(premiumStatusManager.getCurrentStatus());
         }
-        
+
         // Listen for status changes
         unsubscribe = premiumStatusManager.addListener(async (newStatus) => {
           // Update with effective status for current user
@@ -124,4 +124,4 @@ export const usePremiumStatus = (): UsePremiumStatusReturn => {
     hasFeature,
     isLoading,
   };
-}; 
+};

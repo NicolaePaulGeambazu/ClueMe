@@ -9,7 +9,7 @@ interface GridIconProps {
 export const GridIcon: React.FC<GridIconProps> = ({ size = 24, color = '#FFFFFF' }) => {
   const dotSize = size * 0.15;
   const gap = size * 0.1;
-  
+
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       {/* Left column */}
@@ -18,7 +18,7 @@ export const GridIcon: React.FC<GridIconProps> = ({ size = 24, color = '#FFFFFF'
         <View style={[styles.dot, { width: dotSize, height: dotSize, backgroundColor: color, marginTop: gap }]} />
         <View style={[styles.dot, { width: dotSize, height: dotSize, backgroundColor: color, marginTop: gap }]} />
       </View>
-      
+
       {/* Right column */}
       <View style={styles.column}>
         <View style={[styles.dot, { width: dotSize, height: dotSize, backgroundColor: color }]} />
@@ -42,4 +42,4 @@ const styles = StyleSheet.create({
   dot: {
     borderRadius: 999,
   },
-}); 
+});

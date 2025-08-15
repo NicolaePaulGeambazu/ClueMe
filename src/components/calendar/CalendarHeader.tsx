@@ -80,4 +80,4 @@ const CalendarHeader: React.FC<CalendarHeaderProps> = ({ view, setView, selected
   );
 };
 
-export default CalendarHeader; 
+export default CalendarHeader;

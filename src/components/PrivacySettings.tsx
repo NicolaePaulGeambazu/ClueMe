@@ -67,7 +67,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
               try {
                 // This would integrate with your actual export service
                 const exportData = await reminderService.exportUserData(user?.uid || '');
-                
+
                 // In a real app, you'd save this to a file or send via email
                 Alert.alert(
                   'Export Complete',
@@ -77,8 +77,8 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
               } catch (error) {
                 Alert.alert('Export Failed', 'Failed to export your data. Please try again.');
               }
-            }
-          }
+            },
+          },
         ]
       );
     } finally {
@@ -105,7 +105,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
               try {
                 // This would integrate with your actual deletion service
                 await reminderService.deleteUserAccount(user?.uid || '');
-                
+
                 Alert.alert(
                   'Account Deleted',
                   'Your account and all data have been permanently deleted.',
@@ -114,8 +114,8 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
               } catch (error) {
                 Alert.alert('Deletion Failed', 'Failed to delete your account. Please try again.');
               }
-            }
-          }
+            },
+          },
         ]
       );
     } finally {
@@ -147,7 +147,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
   const renderPrivacySection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Privacy Controls</Text>
-      
+
       <View style={styles.settingItem}>
         <View style={styles.settingLeft}>
           <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -213,7 +213,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
   const renderDataSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Your Data</Text>
-      
+
       <TouchableOpacity style={styles.settingItem} onPress={handleExportData}>
         <View style={styles.settingLeft}>
           <View style={[styles.settingIcon, { backgroundColor: colors.success + '15' }]}>
@@ -249,7 +249,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
   const renderLegalSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Legal & Policies</Text>
-      
+
       <TouchableOpacity style={styles.settingItem} onPress={handleOpenPrivacyPolicy}>
         <View style={styles.settingLeft}>
           <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
@@ -300,7 +300,7 @@ export default function PrivacySettings({ visible, onClose }: PrivacySettingsPro
   const renderInfoSection = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Privacy Information</Text>
-      
+
       <View style={styles.infoCard}>
         <View style={styles.infoHeader}>
           <Lock size={16} color={colors.success} strokeWidth={2} />
@@ -497,4 +497,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.text,
     marginTop: 12,
   },
-}); 
+});

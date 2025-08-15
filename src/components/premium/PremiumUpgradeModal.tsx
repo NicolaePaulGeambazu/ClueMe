@@ -49,7 +49,7 @@ export default function PremiumUpgradeModal({
 
   const handlePurchase = async (planId: string) => {
     setSelectedPlan(planId);
-    
+
     try {
       const success = await purchasePlan(planId);
       if (success) {
@@ -219,7 +219,7 @@ export default function PremiumUpgradeModal({
             </View>
             <Text style={[styles.title, { color: colors.text }]}>Upgrade to Premium</Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-              {triggerFeature 
+              {triggerFeature
                 ? `Unlock "${triggerFeature}" and more`
                 : 'Subscribe to unlock all premium features'
               }
@@ -241,7 +241,7 @@ export default function PremiumUpgradeModal({
             <Text style={[styles.comparisonTitle, { color: colors.text }]}>
               What's included?
             </Text>
-            
+
             <View style={styles.comparisonTable}>
               <View style={styles.comparisonHeader}>
                 <Text style={[styles.comparisonHeaderText, { color: colors.textSecondary }]}>
@@ -494,4 +494,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     fontFamily: Fonts.text.regular,
     textAlign: 'center',
   },
-}); 
+});

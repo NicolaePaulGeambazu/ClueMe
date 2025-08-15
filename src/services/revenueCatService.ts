@@ -1,13 +1,23 @@
 import { Platform, Linking } from 'react-native';
 import Purchases, { PurchasesOffering, CustomerInfo, PurchasesPackage } from 'react-native-purchases';
 import secureKeyService from './secureKeyService';
+import auth from '@react-native-firebase/auth';
+
+// Debug flag to control RevenueCat logging - set to false to disable logs
+const ENABLE_REVENUECAT_LOGS = false;
+
+const log = (message: string, ...args: any[]) => {
+  if (ENABLE_REVENUECAT_LOGS) {
+    console.log(message, ...args);
+  }
+};
 
 // Product identifiers - iOS only (family sharing enabled for team plans)
 export const PRODUCT_IDS = {
   // Individual Plans
   INDIVIDUAL_WEEKLY: 'com.clearcue.pro.weekly',
   INDIVIDUAL_YEARLY: 'com.clearcue.pro.yearly',
-  
+
   // Family Plans (with family sharing enabled)
   FAMILY_WEEKLY: 'com.clearcue.team.weekly',
   FAMILY_YEARLY: 'com.clearcue.team.yearly',
@@ -61,15 +71,15 @@ class RevenueCatService {
 
   // Initialize RevenueCat
   async initialize(): Promise<boolean> {
-    if (this.isInitialized) return true;
+    if (this.isInitialized) {return true;}
 
     try {
       // Initialize secure key service
       await secureKeyService.initialize();
-      
+
       // Get API key from secure storage
       const apiKey = await secureKeyService.getKey('REVENUECAT_IOS_API_KEY');
-      
+
       // Validate API key
       if (!apiKey || apiKey === 'appl_YOUR_IOS_API_KEY') {
         console.error('[RevenueCatService] Invalid API key. Please set REVENUECAT_IOS_API_KEY using secureKeyService');
@@ -94,7 +104,7 @@ class RevenueCatService {
         if (Purchases && typeof Purchases.addCustomerInfoUpdateListener === 'function') {
           Purchases.addCustomerInfoUpdateListener((info) => {
             this.customerInfo = info;
-            console.log('[RevenueCatService] Customer info updated:', info);
+            log('[RevenueCatService] Customer info updated:', info);
           });
         }
       } catch (listenerError) {
@@ -103,7 +113,7 @@ class RevenueCatService {
       }
 
       this.isInitialized = true;
-      console.log('[RevenueCatService] Initialized successfully');
+      log('[RevenueCatService] Initialized successfully');
       return true;
     } catch (error: any) {
       // Handle specific NativeEventEmitter error
@@ -112,7 +122,7 @@ class RevenueCatService {
         console.warn('[RevenueCatService] This is normal during development. RevenueCat will be available once the app is properly built.');
         return false;
       }
-      
+
       console.error('[RevenueCatService] Initialization failed:', error);
       return false;
     }
@@ -121,8 +131,23 @@ class RevenueCatService {
   // Set user ID (call when user logs in)
   async setUserID(userId: string): Promise<void> {
     try {
+      log('[RevenueCatService] Setting user ID:', userId);
+
+      // Check if user is anonymous first
+      const currentUser = auth().currentUser;
+      log('[RevenueCatService] Current Firebase user:', {
+        uid: currentUser?.uid,
+        isAnonymous: currentUser?.isAnonymous,
+        email: currentUser?.email,
+      });
+
+      if (currentUser?.isAnonymous) {
+        log('[RevenueCatService] User is anonymous, cannot set RevenueCat user ID');
+        return;
+      }
+
       await Purchases.logIn(userId);
-      console.log('[RevenueCatService] User ID set:', userId);
+      log('[RevenueCatService] User ID set successfully:', userId);
     } catch (error) {
       console.error('[RevenueCatService] Failed to set user ID:', error);
     }
@@ -132,16 +157,16 @@ class RevenueCatService {
   async getOfferings(): Promise<PurchasesOffering | null> {
     try {
       const offerings = await Purchases.getOfferings();
-      console.log('[RevenueCatService] All offerings:', JSON.stringify(offerings, null, 2));
-      
+      log('[RevenueCatService] All offerings:', JSON.stringify(offerings, null, 2));
+
       if (offerings.current) {
-        console.log('[RevenueCatService] Current offering packages:', {
+        log('[RevenueCatService] Current offering packages:', {
           monthly: offerings.current.monthly?.product?.identifier,
           annual: offerings.current.annual?.product?.identifier,
           lifetime: offerings.current.lifetime?.product?.identifier,
         });
       }
-      
+
       return offerings.current;
     } catch (error) {
       console.error('[RevenueCatService] Failed to get offerings:', error);
@@ -163,11 +188,11 @@ class RevenueCatService {
       if (offerings.availablePackages) {
         for (const pkg of offerings.availablePackages) {
           const product = pkg.product;
-          
+
           // Get localized product information
           const localizedName = product.title || product.identifier;
           const localizedDescription = product.description || '';
-          
+
           // Determine interval from product identifier or subscription period
           let interval = 'monthly';
           if (product.identifier.includes('yearly') || product.identifier.includes('annual')) {
@@ -179,7 +204,7 @@ class RevenueCatService {
           }
 
           // Determine if it's a family plan
-          const isFamilyShareable = product.identifier.includes('team') || 
+          const isFamilyShareable = product.identifier.includes('team') ||
                                    product.identifier.includes('family');
 
           products.push({
@@ -237,12 +262,12 @@ class RevenueCatService {
   // Purchase a package
   async purchasePackage(packageToPurchase: PurchasesPackage): Promise<PurchaseResult> {
     try {
-      console.log('[RevenueCatService] Starting purchase for:', packageToPurchase.identifier);
-      
+      log('[RevenueCatService] Starting purchase for:', packageToPurchase.identifier);
+
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
-      
-      console.log('[RevenueCatService] Purchase successful:', customerInfo);
-      
+
+      log('[RevenueCatService] Purchase successful:', customerInfo);
+
       return {
         success: true,
         productId: packageToPurchase.product.identifier,
@@ -250,7 +275,7 @@ class RevenueCatService {
       };
     } catch (error: any) {
       console.error('[RevenueCatService] Purchase failed:', error);
-      
+
       return {
         success: false,
         error: error.message,
@@ -269,9 +294,16 @@ class RevenueCatService {
 
       // Find the package with the specified product ID
       let targetPackage: PurchasesPackage | null = null;
-      
+
+      // Check weekly packages
+      if (offerings.weekly) {
+        if (offerings.weekly.product.identifier === productId) {
+          targetPackage = offerings.weekly;
+        }
+      }
+
       // Check monthly packages
-      if (offerings.monthly) {
+      if (!targetPackage && offerings.monthly) {
         if (offerings.monthly.product.identifier === productId) {
           targetPackage = offerings.monthly;
         }
@@ -291,7 +323,7 @@ class RevenueCatService {
       return await this.purchasePackage(targetPackage);
     } catch (error: any) {
       console.error('[RevenueCatService] Purchase by product ID failed:', error);
-      
+
       return {
         success: false,
         error: error.message,
@@ -305,7 +337,7 @@ class RevenueCatService {
     try {
       const customerInfo = await Purchases.restorePurchases();
       this.customerInfo = customerInfo;
-      
+
       console.log('[RevenueCatService] Purchases restored:', customerInfo);
       return true;
     } catch (error) {
@@ -317,22 +349,31 @@ class RevenueCatService {
   // Get subscription status
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
     try {
+      console.log('[RevenueCatService] Getting subscription status...');
       const customerInfo = await Purchases.getCustomerInfo();
       this.customerInfo = customerInfo;
 
+      console.log('[RevenueCatService] Customer info:', customerInfo);
+      console.log('[RevenueCatService] Active entitlements:', customerInfo.entitlements.active);
+
       const entitlements = customerInfo.entitlements.active;
-      const premiumEntitlement = entitlements['premium'];
+      const premiumEntitlement = entitlements.premium;
+
+      console.log('[RevenueCatService] Premium entitlement:', premiumEntitlement);
 
       if (premiumEntitlement) {
-        return {
+        const status = {
           isActive: true,
           planId: premiumEntitlement.productIdentifier,
           expirationDate: premiumEntitlement.expirationDate ? new Date(premiumEntitlement.expirationDate) : undefined,
           isInTrial: premiumEntitlement.periodType === 'trial',
           willRenew: premiumEntitlement.willRenew,
         };
+        console.log('[RevenueCatService] Returning active status:', status);
+        return status;
       }
 
+      console.log('[RevenueCatService] No premium entitlement found, returning inactive status');
       return {
         isActive: false,
       };
@@ -346,8 +387,16 @@ class RevenueCatService {
 
   // Check if user has premium access
   async hasPremiumAccess(): Promise<boolean> {
-    const status = await this.getSubscriptionStatus();
-    return status.isActive;
+    try {
+      console.log('[RevenueCatService] Checking premium access...');
+      const status = await this.getSubscriptionStatus();
+      console.log('[RevenueCatService] Subscription status:', status);
+      console.log('[RevenueCatService] Has premium access:', status.isActive);
+      return status.isActive;
+    } catch (error) {
+      console.error('[RevenueCatService] Error checking premium access:', error);
+      return false;
+    }
   }
 
   // Get customer info
@@ -365,6 +414,43 @@ class RevenueCatService {
   // Get current customer info (cached)
   getCurrentCustomerInfo(): CustomerInfo | null {
     return this.customerInfo;
+  }
+
+  // Clear cache and refresh customer info
+  async clearCache(): Promise<void> {
+    try {
+      console.log('[RevenueCatService] Clearing cache...');
+      this.customerInfo = null;
+
+      // Check if user is anonymous
+      const currentUser = auth().currentUser;
+      if (currentUser?.isAnonymous) {
+        console.log('[RevenueCatService] User is anonymous, skipping cache refresh');
+        return;
+      }
+
+      // Force refresh customer info from server
+      const freshCustomerInfo = await Purchases.getCustomerInfo();
+      this.customerInfo = freshCustomerInfo;
+
+      console.log('[RevenueCatService] Cache cleared and refreshed:', freshCustomerInfo);
+    } catch (error) {
+      console.error('[RevenueCatService] Failed to clear cache:', error);
+    }
+  }
+
+  // Force refresh customer info from server
+  async refreshCustomerInfo(): Promise<CustomerInfo | null> {
+    try {
+      console.log('[RevenueCatService] Force refreshing customer info...');
+      const customerInfo = await Purchases.getCustomerInfo();
+      this.customerInfo = customerInfo;
+      console.log('[RevenueCatService] Customer info refreshed:', customerInfo);
+      return customerInfo;
+    } catch (error) {
+      console.error('[RevenueCatService] Failed to refresh customer info:', error);
+      return null;
+    }
   }
 
   // Check if user is in trial
@@ -394,6 +480,13 @@ class RevenueCatService {
   // Log out user (call when user logs out)
   async logOut(): Promise<void> {
     try {
+      // Check if user is anonymous first
+      const currentUser = auth().currentUser;
+      if (currentUser?.isAnonymous) {
+        console.log('[RevenueCatService] User is anonymous, skipping RevenueCat logout');
+        return;
+      }
+
       await Purchases.logOut();
       this.customerInfo = null;
       console.log('[RevenueCatService] User logged out');
@@ -406,10 +499,11 @@ class RevenueCatService {
   async getProductPrice(productId: ProductId): Promise<string> {
     try {
       const offerings = await this.getOfferings();
-      if (!offerings) return '';
+      if (!offerings) {return '';}
 
       // Search through all packages for the product
       const allPackages = [
+        offerings.weekly,
         offerings.monthly,
         offerings.annual,
         offerings.lifetime,
@@ -431,7 +525,7 @@ class RevenueCatService {
   async isProductAvailable(productId: ProductId): Promise<boolean> {
     try {
       const offerings = await this.getOfferings();
-      if (!offerings) return false;
+      if (!offerings) {return false;}
 
       const allPackages = [
         offerings.monthly,
@@ -454,9 +548,9 @@ class RevenueCatService {
         const urls = [
           'https://apps.apple.com/account/subscriptions',
           'https://apps.apple.com/account',
-          'https://apps.apple.com'
+          'https://apps.apple.com',
         ];
-        
+
         for (const url of urls) {
           try {
             await Linking.openURL(url);
@@ -466,7 +560,7 @@ class RevenueCatService {
             continue;
           }
         }
-        
+
         // If all URLs fail, provide manual instructions
         throw new Error('Unable to open subscription management automatically. Please follow these steps:\n\n1. Open Settings app\n2. Tap your Apple ID at the top\n3. Tap "Subscriptions"\n4. Find ClearCue and tap "Cancel Subscription"');
       } else if (Platform.OS === 'android') {
@@ -484,7 +578,7 @@ class RevenueCatService {
   async cancelSubscription(): Promise<{ success: boolean; manualInstructions?: string }> {
     try {
       console.log('[RevenueCatService] Attempting to cancel subscription...');
-      
+
       // Get current customer info to check subscription status
       const customerInfo = await this.getCustomerInfo();
       if (!customerInfo) {
@@ -493,8 +587,8 @@ class RevenueCatService {
 
       // Check if user has an active subscription
       const entitlements = customerInfo.entitlements.active;
-      const premiumEntitlement = entitlements['premium'];
-      
+      const premiumEntitlement = entitlements.premium;
+
       if (!premiumEntitlement) {
         throw new Error('No active subscription to cancel');
       }
@@ -505,9 +599,9 @@ class RevenueCatService {
         const urls = [
           'https://apps.apple.com/account/subscriptions',
           'https://apps.apple.com/account',
-          'https://apps.apple.com'
+          'https://apps.apple.com',
         ];
-        
+
         for (const url of urls) {
           try {
             await Linking.openURL(url);
@@ -517,11 +611,11 @@ class RevenueCatService {
             continue;
           }
         }
-        
+
         // If all URLs fail, return manual instructions
         return {
           success: false,
-          manualInstructions: '1. Open Settings app\n2. Tap your Apple ID at the top\n3. Tap "Subscriptions"\n4. Find ClearCue and tap "Cancel Subscription"'
+          manualInstructions: '1. Open Settings app\n2. Tap your Apple ID at the top\n3. Tap "Subscriptions"\n4. Find ClearCue and tap "Cancel Subscription"',
         };
       } else if (Platform.OS === 'android') {
         // For Android, use the Google Play Store subscription management
@@ -557,10 +651,10 @@ class RevenueCatService {
     try {
       const status = await this.getSubscriptionStatus();
       const customerInfo = await this.getCustomerInfo();
-      
+
       let planName = 'Free';
       let nextBillingDate = null;
-      
+
       if (status.isActive && status.planId) {
         // Map product ID to plan name
         switch (status.planId) {
@@ -579,7 +673,7 @@ class RevenueCatService {
           default:
             planName = 'Premium';
         }
-        
+
         // Calculate next billing date
         if (status.expirationDate) {
           nextBillingDate = status.expirationDate;
@@ -612,4 +706,4 @@ class RevenueCatService {
 
 // Export singleton instance
 export const revenueCatService = new RevenueCatService();
-export default revenueCatService; 
+export default revenueCatService;

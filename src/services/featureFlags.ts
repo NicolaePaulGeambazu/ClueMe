@@ -13,7 +13,7 @@ export interface FeatureFlags {
   customIntervals: boolean;
   multipleDays: boolean;
   endConditions: boolean;
-  timezoneSupport: boolean;
+
   unlimitedLists: boolean;
   unlimitedReminders: boolean;
 }
@@ -29,7 +29,7 @@ const FREE_FEATURES: FeatureFlags = {
   customIntervals: false,
   multipleDays: false,
   endConditions: false,
-  timezoneSupport: false,
+
   unlimitedLists: false,
   unlimitedReminders: false,
 };
@@ -45,7 +45,6 @@ const PRO_FEATURES: FeatureFlags = {
   customIntervals: true,
   multipleDays: true,
   endConditions: true,
-  timezoneSupport: true,
   unlimitedLists: true,
   unlimitedReminders: true,
 };
@@ -61,7 +60,6 @@ const TESTING_FEATURES: FeatureFlags = {
   customIntervals: true,
   multipleDays: true,
   endConditions: true,
-  timezoneSupport: true,
   unlimitedLists: true,
   unlimitedReminders: true,
 };
@@ -100,11 +98,11 @@ export class FeatureFlagService {
     if (this.isTestingMode) {
       return TESTING_FEATURES[feature];
     }
-    
+
     if (this.userTier === 'pro') {
       return PRO_FEATURES[feature];
     }
-    
+
     return FREE_FEATURES[feature];
   }
 
@@ -113,11 +111,11 @@ export class FeatureFlagService {
     if (this.isTestingMode) {
       return { ...TESTING_FEATURES };
     }
-    
+
     if (this.userTier === 'pro') {
       return { ...PRO_FEATURES };
     }
-    
+
     return { ...FREE_FEATURES };
   }
 
@@ -136,11 +134,11 @@ export class FeatureFlagService {
   // Get feature restrictions for UI display
   getFeatureRestrictions(): { [key: string]: boolean } {
     const restrictions: { [key: string]: boolean } = {};
-    
+
     Object.keys(FREE_FEATURES).forEach((feature) => {
       restrictions[feature] = !this.isFeatureEnabled(feature as keyof FeatureFlags);
     });
-    
+
     return restrictions;
   }
 
@@ -234,4 +232,3 @@ export const getMaxNotificationTimes = (): number => {
 // Simple feature flags service
 // In a real app, this would check against user subscription status
 
- 

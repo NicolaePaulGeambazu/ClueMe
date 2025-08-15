@@ -64,7 +64,7 @@ export class DateUtils {
 
   // Format date based on user preference
   static formatDate(date: Date | string | unknown, format?: DateFormat): string {
-    if (!date) return '';
+    if (!date) {return '';}
 
     try {
       let dateObj: Date;
@@ -80,7 +80,7 @@ export class DateUtils {
         return '';
       }
 
-      if (isNaN(dateObj.getTime())) return '';
+      if (isNaN(dateObj.getTime())) {return '';}
 
       const locale = this.getCurrentLocale();
       const useFormat = format || this.dateFormat;
@@ -101,7 +101,7 @@ export class DateUtils {
 
   // Format time based on user preference
   static formatTime(date: Date | string | unknown, format?: TimeFormat): string {
-    if (!date) return '';
+    if (!date) {return '';}
 
     try {
       let dateObj: Date;
@@ -117,7 +117,7 @@ export class DateUtils {
         return '';
       }
 
-      if (isNaN(dateObj.getTime())) return '';
+      if (isNaN(dateObj.getTime())) {return '';}
 
       const useFormat = format || this.timeFormat;
 
@@ -136,7 +136,7 @@ export class DateUtils {
 
   // Format date and time together
   static formatDateTime(date: Date | string | unknown, dateFormat?: DateFormat, timeFormat?: TimeFormat): string {
-    if (!date) return '';
+    if (!date) {return '';}
 
     try {
       let dateObj: Date;
@@ -152,7 +152,7 @@ export class DateUtils {
         return '';
       }
 
-      if (isNaN(dateObj.getTime())) return '';
+      if (isNaN(dateObj.getTime())) {return '';}
 
       const locale = this.getCurrentLocale();
       const useDateFormat = dateFormat || this.dateFormat;
@@ -194,7 +194,7 @@ export class DateUtils {
 
   // Check if date is today
   static isToday(date: Date | string | unknown): boolean {
-    if (!date) return false;
+    if (!date) {return false;}
 
     try {
       let dateObj: Date;
@@ -210,14 +210,14 @@ export class DateUtils {
         return false;
       }
 
-      if (isNaN(dateObj.getTime())) return false;
+      if (isNaN(dateObj.getTime())) {return false;}
 
       const today = new Date();
       const locale = this.getCurrentLocale();
-      
+
       const todayStr = formatDateFns(today, 'yyyy-MM-dd', { locale });
       const dateStr = formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
-      
+
       return todayStr === dateStr;
     } catch (error) {
       return false;
@@ -226,7 +226,7 @@ export class DateUtils {
 
   // Check if date is yesterday
   static isYesterday(date: Date | string | unknown): boolean {
-    if (!date) return false;
+    if (!date) {return false;}
 
     try {
       let dateObj: Date;
@@ -242,15 +242,15 @@ export class DateUtils {
         return false;
       }
 
-      if (isNaN(dateObj.getTime())) return false;
+      if (isNaN(dateObj.getTime())) {return false;}
 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const locale = this.getCurrentLocale();
-      
+
       const yesterdayStr = formatDateFns(yesterday, 'yyyy-MM-dd', { locale });
       const dateStr = formatDateFns(dateObj, 'yyyy-MM-dd', { locale });
-      
+
       return yesterdayStr === dateStr;
     } catch (error) {
       return false;
@@ -259,7 +259,7 @@ export class DateUtils {
 
   // Get relative date string (Today, Yesterday, or formatted date)
   static getRelativeDate(date: Date | string | unknown): string {
-    if (!date) return '';
+    if (!date) {return '';}
 
     try {
       let dateObj: Date;
@@ -275,7 +275,7 @@ export class DateUtils {
         return '';
       }
 
-      if (isNaN(dateObj.getTime())) return '';
+      if (isNaN(dateObj.getTime())) {return '';}
 
       if (this.isToday(dateObj)) {
         return 'Today';
@@ -294,7 +294,7 @@ export class DateUtils {
 
   // Get day of week (0 = Sunday, 1 = Monday, etc.)
   static getDayOfWeek(date: Date | string | unknown): number {
-    if (!date) return 0;
+    if (!date) {return 0;}
 
     try {
       let dateObj: Date;
@@ -310,7 +310,7 @@ export class DateUtils {
         return 0;
       }
 
-      if (isNaN(dateObj.getTime())) return 0;
+      if (isNaN(dateObj.getTime())) {return 0;}
 
       return dateObj.getDay();
     } catch (error) {
@@ -367,11 +367,20 @@ export class DateUtils {
   // Check if a reminder is overdue
   static isOverdue(dueDate?: string, completed?: boolean, dueTime?: string, reminder?: ReminderData): boolean {
     if (!dueDate || completed) {return false;}
-    
+
     try {
       const dueDateTime = this.parseDateWithTimezone(dueDate, dueTime);
       const now = new Date();
-      
+
+      // Debug logging for overdue check
+      console.log('[DateUtils] Overdue check:', {
+        dueDate,
+        dueTime,
+        parsedDueDateTime: dueDateTime.toISOString(),
+        now: now.toISOString(),
+        isOverdue: dueDateTime.getTime() < (now.getTime() - 1000)
+      });
+
       // For recurring reminders, only mark as overdue if the series has ended
       if (reminder && reminder.isRecurring) {
         // If the recurring series has ended and the last occurrence is overdue, mark as overdue
@@ -381,15 +390,18 @@ export class DateUtils {
             return true;
           }
         }
-        
-        // For active recurring reminders (without end date or end date in future), 
+
+        // For active recurring reminders (without end date or end date in future),
         // they're not overdue because the next occurrence will be generated
         return false;
       }
-      
+
       // For non-recurring reminders, use simple comparison
-      return dueDateTime < now;
+      // Add a small buffer to prevent rapid state changes
+      const bufferMs = 1000; // 1 second buffer
+      return dueDateTime.getTime() < (now.getTime() - bufferMs);
     } catch (error) {
+      console.error('[DateUtils] Error in isOverdue:', error);
       // Fallback to date-only comparison
       const today = this.getTodayISO();
       return dueDate < today;
@@ -400,8 +412,27 @@ export class DateUtils {
   static parseDateWithTimezone(dateString: string, timeString?: string): Date {
     // Create a date object from the date string
     const date = new Date(dateString);
-    
-    // If there's a time string, combine it with the date
+
+    // If the dateString is already an ISO string with time (contains 'T'), 
+    // we should use it as-is since it already contains the correct time
+    if (dateString.includes('T')) {
+      // The dateString already contains time information, so we don't need to apply timeString
+      // However, we need to ensure it's interpreted as local time, not UTC
+      if (!dateString.includes('Z') && !dateString.includes('+')) {
+        // This is a local date string, so we need to create a proper Date object
+        // that preserves the local time
+        const [datePart, timePart] = dateString.split('T');
+        const [year, month, day] = datePart.split('-').map(Number);
+        const [hours, minutes, seconds] = timePart.split(':').map(Number);
+        
+        // Create a new Date object with the local components
+        const localDate = new Date(year, month - 1, day, hours, minutes, seconds || 0);
+        return localDate;
+      }
+      return date;
+    }
+
+    // If we have a timeString and the dateString doesn't contain time, apply the time
     if (timeString) {
       const [hours, minutes] = timeString.split(':').map(Number);
       if (!isNaN(hours) && !isNaN(minutes)) {
@@ -409,7 +440,7 @@ export class DateUtils {
         date.setHours(hours, minutes, 0, 0);
       }
     }
-    
+
     return date;
   }
 
@@ -422,7 +453,7 @@ export class DateUtils {
   static compareDates(date1: Date | string, date2: Date | string): number {
     const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
     const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
-    
+
     return d1.getTime() - d2.getTime();
   }
 
@@ -430,7 +461,7 @@ export class DateUtils {
   static isDateInPast(date: Date | string): boolean {
     const targetDate = typeof date === 'string' ? new Date(date) : date;
     const now = new Date();
-    
+
     return targetDate < now;
   }
 
@@ -438,7 +469,7 @@ export class DateUtils {
   static isDateToday(date: Date | string): boolean {
     const targetDate = typeof date === 'string' ? new Date(date) : date;
     const today = new Date();
-    
+
     return targetDate.toDateString() === today.toDateString();
   }
 
@@ -533,17 +564,17 @@ export const isDateToday = (date: Date | string) => DateUtils.isDateToday(date);
  * Normalize a date to ensure it's a valid Date object
  */
 export const normalizeDate = (date: Date | string | undefined | null | any): Date | undefined => {
-  if (!date) return undefined;
-  
+  if (!date) {return undefined;}
+
   if (date instanceof Date) {
     return isNaN(date.getTime()) ? undefined : date;
   }
-  
+
   if (typeof date === 'string') {
     const parsed = new Date(date);
     return isNaN(parsed.getTime()) ? undefined : parsed;
   }
-  
+
   if (date && typeof date === 'object') {
     // Handle Firestore Timestamp objects
     if ('toDate' in date && typeof date.toDate === 'function') {
@@ -566,7 +597,7 @@ export const normalizeDate = (date: Date | string | undefined | null | any): Dat
       }
     }
   }
-  
+
   return undefined;
 };
 
@@ -598,21 +629,21 @@ export const getNextOccurrence = (
   const now = new Date();
   const start = startDate || baseDate;
   let current = new Date(start);
-  
+
   // If we're before the start date, return the start date
   if (current < now) {
     current = new Date(now);
   }
-  
+
   // Generate occurrences until we find one in the future
   for (let i = 0; i < 365; i++) { // Limit to 1 year to prevent infinite loops
     let nextDate = new Date(current);
-    
+
     switch (repeatPattern) {
       case 'daily':
         nextDate.setDate(current.getDate() + (customInterval || 1));
         break;
-        
+
       case 'weekly':
         if (repeatDays && repeatDays.length > 0) {
           // Find the next occurrence on one of the specified days
@@ -634,22 +665,22 @@ export const getNextOccurrence = (
           nextDate.setDate(current.getDate() + 7);
         }
         break;
-        
+
       case 'monthly':
         nextDate.setMonth(current.getMonth() + (customInterval || 1));
         break;
-        
+
       case 'yearly':
         nextDate.setFullYear(current.getFullYear() + (customInterval || 1));
         break;
-        
+
       case 'weekdays':
         // Skip weekends
         do {
           nextDate.setDate(current.getDate() + 1);
         } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
         break;
-        
+
       case 'first_monday':
         // Find the first Monday of the next month
         nextDate.setDate(1);
@@ -658,7 +689,7 @@ export const getNextOccurrence = (
           nextDate.setDate(nextDate.getDate() + 1);
         }
         break;
-        
+
       case 'last_friday':
         // Find the last Friday of the next month
         nextDate.setDate(1);
@@ -668,28 +699,28 @@ export const getNextOccurrence = (
           nextDate.setDate(nextDate.getDate() - 1);
         }
         break;
-        
+
       case 'custom':
         nextDate.setDate(current.getDate() + (customInterval || 1));
         break;
-        
+
       default:
         return null;
     }
-    
+
     // Check if this occurrence is within the end date
     if (endDate && nextDate > endDate) {
       return null;
     }
-    
+
     // If this occurrence is in the future, return it
     if (nextDate > now) {
       return nextDate;
     }
-    
+
     current = nextDate;
   }
-  
+
   return null;
 };
 
@@ -709,19 +740,19 @@ export const generateOccurrences = (
   const start = startDate || baseDate;
   let current = new Date(start);
   const end = endDate || new Date(start.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year default
-  
+
   for (let i = 0; i < maxOccurrences && current <= end; i++) {
     if (current >= start) {
       occurrences.push(new Date(current));
     }
-    
+
     const next = getNextOccurrence(current, repeatPattern, customInterval, repeatDays);
     if (!next || next <= current) {
       break;
     }
     current = next;
   }
-  
+
   return occurrences;
 };
 
@@ -729,11 +760,11 @@ export const generateOccurrences = (
  * Format a date for display in the user's locale
  */
 export const formatDateForDisplay = (date: Date | undefined | null): string => {
-  if (!date) return '';
-  
+  if (!date) {return '';}
+
   const normalized = normalizeDate(date);
-  if (!normalized) return '';
-  
+  if (!normalized) {return '';}
+
   return normalized.toLocaleDateString();
 };
 

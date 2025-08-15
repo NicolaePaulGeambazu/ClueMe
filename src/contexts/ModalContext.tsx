@@ -33,14 +33,14 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   const { createReminder } = useReminders();
   const { user } = useAuth();
   const { theme } = useTheme();
-  
+
   // QuickAddModal state
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  
+
   // EditReminderModal state
   const [showEditReminder, setShowEditReminder] = useState(false);
   const [editReminderId, setEditReminderId] = useState<string>('');
-  
+
   // Date picker state
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
   const [datePickerType, setDatePickerType] = useState<'main' | 'end'>('main');
@@ -49,14 +49,14 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
 
   const handleQuickAddSave = async (reminderData: any) => {
     try {
-      
+
       await createReminder({
         ...reminderData,
         userId: user?.uid,
         status: 'pending',
         completed: false,
       });
-      
+
       hideQuickAddModal();
     } catch (error) {
       throw error;
@@ -126,7 +126,7 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
   return (
     <ModalContext.Provider value={value}>
       {children}
-      
+
       {/* Global Modals */}
       <QuickAddModal
         visible={showQuickAdd}
@@ -154,4 +154,4 @@ export const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
       />
     </ModalContext.Provider>
   );
-}; 
+};

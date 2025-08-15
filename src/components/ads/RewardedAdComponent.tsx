@@ -27,7 +27,7 @@ const RewardedAdComponent: React.FC<RewardedAdComponentProps> = ({
   }, []);
 
   const loadRewardedAd = async () => {
-    if (!adMobService.shouldShowAds()) return;
+    if (!adMobService.shouldShowAds()) {return;}
 
     try {
       setIsLoading(true);
@@ -48,7 +48,7 @@ const RewardedAdComponent: React.FC<RewardedAdComponentProps> = ({
     try {
       setIsLoading(true);
       const shown = await adMobService.showRewardedAd();
-      
+
       if (shown) {
         // Simulate reward (replace with actual reward logic)
         const reward = {
@@ -56,7 +56,7 @@ const RewardedAdComponent: React.FC<RewardedAdComponentProps> = ({
           value: 'unlocked',
           timestamp: new Date().toISOString(),
         };
-        
+
         onRewardEarned?.(reward);
         Alert.alert('Reward Earned!', 'You\'ve unlocked bonus features!');
       }
@@ -127,4 +127,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RewardedAdComponent; 
+export default RewardedAdComponent;

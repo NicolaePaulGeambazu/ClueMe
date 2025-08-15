@@ -31,18 +31,18 @@ const InterstitialAdTrigger: React.FC<InterstitialAdTriggerProps> = ({
   }, [triggerOnAction, actionCompleted]);
 
   const showInterstitialAd = async () => {
-    if (hasTriggered.current) return;
+    if (hasTriggered.current) {return;}
 
     try {
       // TODO: Uncomment when AdMob is installed
       // // Load the ad first
       // await adMobService.loadInterstitialAd();
-      
+
       // // Add a slight delay to avoid jarring user experience
       // setTimeout(async () => {
       //   const shown = await adMobService.showInterstitialAd();
       //   hasTriggered.current = true;
-      
+
       //   if (shown) {
       //     onAdShown?.();
       //   } else {
@@ -63,4 +63,4 @@ const InterstitialAdTrigger: React.FC<InterstitialAdTriggerProps> = ({
   return null;
 };
 
-export default InterstitialAdTrigger; 
+export default InterstitialAdTrigger;

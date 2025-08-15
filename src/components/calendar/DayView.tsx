@@ -40,4 +40,4 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events }) => {
   );
 };
 
-export default DayView; 
+export default DayView;

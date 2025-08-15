@@ -40,7 +40,7 @@ export default function ListsScreen({ navigation }: any) {
         isLoading,
         listsCount: lists.length,
         searchQuery,
-        error
+        error,
       });
     }
   }, [isLoading, lists, searchQuery, error]);
@@ -52,7 +52,7 @@ export default function ListsScreen({ navigation }: any) {
   // Filtered lists based on filter and search
   const filteredLists = React.useMemo(() => {
     const base = listFilter === 'my' ? myLists : sharedLists;
-    if (!searchQuery) return base;
+    if (!searchQuery) {return base;}
     return base.filter(list =>
       list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (list.description && list.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -167,9 +167,9 @@ export default function ListsScreen({ navigation }: any) {
         createdBy: user.uid,
         familyId: family?.id || null,
       });
-      
+
       // The listener will automatically update the lists
-      
+
       setIsCreateModalVisible(false);
     } catch (err: any) {
       setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
@@ -194,9 +194,9 @@ export default function ListsScreen({ navigation }: any) {
         format: listData.format,
         isPrivate: listData.isPrivate,
       });
-      
+
       // The listener will automatically update the lists
-      
+
       setIsCreateModalVisible(false);
       setEditingList(null);
     } catch (err: any) {
@@ -220,7 +220,7 @@ export default function ListsScreen({ navigation }: any) {
             setError(null);
             try {
               await listService.deleteList(list.id);
-              
+
               // The listener will automatically update the lists
             } catch (err: any) {
               setError(t('common.error') + ': ' + (err && err.message ? err.message : 'Unknown error'));
@@ -238,7 +238,7 @@ export default function ListsScreen({ navigation }: any) {
       await listService.updateList(list.id, {
         isFavorite: !list.isFavorite,
       });
-      
+
       // The listener will automatically update the lists
     } catch (error) {
       Alert.alert('Error', 'Failed to update list. Please try again.');
@@ -373,9 +373,9 @@ export default function ListsScreen({ navigation }: any) {
                       style={styles.actionButton}
                       onPress={() => handleToggleFavorite(list)}
                     >
-                      <Star 
-                        size={16} 
-                        color={list.isFavorite ? colors.warning : colors.textSecondary} 
+                      <Star
+                        size={16}
+                        color={list.isFavorite ? colors.warning : colors.textSecondary}
                         fill={list.isFavorite ? colors.warning : 'transparent'}
                       />
                     </TouchableOpacity>

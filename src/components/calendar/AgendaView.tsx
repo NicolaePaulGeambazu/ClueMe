@@ -27,4 +27,4 @@ const AgendaView: React.FC<AgendaViewProps> = ({ selectedDate, events }) => {
   );
 };
 
-export default AgendaView; 
+export default AgendaView;

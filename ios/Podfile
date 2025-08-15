@@ -81,6 +81,10 @@ target 'ClearCue2' do
   pod 'GoogleDataTransport', :modular_headers => true # Often a transitive dependency for Firebase
   pod 'nanopb', :modular_headers => true # Often a transitive dependency for Firebase
 
+  # RevenueCat Paywalls - Required for RevenueCat Paywalls functionality
+  pod 'RevenueCat'
+  pod 'RevenueCatUI'
+
   # Other React Native community modules from your package.json:
   # These are generally auto-linked by `use_native_modules!`, but listed here for clarity
   # and if you ever needed to add specific options.

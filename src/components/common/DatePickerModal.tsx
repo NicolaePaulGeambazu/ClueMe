@@ -136,4 +136,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 20,
     minHeight: 300,
   },
-}); 
+});

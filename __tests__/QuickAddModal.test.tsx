@@ -66,7 +66,7 @@ describe('QuickAddModal', () => {
     mockOnClose = jest.fn();
     mockOnSave = jest.fn();
     mockOnAdvanced = jest.fn();
-    
+
     // Mock current date to be consistent
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-01-15T10:00:00Z'));
@@ -111,10 +111,10 @@ describe('QuickAddModal', () => {
 
       // Open date sheet
       fireEvent.press(getByText('Today'));
-      
+
       // Select tomorrow
       fireEvent.press(getByText('Tomorrow'));
-      
+
       await waitFor(() => {
         expect(getByText('Tomorrow')).toBeTruthy();
       });
@@ -134,10 +134,10 @@ describe('QuickAddModal', () => {
 
       // Open date sheet
       fireEvent.press(getByText('Today'));
-      
+
       // Select custom date
       fireEvent.press(getByText('Pick specific date'));
-      
+
       // Mock date picker confirmation
       await act(async () => {
         // Simulate date picker confirmation with a specific date
@@ -163,7 +163,7 @@ describe('QuickAddModal', () => {
 
       // Open time sheet
       fireEvent.press(getByText('1 hour from now'));
-      
+
       // Should show "now" and "in1hour" for today
       expect(getByText('Right now')).toBeTruthy();
       expect(getByText('In 1 hour')).toBeTruthy();
@@ -186,10 +186,10 @@ describe('QuickAddModal', () => {
       // Change date to tomorrow
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Tomorrow'));
-      
+
       // Open time sheet
       fireEvent.press(getByText('2:00 PM'));
-      
+
       await waitFor(() => {
         // Should not show "now" and "in1hour" for tomorrow
         expect(queryByText('Right now')).toBeNull();
@@ -214,11 +214,11 @@ describe('QuickAddModal', () => {
 
       // Initially shows "1 hour from now" (default for today)
       expect(getByText('1 hour from now')).toBeTruthy();
-      
+
       // Change date to tomorrow
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Tomorrow'));
-      
+
       await waitFor(() => {
         // Should reset to afternoon (default for non-today)
         expect(getByText('2:00 PM')).toBeTruthy();
@@ -246,23 +246,23 @@ describe('QuickAddModal', () => {
       // Change date to tomorrow
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Tomorrow'));
-      
+
       // Change time to "1 hour from now"
       fireEvent.press(getByText('2:00 PM'));
       fireEvent.press(getByText('In 1 hour'));
-      
+
       // Save the reminder
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
-        
+
         // The time should be calculated relative to tomorrow, not today
         const tomorrow = new Date('2024-01-16T10:00:00Z');
         const expectedTime = new Date(tomorrow.getTime() + 60 * 60 * 1000);
         const expectedTimeString = `${expectedTime.getHours().toString().padStart(2, '0')}:${expectedTime.getMinutes().toString().padStart(2, '0')}`;
-        
+
         expect(savedReminder.dueTime).toBe(expectedTimeString);
       });
     });
@@ -283,21 +283,21 @@ describe('QuickAddModal', () => {
 
       // Mock a past date selection
       const pastDate = new Date('2024-01-10T10:00:00Z');
-      
+
       // This would normally be set through the date picker
       // For testing, we'll simulate the state change
       await act(async () => {
         // Simulate selecting a past date
       });
-      
+
       // The reminder should still be created but with adjusted time
       const titleInput = getByPlaceholderText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Past date reminder');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -317,18 +317,18 @@ describe('QuickAddModal', () => {
 
       // Mock a far future date selection
       const futureDate = new Date('2030-12-31T10:00:00Z');
-      
+
       await act(async () => {
         // Simulate selecting a far future date
       });
-      
+
       const titleInput = getByPlaceholderText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Future reminder');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -350,34 +350,34 @@ describe('QuickAddModal', () => {
 
       // Mock timezone change
       const originalTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
+
       // Simulate timezone change
       Object.defineProperty(Intl, 'DateTimeFormat', {
         writable: true,
         value: jest.fn().mockReturnValue({
-          resolvedOptions: () => ({ timeZone: 'America/Los_Angeles' })
-        })
+          resolvedOptions: () => ({ timeZone: 'America/Los_Angeles' }),
+        }),
       });
-      
+
       const titleInput = getByPlaceholderText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Timezone test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
         expect(savedReminder.timezone).toBe('America/Los_Angeles');
       });
-      
+
       // Restore original timezone
       Object.defineProperty(Intl, 'DateTimeFormat', {
         writable: true,
         value: jest.fn().mockReturnValue({
-          resolvedOptions: () => ({ timeZone: originalTimezone })
-        })
+          resolvedOptions: () => ({ timeZone: originalTimezone }),
+        }),
       });
     });
 
@@ -401,15 +401,15 @@ describe('QuickAddModal', () => {
         fireEvent.press(getByText('Next week'));
         fireEvent.press(getByText('Today'));
       });
-      
+
       // Should still work correctly
       const titleInput = getByPlaceholderText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Rapid change test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -429,7 +429,7 @@ describe('QuickAddModal', () => {
 
       // Try to save without title
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).not.toHaveBeenCalled();
       });
@@ -448,14 +448,14 @@ describe('QuickAddModal', () => {
       );
 
       const longTitle = 'A'.repeat(200); // Very long title
-      
+
       const titleInput = getByPlaceholderText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, longTitle);
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -481,18 +481,18 @@ describe('QuickAddModal', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Daily reminder');
       }
-      
+
       // Open recurring options
       fireEvent.press(getByText('Does not repeat'));
-      
+
       // This would normally open the recurring options modal
       // For testing, we'll simulate the state change
       await act(async () => {
         // Simulate setting recurring pattern
       });
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -518,18 +518,18 @@ describe('QuickAddModal', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Family task');
       }
-      
+
       // Open family assignment
       fireEvent.press(getByText('Assign to me'));
-      
+
       // This would normally open the family picker modal
       // For testing, we'll simulate the state change
       await act(async () => {
         // Simulate assigning to family members
       });
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -556,13 +556,13 @@ describe('QuickAddModal', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Test reminder');
       }
-      
+
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Tomorrow'));
-      
+
       // Close modal
       fireEvent.press(getByText('✕'));
-      
+
       // Reopen modal
       rerender(
         <TestWrapper>
@@ -574,7 +574,7 @@ describe('QuickAddModal', () => {
           />
         </TestWrapper>
       );
-      
+
       await waitFor(() => {
         // Should be reset to defaults
         expect(getByText('Today')).toBeTruthy();
@@ -637,7 +637,7 @@ describe('QuickAddModal', () => {
           fireEvent.press(getByText('2:00 PM'));
         }
       });
-      
+
       // Should not crash
       expect(getByText('Create Reminder')).toBeTruthy();
     });
@@ -669,4 +669,4 @@ describe('QuickAddModal', () => {
       expect(getByText('Assign to me')).toBeTruthy();
     });
   });
-}); 
+});

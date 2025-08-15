@@ -143,24 +143,24 @@ class AdMobService {
   }
 
   async initialize(): Promise<boolean> {
-    if (this.isInitialized) return true;
+    if (this.isInitialized) {return true;}
 
     try {
       // Initialize secure key service
       await secureKeyService.initialize();
-      
+
       // Load AdMob keys from secure storage
       const bannerId = await secureKeyService.getKey('ADMOB_BANNER_ID');
       const interstitialId = await secureKeyService.getKey('ADMOB_INTERSTITIAL_ID');
       const rewardedId = await secureKeyService.getKey('ADMOB_REWARDED_ID');
-      
+
       // Update AD_UNIT_IDS with secure keys or fallback to test IDs
       AD_UNIT_IDS = {
         BANNER: __DEV__ ? (AdMobModule?.TestIds?.BANNER || 'test-banner') : (bannerId || 'ca-app-pub-6527628493119103/5757803064'),
         INTERSTITIAL: __DEV__ ? (AdMobModule?.TestIds?.INTERSTITIAL || 'test-interstitial') : (interstitialId || 'ca-app-pub-6527628493119103/2053813036'),
         REWARDED: __DEV__ ? (AdMobModule?.TestIds?.REWARDED || 'test-rewarded') : (rewardedId || 'ca-app-pub-6527628493119103/YOUR_REWARDED_ID'),
       };
-      
+
       this.isInitialized = true;
       console.log('[AdMobService] Initialized successfully');
       return true;
@@ -177,4 +177,4 @@ class AdMobService {
 
 // Export singleton instance
 export const adMobService = new AdMobService();
-export default adMobService; 
+export default adMobService;

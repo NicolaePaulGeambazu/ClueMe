@@ -48,7 +48,7 @@ export const DisabledFeature: React.FC<DisabledFeatureProps> = ({
           <Lock size={getIconSize(size)} color={colors.textSecondary} />
         </View>
       )}
-      
+
       <View style={styles.content}>
         <Text style={styles.featureName}>{featureName}</Text>
         {showLabel && (
@@ -58,7 +58,7 @@ export const DisabledFeature: React.FC<DisabledFeatureProps> = ({
           </View>
         )}
       </View>
-      
+
       {variant === 'prominent' && (
         <View style={styles.upgradeButton}>
           <Text style={styles.upgradeText}>{t('premium.upgrade')}</Text>
@@ -166,4 +166,4 @@ const getLineHeight = (size: 'small' | 'medium' | 'large'): number => {
     default:
       return LineHeights.footnote;
   }
-}; 
+};

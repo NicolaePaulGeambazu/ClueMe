@@ -47,10 +47,10 @@ export const AddReminderBottomSheet = () => {
 
   const handleAddReminder = () => {
     // TODO: Add actual reminder creation logic here
-    
+
     // Trigger interstitial ad after successful reminder creation
     setReminderAdded(true);
-    
+
     // Reset form
     setTitle('');
     setSubTasks([]);
@@ -264,4 +264,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddReminderBottomSheet; 
+export default AddReminderBottomSheet;

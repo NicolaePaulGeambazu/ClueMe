@@ -55,7 +55,7 @@ describe('QuickAddModal Edge Cases', () => {
     mockOnClose = jest.fn();
     mockOnSave = jest.fn();
     mockOnAdvanced = jest.fn();
-    
+
     // Mock current date to be consistent
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-01-15T10:00:00Z'));
@@ -70,7 +70,7 @@ describe('QuickAddModal Edge Cases', () => {
     it('should handle leap year dates correctly', async () => {
       // Set date to February 29, 2024 (leap year)
       jest.setSystemTime(new Date('2024-02-29T10:00:00Z'));
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -86,9 +86,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Leap year test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -99,7 +99,7 @@ describe('QuickAddModal Edge Cases', () => {
     it('should handle year boundary correctly', async () => {
       // Set date to December 31, 2024
       jest.setSystemTime(new Date('2024-12-31T23:59:59Z'));
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -115,13 +115,13 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Year boundary test');
       }
-      
+
       // Select tomorrow (should be January 1, 2025)
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Tomorrow'));
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -132,7 +132,7 @@ describe('QuickAddModal Edge Cases', () => {
     it('should handle month boundary correctly', async () => {
       // Set date to January 31, 2024
       jest.setSystemTime(new Date('2024-01-31T10:00:00Z'));
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -148,13 +148,13 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Month boundary test');
       }
-      
+
       // Select next week (should handle February correctly)
       fireEvent.press(getByText('Today'));
       fireEvent.press(getByText('Next week'));
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -180,15 +180,15 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Midnight test');
       }
-      
+
       // This would normally be set through custom time picker
       // For testing, we'll simulate the state change
       await act(async () => {
         // Simulate setting time to midnight (00:00)
       });
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -212,13 +212,13 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Late night test');
       }
-      
+
       await act(async () => {
         // Simulate setting time to 23:59
       });
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -229,14 +229,14 @@ describe('QuickAddModal Edge Cases', () => {
     it('should handle timezone edge cases', async () => {
       // Mock different timezone
       const originalTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
+
       Object.defineProperty(Intl, 'DateTimeFormat', {
         writable: true,
         value: jest.fn().mockReturnValue({
-          resolvedOptions: () => ({ timeZone: 'UTC' })
-        })
+          resolvedOptions: () => ({ timeZone: 'UTC' }),
+        }),
       });
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -252,21 +252,21 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Timezone edge test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
         expect(savedReminder.timezone).toBe('UTC');
       });
-      
+
       // Restore original timezone
       Object.defineProperty(Intl, 'DateTimeFormat', {
         writable: true,
         value: jest.fn().mockReturnValue({
-          resolvedOptions: () => ({ timeZone: originalTimezone })
-        })
+          resolvedOptions: () => ({ timeZone: originalTimezone }),
+        }),
       });
     });
   });
@@ -288,9 +288,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, '   ');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).not.toHaveBeenCalled();
       });
@@ -312,9 +312,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, '!@#$%^&*()');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -338,9 +338,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, '🎉 🎊 🎈 Unicode Test 中文 Español');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -364,9 +364,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'A');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
         const savedReminder = mockOnSave.mock.calls[0][0];
@@ -397,15 +397,15 @@ describe('QuickAddModal Edge Cases', () => {
           fireEvent.press(getByText('2:00 PM'));
         }
       });
-      
+
       // Should still be functional
       const titleInput = getByText('What do you want to remember?');
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Rapid state test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -427,7 +427,7 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Concurrent test');
       }
-      
+
       // Simulate concurrent operations
       await act(async () => {
         const promises = [
@@ -437,7 +437,7 @@ describe('QuickAddModal Edge Cases', () => {
         ];
         await Promise.all(promises);
       });
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -447,7 +447,7 @@ describe('QuickAddModal Edge Cases', () => {
   describe('Error Handling Edge Cases', () => {
     it('should handle save function throwing error', async () => {
       const mockOnSaveWithError = jest.fn().mockRejectedValue(new Error('Save failed'));
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -463,24 +463,24 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Error test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSaveWithError).toHaveBeenCalled();
       });
-      
+
       // Modal should still be open after error
       expect(getByText('Create Reminder')).toBeTruthy();
     });
 
     it('should handle network timeout scenarios', async () => {
-      const mockOnSaveWithTimeout = jest.fn().mockImplementation(() => 
-        new Promise((_, reject) => 
+      const mockOnSaveWithTimeout = jest.fn().mockImplementation(() =>
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Network timeout')), 100)
         )
       );
-      
+
       const { getByText } = render(
         <TestWrapper>
           <QuickAddModal
@@ -496,14 +496,14 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Timeout test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       // Fast-forward time
       await act(async () => {
         jest.advanceTimersByTime(150);
       });
-      
+
       await waitFor(() => {
         expect(mockOnSaveWithTimeout).toHaveBeenCalled();
       });
@@ -542,9 +542,9 @@ describe('QuickAddModal Edge Cases', () => {
       if (titleInput) {
         fireEvent.changeText(titleInput, 'Memory test');
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -575,7 +575,7 @@ describe('QuickAddModal Edge Cases', () => {
               />
             </TestWrapper>
           );
-          
+
           rerender(
             <TestWrapper>
               <QuickAddModal
@@ -588,7 +588,7 @@ describe('QuickAddModal Edge Cases', () => {
           );
         }
       });
-      
+
       // Should not crash
       expect(mockOnClose).toHaveBeenCalled();
     });
@@ -614,9 +614,9 @@ describe('QuickAddModal Edge Cases', () => {
         fireEvent.focus(titleInput);
         fireEvent.blur(titleInput);
       }
-      
+
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
@@ -639,13 +639,13 @@ describe('QuickAddModal Edge Cases', () => {
         fireEvent.changeText(titleInput, 'Keyboard test');
         fireEvent.keyPress(titleInput, { key: 'Enter' });
       }
-      
+
       // Should still work after keyboard interaction
       fireEvent.press(getByText('Create Reminder'));
-      
+
       await waitFor(() => {
         expect(mockOnSave).toHaveBeenCalled();
       });
     });
   });
-}); 
+});

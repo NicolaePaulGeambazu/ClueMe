@@ -1,5 +1,4 @@
 import { RemotePricing } from './premiumService';
-import geolocationService, { UserLocation, RegionalPricing } from './geolocationService';
 
 interface RemoteConfigValue {
   asString(): string;
@@ -56,24 +55,21 @@ export class RemoteConfigService {
 
   // Initialize Firebase Remote Config
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
 
     try {
-      // Initialize geolocation service first
-      await geolocationService.initialize();
-      
       // TODO: Implement Firebase Remote Config
       // const remoteConfig = firebase.remoteConfig();
-      // 
+      //
       // // Set default values
       // await remoteConfig.setDefaults(this.defaultConfig);
-      // 
+      //
       // // Set minimum fetch interval (in seconds)
       // remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour
-      // 
+      //
       // // Fetch and activate config
       // await remoteConfig.fetchAndActivate();
-      
+
       this.isInitialized = true;
     } catch (error) {
       // Continue with default values
@@ -81,22 +77,15 @@ export class RemoteConfigService {
     }
   }
 
-  // Get premium pricing from remote config with regional support
+  // Get premium pricing from remote config (UK only)
   async getPremiumPricing(): Promise<RemotePricing> {
     try {
-      // Ensure geolocation service is initialized
-      if (!geolocationService.getUserLocation()) {
-        await geolocationService.initialize();
-      }
-
-      // Get regional pricing for user's country
-      const regionalPricing = await geolocationService.getRegionalPricing();
-      
+      // Return default UK pricing
       return {
-        monthlyPrice: regionalPricing.monthlyPrice,
-        yearlyPrice: regionalPricing.yearlyPrice,
-        currency: regionalPricing.currency,
-        yearlySavings: regionalPricing.yearlySavings,
+        monthlyPrice: this.defaultConfig.premium_monthly_price,
+        yearlyPrice: this.defaultConfig.premium_yearly_price,
+        currency: this.defaultConfig.premium_currency,
+        yearlySavings: this.defaultConfig.premium_yearly_savings,
       };
     } catch (error) {
       // Fallback to default pricing
@@ -109,14 +98,18 @@ export class RemoteConfigService {
     }
   }
 
-  // Get user location information
-  getUserLocation(): UserLocation | null {
-    return geolocationService.getUserLocation();
+  // Get user location information (UK only)
+  getUserLocation(): { countryCode: string; currency: string; currencySymbol: string } | null {
+    return {
+      countryCode: 'GB',
+      currency: 'GBP',
+      currencySymbol: '£',
+    };
   }
 
-  // Get currency symbol for current user location
+  // Get currency symbol for current user location (UK only)
   getCurrentCurrencySymbol(): string {
-    return geolocationService.getCurrentCurrencySymbol();
+    return '£';
   }
 
   // Get feature flag value
@@ -167,7 +160,7 @@ export class RemoteConfigService {
       // TODO: Implement Firebase Remote Config
       // const remoteConfig = firebase.remoteConfig();
       // await remoteConfig.fetchAndActivate();
-      
+
     } catch (error) {
       // Silent fail for now
     }
@@ -231,4 +224,4 @@ export class RemoteConfigService {
   }
 }
 
-export default RemoteConfigService.getInstance(); 
+export default RemoteConfigService.getInstance();

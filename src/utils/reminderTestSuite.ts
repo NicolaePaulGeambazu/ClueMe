@@ -1,30 +1,14 @@
-/**
- * Comprehensive Reminder Test Suite
- * 
- * This file tests all possible combinations when adding reminders:
- * - Basic reminder creation
- * - Different reminder types
- * - Date/time combinations
- * - Recurring patterns
- * - Notification settings
- * - Family sharing
- * - Edge cases and error conditions
- */
-
-import { DateTime } from 'luxon';
-import { reminderService } from '../services/firebaseService';
-import notificationService from '../services/notificationService';
 import { generateRecurringOccurrences } from './calendarUtils';
 import { generateNextOccurrence, shouldGenerateNextOccurrence } from './recurringReminderUtils';
 import { scheduleNotification, cancelNotification } from './notificationUtils';
-import { 
-  Reminder, 
-  ReminderType, 
-  ReminderPriority, 
-  ReminderStatus, 
-  RepeatPattern, 
-  NotificationType, 
-  NotificationTiming 
+import {
+  Reminder,
+  ReminderType,
+  ReminderPriority,
+  ReminderStatus,
+  RepeatPattern,
+  NotificationType,
+  NotificationTiming,
 } from '../design-system/reminders/types';
 
 // Test result interface
@@ -76,7 +60,7 @@ const reminderServiceMock = {
     // Simulate async operation
     await new Promise(resolve => setTimeout(resolve, 100));
     return `test-reminder-${Date.now()}`;
-  }
+  },
 };
 
 // Test data generators
@@ -93,7 +77,7 @@ const generateTestReminder = (overrides: TestReminderOverrides = {}): Reminder =
   isFavorite: false,
   hasNotification: true,
   notificationTimings: [
-    { type: NotificationType.BEFORE, value: 15 }
+    { type: NotificationType.BEFORE, value: 15 },
   ],
   isRecurring: false,
   assignedTo: [],
@@ -101,7 +85,7 @@ const generateTestReminder = (overrides: TestReminderOverrides = {}): Reminder =
   status: ReminderStatus.PENDING,
   createdAt: new Date(),
   updatedAt: new Date(),
-  ...overrides
+  ...overrides,
 });
 
 // Test suites
@@ -119,7 +103,7 @@ export class ReminderTestSuite {
       tests: [],
       totalTests: 0,
       passedTests: 0,
-      failedTests: 0
+      failedTests: 0,
     };
   }
 
@@ -128,9 +112,9 @@ export class ReminderTestSuite {
       this.currentSuite.totalTests = this.currentSuite.tests.length;
       this.currentSuite.passedTests = this.currentSuite.tests.filter(t => t.passed).length;
       this.currentSuite.failedTests = this.currentSuite.tests.filter(t => !t.passed).length;
-      
+
       this.results.push(this.currentSuite);
-      
+
       if (this.currentSuite.failedTests > 0) {
         this.currentSuite.tests
           .filter(t => !t.passed)
@@ -138,7 +122,7 @@ export class ReminderTestSuite {
             // Log failed tests
           });
       }
-      
+
       this.currentSuite = null;
     }
   }
@@ -147,7 +131,7 @@ export class ReminderTestSuite {
     const startTime = Date.now();
     const result: TestResult = {
       testName,
-      passed: false
+      passed: false,
     };
 
     try {
@@ -180,7 +164,7 @@ export class ReminderTestSuite {
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       // Simulate the add form workflow
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
@@ -204,7 +188,7 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, hasNotification: reminder.hasNotification };
     });
@@ -213,14 +197,14 @@ export class ReminderTestSuite {
     await this.runTest('Add form: Custom date/time', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       tomorrow.setHours(14, 30, 0, 0); // 2:30 PM
-      
+
       const formData: FormData = {
         title: 'Custom Time Reminder',
         datetime: tomorrow.toISOString(),
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -243,7 +227,7 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueTime: reminder.dueTime };
     });
@@ -252,14 +236,14 @@ export class ReminderTestSuite {
     await this.runTest('Add form: Daily recurring reminder', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       tomorrow.setHours(9, 0, 0, 0); // 9:00 AM
-      
+
       const formData: FormData = {
         title: 'Daily Recurring Reminder',
         datetime: tomorrow.toISOString(),
         repeatRRule: 'FREQ=DAILY;INTERVAL=1',
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -284,7 +268,7 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, isRecurring: reminder.isRecurring };
     });
@@ -300,14 +284,14 @@ export class ReminderTestSuite {
     await this.runTest('Daily recurring with notifications for each occurrence', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       tomorrow.setHours(9, 0, 0, 0); // 9:00 AM
-      
+
       const formData: FormData = {
         title: 'Daily Medication Reminder',
         datetime: tomorrow.toISOString(),
         repeatRRule: 'FREQ=DAILY;INTERVAL=1',
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -332,19 +316,19 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      
+
       // Verify that notifications are scheduled for each occurrence
       const occurrences = generateRecurringOccurrences(reminder, new Date(), new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 7); // Generate next 7 occurrences
       const notificationCount = occurrences.length;
-      
-      return { 
-        id, 
-        title: reminder.title, 
-        isRecurring: reminder.isRecurring, 
+
+      return {
+        id,
+        title: reminder.title,
+        isRecurring: reminder.isRecurring,
         notificationCount,
-        occurrences: occurrences.length
+        occurrences: occurrences.length,
       };
     });
 
@@ -353,14 +337,14 @@ export class ReminderTestSuite {
       const nextMonday = new Date();
       nextMonday.setDate(nextMonday.getDate() + (8 - nextMonday.getDay()) % 7); // Next Monday
       nextMonday.setHours(10, 0, 0, 0); // 10:00 AM
-      
+
       const formData: FormData = {
         title: 'Weekly Meeting Reminder',
         datetime: nextMonday.toISOString(),
         repeatRRule: 'FREQ=WEEKLY;INTERVAL=1;BYDAY=MO,WE,FR',
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -386,19 +370,19 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      
+
       // Verify that notifications are scheduled for each occurrence
       const occurrences = generateRecurringOccurrences(reminder, new Date(), new Date(Date.now() + 4 * 7 * 24 * 60 * 60 * 1000), 12); // Generate next 12 occurrences (4 weeks * 3 days/week)
       const notificationCount = occurrences.length;
-      
-      return { 
-        id, 
-        title: reminder.title, 
-        repeatDays: reminder.repeatDays, 
+
+      return {
+        id,
+        title: reminder.title,
+        repeatDays: reminder.repeatDays,
         notificationCount,
-        occurrences: occurrences.length
+        occurrences: occurrences.length,
       };
     });
 
@@ -408,14 +392,14 @@ export class ReminderTestSuite {
       nextMonth.setMonth(nextMonth.getMonth() + 1);
       nextMonth.setDate(15); // 15th of next month
       nextMonth.setHours(14, 0, 0, 0); // 2:00 PM
-      
+
       const formData: FormData = {
         title: 'Monthly Bill Payment',
         datetime: nextMonth.toISOString(),
         repeatRRule: 'FREQ=MONTHLY;INTERVAL=1',
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -441,19 +425,19 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      
+
       // Verify that notifications are scheduled for each occurrence
       const occurrences = generateRecurringOccurrences(reminder, new Date(), new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000), 12); // Generate next 12 occurrences
       const notificationCount = occurrences.length * (reminder.notificationTimings?.length || 0); // Multiple notifications per occurrence
-      
-      return { 
-        id, 
-        title: reminder.title, 
+
+      return {
+        id,
+        title: reminder.title,
         priority: reminder.priority,
         notificationCount,
-        occurrences: occurrences.length
+        occurrences: occurrences.length,
       };
     });
 
@@ -468,14 +452,14 @@ export class ReminderTestSuite {
     await this.runTest('Family member assignment with notifications', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       tomorrow.setHours(16, 0, 0, 0); // 4:00 PM
-      
+
       const formData: FormData = {
         title: 'Family Dinner Preparation',
         datetime: tomorrow.toISOString(),
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -498,16 +482,16 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      
+
       // Verify that family members receive notifications
       const familyNotificationCount = (reminder.assignedTo?.length || 0) * (reminder.notificationTimings?.length || 0);
-      
-      return { 
-        id, 
-        title: reminder.title, 
-        assignedTo: reminder.assignedTo, 
+
+      return {
+        id,
+        title: reminder.title,
+        assignedTo: reminder.assignedTo,
         familyNotificationCount,
       };
     });
@@ -517,14 +501,14 @@ export class ReminderTestSuite {
       const nextWeekend = new Date();
       nextWeekend.setDate(nextWeekend.getDate() + (6 - nextWeekend.getDay() + 7) % 7); // Next Saturday
       nextWeekend.setHours(10, 0, 0, 0); // 10:00 AM
-      
+
       const formData: FormData = {
         title: 'Weekly Family Cleanup',
         datetime: nextWeekend.toISOString(),
         repeatRRule: 'FREQ=WEEKLY;INTERVAL=1;BYDAY=SA',
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -550,19 +534,19 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      
+
       // Verify that family members receive notifications for each occurrence
       const occurrences = generateRecurringOccurrences(reminder, new Date(), new Date(Date.now() + 8 * 7 * 24 * 60 * 60 * 1000), 8); // Generate next 8 occurrences
       const familyNotificationCount = occurrences.length * (reminder.assignedTo?.length || 0) * (reminder.notificationTimings?.length || 0);
-      
-      return { 
-        id, 
-        title: reminder.title, 
-        assignedTo: reminder.assignedTo, 
+
+      return {
+        id,
+        title: reminder.title,
+        assignedTo: reminder.assignedTo,
         occurrences: occurrences.length,
-        familyNotificationCount
+        familyNotificationCount,
       };
     });
 
@@ -577,20 +561,20 @@ export class ReminderTestSuite {
     await this.runTest('Prevent creating reminder with past date', async () => {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       yesterday.setHours(14, 0, 0, 0); // 2:00 PM yesterday
-      
+
       const formData: FormData = {
         title: 'Past Date Reminder',
         datetime: yesterday.toISOString(),
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       try {
         // This should fail validation
         if (new Date(formData.datetime) <= new Date()) {
           throw new Error('Cannot create reminder with past date');
         }
-        
+
         const reminder: Reminder = {
           id: `test-${Date.now()}`,
           title: formData.title.trim(),
@@ -613,7 +597,7 @@ export class ReminderTestSuite {
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        
+
         const id = await reminderServiceMock.createReminder(reminder);
         return { id, title: reminder.title, shouldHaveFailed: true };
       } catch (error: unknown) {
@@ -625,20 +609,20 @@ export class ReminderTestSuite {
     await this.runTest('Prevent creating reminder with past time today', async () => {
       const pastTimeToday = new Date();
       pastTimeToday.setHours(pastTimeToday.getHours() - 2); // 2 hours ago
-      
+
       const formData: FormData = {
         title: 'Past Time Today Reminder',
         datetime: pastTimeToday.toISOString(),
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       try {
         // This should fail validation
         if (new Date(formData.datetime) <= new Date()) {
           throw new Error('Cannot create reminder with past time');
         }
-        
+
         const reminder: Reminder = {
           id: `test-${Date.now()}`,
           title: formData.title.trim(),
@@ -661,7 +645,7 @@ export class ReminderTestSuite {
           createdAt: new Date(),
           updatedAt: new Date(),
         };
-        
+
         const id = await reminderServiceMock.createReminder(reminder);
         return { id, title: reminder.title, shouldHaveFailed: true };
       } catch (error: unknown) {
@@ -673,14 +657,14 @@ export class ReminderTestSuite {
     await this.runTest('Allow creating reminder with future date', async () => {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
       tomorrow.setHours(14, 0, 0, 0); // 2:00 PM tomorrow
-      
+
       const formData: FormData = {
         title: 'Future Date Reminder',
         datetime: tomorrow.toISOString(),
         repeatRRule: undefined,
         pushNotification: true,
       };
-      
+
       const reminder: Reminder = {
         id: `test-${Date.now()}`,
         title: formData.title.trim(),
@@ -703,7 +687,7 @@ export class ReminderTestSuite {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueDate: reminder.dueDate };
     });
@@ -724,7 +708,7 @@ export class ReminderTestSuite {
           type,
           dueDate: new Date(Date.now() + (types.indexOf(type) + 1) * 24 * 60 * 60 * 1000),
         });
-        
+
         const id = await reminderServiceMock.createReminder(reminder);
         return { id, title: reminder.title, type: reminder.type };
       });
@@ -744,7 +728,7 @@ export class ReminderTestSuite {
         dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         dueTime: undefined,
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueDate: reminder.dueDate };
     });
@@ -756,7 +740,7 @@ export class ReminderTestSuite {
         dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
         dueTime: '14:30',
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueTime: reminder.dueTime };
     });
@@ -770,7 +754,7 @@ export class ReminderTestSuite {
         startTime: '09:00',
         endTime: '10:00',
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, startTime: reminder.startTime, endTime: reminder.endTime };
     });
@@ -781,7 +765,7 @@ export class ReminderTestSuite {
         title: 'Past Date Reminder',
         dueDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueDate: reminder.dueDate };
     });
@@ -792,7 +776,7 @@ export class ReminderTestSuite {
         title: 'Future Date Reminder',
         dueDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year from now
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, dueDate: reminder.dueDate };
     });
@@ -813,7 +797,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, pattern: reminder.repeatPattern };
     });
@@ -828,7 +812,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 12 * 7 * 24 * 60 * 60 * 1000), // 12 weeks
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, pattern: reminder.repeatPattern };
     });
@@ -843,7 +827,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000), // 12 months
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, pattern: reminder.repeatPattern };
     });
@@ -858,7 +842,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000), // 5 years
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, pattern: reminder.repeatPattern };
     });
@@ -875,7 +859,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 8 * 7 * 24 * 60 * 60 * 1000), // 8 weeks
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, repeatDays: reminder.repeatDays };
     });
@@ -890,7 +874,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 6 * 14 * 24 * 60 * 60 * 1000), // 6 occurrences
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, interval: reminder.customInterval };
     });
@@ -909,7 +893,7 @@ export class ReminderTestSuite {
         hasNotification: false,
         notificationTimings: [],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, hasNotification: reminder.hasNotification };
     });
@@ -923,7 +907,7 @@ export class ReminderTestSuite {
           { type: NotificationType.BEFORE, value: 15 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, timings: reminder.notificationTimings };
     });
@@ -939,7 +923,7 @@ export class ReminderTestSuite {
           { type: NotificationType.EXACT, value: 0 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, timings: reminder.notificationTimings };
     });
@@ -953,7 +937,7 @@ export class ReminderTestSuite {
           { type: NotificationType.AFTER, value: 30 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, timings: reminder.notificationTimings };
     });
@@ -967,7 +951,7 @@ export class ReminderTestSuite {
           { type: NotificationType.BEFORE, value: 1440 }, // 24 hours
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, timings: reminder.notificationTimings };
     });
@@ -989,7 +973,7 @@ export class ReminderTestSuite {
           { type: NotificationType.BEFORE, value: 15 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, assignedTo: reminder.assignedTo };
     });
@@ -1003,7 +987,7 @@ export class ReminderTestSuite {
           { type: NotificationType.BEFORE, value: 15 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, hasNotification: reminder.hasNotification };
     });
@@ -1018,7 +1002,7 @@ export class ReminderTestSuite {
           { type: NotificationType.BEFORE, value: 15 },
         ],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, assignedTo: reminder.assignedTo };
     });
@@ -1035,7 +1019,7 @@ export class ReminderTestSuite {
       const reminder: Reminder = generateTestReminder({
         title: '',
       });
-      
+
       try {
         await reminderServiceMock.createReminder(reminder);
         throw new Error('Should have failed with empty title');
@@ -1053,7 +1037,7 @@ export class ReminderTestSuite {
       const reminder: Reminder = generateTestReminder({
         title: longTitle,
       });
-      
+
       try {
         await reminderServiceMock.createReminder(reminder);
         throw new Error('Should have failed with long title');
@@ -1070,7 +1054,7 @@ export class ReminderTestSuite {
       const reminder: Reminder = generateTestReminder({
         dueDate: new Date('invalid-date'),
       });
-      
+
       try {
         await reminderServiceMock.createReminder(reminder);
         throw new Error('Should have failed with invalid date');
@@ -1089,7 +1073,7 @@ export class ReminderTestSuite {
         isRecurring: true,
         repeatPattern: undefined,
       });
-      
+
       try {
         await reminderServiceMock.createReminder(reminder);
         throw new Error('Should have failed without repeat pattern');
@@ -1108,7 +1092,7 @@ export class ReminderTestSuite {
         hasNotification: true,
         notificationTimings: [],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
       return { id, title: reminder.title, hasNotification: reminder.hasNotification };
     });
@@ -1129,7 +1113,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       });
-      
+
       const occurrences = generateRecurringOccurrences(reminder);
       return { occurrencesCount: occurrences.length, firstOccurrence: occurrences[0] };
     });
@@ -1144,7 +1128,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(),
         recurringEndDate: new Date(Date.now() + 4 * 7 * 24 * 60 * 60 * 1000), // 4 weeks
       });
-      
+
       const occurrences = generateRecurringOccurrences(reminder);
       return { occurrencesCount: occurrences.length, firstOccurrence: occurrences[0] };
     });
@@ -1159,7 +1143,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Week ago
         recurringEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Week from now
       });
-      
+
       const shouldGenerate = shouldGenerateNextOccurrence(reminder);
       return { shouldGenerate, dueDate: reminder.dueDate };
     });
@@ -1174,7 +1158,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Week ago
         recurringEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Week from now
       });
-      
+
       const nextOccurrence = generateNextOccurrence(reminder);
       return { hasNextOccurrence: !!nextOccurrence, nextDate: nextOccurrence?.dueDate };
     });
@@ -1189,7 +1173,7 @@ export class ReminderTestSuite {
         recurringStartDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Month ago
         recurringEndDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Week ago (past)
       });
-      
+
       const shouldGenerate = shouldGenerateNextOccurrence(reminder);
       const nextOccurrence = generateNextOccurrence(reminder);
       return { shouldGenerate, hasNextOccurrence: !!nextOccurrence };
@@ -1210,7 +1194,7 @@ export class ReminderTestSuite {
         message: 'This is an immediate test notification',
         date: new Date(Date.now() + 5000), // 5 seconds from now
       };
-      
+
       const scheduled = await scheduleNotification(notification);
       return { scheduled, notificationId: notification.id };
     });
@@ -1223,7 +1207,7 @@ export class ReminderTestSuite {
         message: 'This is a future test notification',
         date: new Date(Date.now() + 60 * 1000), // 1 minute from now
       };
-      
+
       const scheduled = await scheduleNotification(notification);
       return { scheduled, notificationId: notification.id };
     });
@@ -1237,7 +1221,7 @@ export class ReminderTestSuite {
         message: 'This notification will be cancelled',
         date: new Date(Date.now() + 30 * 1000), // 30 seconds from now
       };
-      
+
       await scheduleNotification(notification);
       cancelNotification(notificationId);
       return { cancelled: true, notificationId };
@@ -1251,7 +1235,7 @@ export class ReminderTestSuite {
         message: 'This notification is in the past',
         date: new Date(Date.now() - 60 * 1000), // 1 minute ago
       };
-      
+
       const scheduled = await scheduleNotification(notification);
       return { scheduled, expectedToFail: !scheduled };
     });
@@ -1281,14 +1265,14 @@ export class ReminderTestSuite {
         assignedTo: ['family-member-1'],
         tags: ['work', 'important'],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      return { 
-        id, 
-        title: reminder.title, 
+      return {
+        id,
+        title: reminder.title,
         isRecurring: reminder.isRecurring,
         notificationCount: reminder.notificationTimings?.length || 0,
-        assignedTo: reminder.assignedTo
+        assignedTo: reminder.assignedTo,
       };
     });
 
@@ -1310,13 +1294,13 @@ export class ReminderTestSuite {
         ],
         tags: ['urgent', 'meeting'],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      return { 
-        id, 
-        title: reminder.title, 
+      return {
+        id,
+        title: reminder.title,
         priority: reminder.priority,
-        repeatDays: reminder.repeatDays
+        repeatDays: reminder.repeatDays,
       };
     });
 
@@ -1337,15 +1321,15 @@ export class ReminderTestSuite {
         ],
         tags: ['family', 'event'],
       });
-      
+
       const id = await reminderServiceMock.createReminder(reminder);
-      return { 
-        id, 
-        title: reminder.title, 
+      return {
+        id,
+        title: reminder.title,
         type: reminder.type,
         startTime: reminder.startTime,
         endTime: reminder.endTime,
-        assignedTo: reminder.assignedTo
+        assignedTo: reminder.assignedTo,
       };
     });
 
@@ -1378,7 +1362,7 @@ export class ReminderTestSuite {
     const totalFailed = this.results.reduce((sum, suite) => sum + suite.failedTests, 0);
 
     // Log results
-    console.log(`\n=== Reminder Test Suite Results ===`);
+    console.log('\n=== Reminder Test Suite Results ===');
     console.log(`Total Tests: ${totalTests}`);
     console.log(`Passed: ${totalPassed}`);
     console.log(`Failed: ${totalFailed}`);
@@ -1416,4 +1400,4 @@ export const testNotificationSettings = async (): Promise<TestSuite[]> => {
   const testSuite = new ReminderTestSuite();
   await testSuite.testNotificationSettings();
   return testSuite.getResults();
-}; 
+};

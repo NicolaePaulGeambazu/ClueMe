@@ -2,7 +2,6 @@ import firebase from '@react-native-firebase/app';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 // Analytics service removed to fix Firebase issues
-import notificationService from './notificationService';
 import globalNotificationService from './globalNotificationService';
 import { Platform } from 'react-native';
 import { generateNextOccurrence, shouldGenerateNextOccurrence } from '../utils/reminderUtils';
@@ -230,7 +229,7 @@ const isCollectionNotFoundError = (error: any): boolean => {
 // Helper function to handle Firebase errors gracefully
 const handleFirebaseError = (error: any, operation: string): boolean => {
   console.error(`Firebase error in ${operation}:`, error);
-  
+
   if (isPermissionDeniedError(error)) {
     console.error(`Permission denied for ${operation}`);
     return true; // Return true to indicate this is a handled error
@@ -362,12 +361,12 @@ const INSTANCE_CACHE_DURATION = 30 * 1000; // 30 seconds
 
 export const getFirestoreInstance = () => {
   const now = Date.now();
-  
+
   // Return cached instance if it's still valid
   if (cachedFirestoreInstance && (now - lastInstanceCheck) < INSTANCE_CACHE_DURATION) {
     return cachedFirestoreInstance;
   }
-  
+
   try {
     console.log('Getting Firestore instance...');
     const firestoreInstance = firestore();
@@ -376,11 +375,11 @@ export const getFirestoreInstance = () => {
       throw new Error('Firestore not initialized');
     }
     console.log('Firestore instance obtained successfully');
-    
+
     // Cache the instance
     cachedFirestoreInstance = firestoreInstance;
     lastInstanceCheck = now;
-    
+
     return firestoreInstance;
   } catch (error) {
     console.error('Error getting Firestore instance:', error);
@@ -528,14 +527,22 @@ function removeUndefinedFields<T extends object>(obj: T): Partial<T> {
 export const reminderService = {
   // Track last check time to prevent too frequent checks
   lastRecurringCheckTime: {} as { [key: string]: number },
-  
+
   // Track recently processed recurring reminders to prevent duplicates
   recentlyProcessedRecurring: {} as { [key: string]: number },
 
   // Create a new reminder
   async createReminder(reminderData: Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
-      
+      console.log('[FirebaseService] Creating reminder in Firestore:', {
+        title: reminderData.title,
+        isRecurring: reminderData.isRecurring,
+        repeatPattern: reminderData.repeatPattern,
+        dueDate: reminderData.dueDate,
+        recurringEndDate: reminderData.recurringEndDate,
+        userId: reminderData.userId
+      });
+
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc();
       const reminderId = reminderRef.id;
@@ -565,22 +572,28 @@ export const reminderService = {
 
       await reminderRef.set(removeUndefinedFields(newReminder) as any);
 
+      console.log('[FirebaseService] Reminder created successfully:', {
+        id: reminderId,
+        isRecurring: newReminder.isRecurring,
+        recurringGroupId: newReminder.recurringGroupId
+      });
+
       // Create family activity if this is a family-related reminder
       if (reminderData.familyId && reminderData.sharedWithFamily) {
         try {
           // Get user's family member info
           const familyMembers = await this.getFamilyMembers(reminderData.familyId);
           const userMember = familyMembers.find(m => m.userId === reminderData.userId);
-          
+
           if (userMember) {
             // Filter out undefined values from metadata to prevent Firestore errors
             const cleanMetadata: any = {};
-            if (reminderId) cleanMetadata.reminderId = reminderId;
-            if (reminderData.title) cleanMetadata.reminderTitle = reminderData.title;
-            if (reminderData.type) cleanMetadata.reminderType = reminderData.type;
-            if (reminderData.assignedTo && reminderData.assignedTo.length > 0) cleanMetadata.assignedTo = reminderData.assignedTo;
-            if (reminderData.priority) cleanMetadata.priority = reminderData.priority;
-            
+            if (reminderId) {cleanMetadata.reminderId = reminderId;}
+            if (reminderData.title) {cleanMetadata.reminderTitle = reminderData.title;}
+            if (reminderData.type) {cleanMetadata.reminderType = reminderData.type;}
+            if (reminderData.assignedTo && reminderData.assignedTo.length > 0) {cleanMetadata.assignedTo = reminderData.assignedTo;}
+            if (reminderData.priority) {cleanMetadata.priority = reminderData.priority;}
+
             await this.createFamilyActivity({
               familyId: reminderData.familyId,
               type: 'reminder_created',
@@ -588,7 +601,7 @@ export const reminderService = {
               description: `${userMember.name} created: "${reminderData.title}"`,
               memberId: reminderData.userId,
               memberName: userMember.name,
-              metadata: cleanMetadata
+              metadata: cleanMetadata,
             });
           } else {
           }
@@ -600,10 +613,10 @@ export const reminderService = {
       // Always schedule a default notification at the due time, even if no custom timings are set
       try {
         // Check if notification service is available
-        if (!notificationService) {
+        if (!globalNotificationService) {
           return reminderId;
         }
-        
+
         // Convert reminder to notification service format
         const notificationReminder = {
           id: newReminder.id,
@@ -625,13 +638,20 @@ export const reminderService = {
           notificationTimings: newReminder.notificationTimings?.map(timing => ({
             type: timing.type,
             value: timing.value,
-            label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`
-          }))
+            label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`,
+          })),
         };
-        
+
         // Schedule notifications for all co-owners (creator + assigned users)
         // Each co-owner will receive notifications about the reminder
-        await notificationService.scheduleReminderNotifications(notificationReminder);
+        console.log('[FirebaseService] Scheduling notifications for reminder:', {
+          id: newReminder.id,
+          title: newReminder.title,
+          dueDate: newReminder.dueDate,
+          isRecurring: newReminder.isRecurring,
+          notificationTimings: newReminder.notificationTimings
+        });
+        await globalNotificationService.scheduleReminderNotifications(notificationReminder);
 
         // Send assignment notifications if reminder is assigned to other users
         if (reminderData.assignedTo && reminderData.assignedTo.length > 0) {
@@ -640,7 +660,7 @@ export const reminderService = {
             const assignedByUserDoc = await firestoreInstance.collection('users').doc(reminderData.userId).get();
             const assignedByUserData = assignedByUserDoc.data();
             const assignedByDisplayName = assignedByUserData?.displayName || reminderData.assignedBy || 'Unknown';
-            
+
             // Use global notification service for better handling (push + toast)
             await globalNotificationService.sendAssignmentNotification(
               reminderId,
@@ -679,8 +699,8 @@ export const reminderService = {
           reminderData: {
             title: reminderData.title,
             dueDate: reminderData.dueDate,
-            dueTime: reminderData.dueTime
-          }
+            dueTime: reminderData.dueTime,
+          },
         });
         // Don't throw here - the reminder was created successfully, just notification scheduling failed
       }
@@ -730,15 +750,15 @@ export const reminderService = {
 
   // Get family reminders with proper permission checking and performance optimizations
   async getFamilyReminders(
-    userId: string, 
-    familyId: string, 
+    userId: string,
+    familyId: string,
     limit: number = 50,
     page: number = 0,
     useCache: boolean = true
   ): Promise<{ reminders: Reminder[]; hasMore: boolean; totalCount: number }> {
     try {
-  
-      
+
+
       // Check cache first
       if (useCache) {
         const cached = getCachedReminders(userId, familyId);
@@ -746,11 +766,11 @@ export const reminderService = {
           const startIndex = page * limit;
           const endIndex = startIndex + limit;
           const paginatedReminders = cached.slice(startIndex, endIndex);
-          
+
           return {
             reminders: paginatedReminders,
             hasMore: endIndex < cached.length,
-            totalCount: cached.length
+            totalCount: cached.length,
           };
         }
       }
@@ -761,7 +781,7 @@ export const reminderService = {
       // Get user's family membership to check permissions
       const familyMembers = await this.getFamilyMembers(familyId);
       const userMember = familyMembers.find((m: FamilyMember) => m.userId === userId);
-      
+
       if (!userMember) {
         return { reminders: [], hasMore: false, totalCount: 0 };
       }
@@ -806,7 +826,7 @@ export const reminderService = {
         const assignedReminders = assignedSnapshot && !assignedSnapshot.empty
           ? assignedSnapshot.docs.map((doc: any) => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
             } as Reminder))
           : [];
 
@@ -831,13 +851,13 @@ export const reminderService = {
       // 3. If user is owner/admin, get family members' reminders (with performance optimization)
       if (userMember.role === 'owner' || userMember.role === 'admin') {
         const familyUserIds = familyMembers.map((m: FamilyMember) => m.userId);
-        
+
         // For large families, limit the number of queries
         const maxFamilyQueries = Math.min(familyUserIds.length - 1, 5); // Max 5 additional queries
         const familyUserIdsToQuery = familyUserIds
           .filter(id => id !== userId)
           .slice(0, maxFamilyQueries);
-        
+
         for (const familyUserId of familyUserIdsToQuery) {
           try {
             const familyQuery = remindersRef
@@ -872,7 +892,7 @@ export const reminderService = {
         const bTime = b.updatedAt instanceof Date ? b.updatedAt.getTime() : new Date(b.updatedAt as string).getTime();
         return bTime - aTime;
       });
-      
+
       // Cache the full result
       if (useCache) {
         setCachedReminders(userId, sortedReminders, familyId);
@@ -886,7 +906,7 @@ export const reminderService = {
       return {
         reminders: paginatedReminders,
         hasMore: endIndex < sortedReminders.length,
-        totalCount: sortedReminders.length
+        totalCount: sortedReminders.length,
       };
 
     } catch (error) {
@@ -896,9 +916,9 @@ export const reminderService = {
 
   // Check if user has permission to view this reminder
   checkReminderPermission(
-    reminderData: any, 
-    userId: string, 
-    userMember: FamilyMember, 
+    reminderData: any,
+    userId: string,
+    userMember: FamilyMember,
     familyMembers: FamilyMember[]
   ): boolean {
     // Owner can always view
@@ -924,8 +944,8 @@ export const reminderService = {
 
   // Check if user has permission to edit this reminder
   checkReminderEditPermission(
-    reminderData: any, 
-    userId: string, 
+    reminderData: any,
+    userId: string,
     userMember: FamilyMember
   ): boolean {
     // Owner can always edit
@@ -1006,12 +1026,12 @@ export const reminderService = {
         const reminders: Reminder[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data() as any;
-          
+
           // Skip deleted reminders
           if (data.deletedAt) {
             return;
           }
-          
+
           reminders.push({
             id: doc.id,
             ...data,
@@ -1021,7 +1041,7 @@ export const reminderService = {
             deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt).toISOString() : undefined,
           });
         });
-    
+
         // Real-time listener updated
         callback(reminders);
       }, (error) => {
@@ -1039,7 +1059,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const remindersRef = firestoreInstance.collection('reminders');
-      
+
       // Listen to reminders assigned to this user
       const assignedQuery = remindersRef
         .where('assignedTo', 'array-contains', userId)
@@ -1058,12 +1078,12 @@ export const reminderService = {
         assignedReminders = [];
         snapshot.forEach((doc) => {
           const data = doc.data() as any;
-          
+
           // Skip deleted reminders
           if (data.deletedAt) {
             return;
           }
-          
+
           assignedReminders.push({
             id: doc.id,
             ...data,
@@ -1073,7 +1093,7 @@ export const reminderService = {
             deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt).toISOString() : undefined,
           });
         });
-        
+
         updateCombinedReminders();
       }, (error) => {
         assignedReminders = [];
@@ -1084,12 +1104,12 @@ export const reminderService = {
         familyReminders = [];
         snapshot.forEach((doc) => {
           const data = doc.data() as any;
-          
+
           // Skip deleted reminders and user's own reminders
           if (data.deletedAt || data.userId === userId) {
             return;
           }
-          
+
           familyReminders.push({
             id: doc.id,
             ...data,
@@ -1099,7 +1119,7 @@ export const reminderService = {
             deletedAt: data.deletedAt ? convertTimestamp(data.deletedAt).toISOString() : undefined,
           });
         });
-        
+
         updateCombinedReminders();
       }, (error) => {
         familyReminders = [];
@@ -1109,10 +1129,10 @@ export const reminderService = {
       const updateCombinedReminders = () => {
         // Combine and deduplicate reminders
         const allReminders = [...assignedReminders, ...familyReminders];
-        const uniqueReminders = allReminders.filter((reminder, index, self) => 
+        const uniqueReminders = allReminders.filter((reminder, index, self) =>
           index === self.findIndex(r => r.id === reminder.id)
         );
-        
+
         callback(uniqueReminders);
       };
 
@@ -1175,18 +1195,18 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      
+
       const doc = await reminderRef.get();
-      
+
       if (!doc.exists) {
         return null;
       }
-      
+
       const data = doc.data();
       if (!data) {
         return null;
       }
-      
+
       const reminder: Reminder = {
         id: doc.id,
         userId: data.userId,
@@ -1224,7 +1244,7 @@ export const reminderService = {
         recurringEndDate: convertTimestamp(data.recurringEndDate),
         recurringGroupId: data.recurringGroupId,
       };
-      
+
       return reminder;
     } catch (error) {
       if (handleFirebaseError(error, 'getReminderById')) {
@@ -1237,24 +1257,25 @@ export const reminderService = {
   // Update a reminder
   async updateReminder(reminderId: string, updates: Partial<Reminder>): Promise<void> {
     try {
+      console.log('[reminderService] Editing reminder:', reminderId, updates);
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      
+
       // Get the current reminder to check if it's recurring
       const currentReminder = await reminderRef.get();
       const currentData = currentReminder.data() as Reminder;
-      
+
       // Check if assignments changed
       const oldAssignedTo = currentData.assignedTo || [];
       const newAssignedTo = updates.assignedTo || [];
       const assignmentsChanged = JSON.stringify(oldAssignedTo.sort()) !== JSON.stringify(newAssignedTo.sort());
-      
+
       // Remove undefined fields before updating to prevent Firestore errors
       const cleanUpdates = removeUndefinedFields({
         ...updates,
         updatedAt: new Date(),
       });
-      
+
       await reminderRef.update(cleanUpdates);
 
       // Handle recurring reminders - generate next occurrence if completed
@@ -1270,7 +1291,7 @@ export const reminderService = {
           const assignedByUserDoc = await firestoreInstance.collection('users').doc(assignedByUserId).get();
           const assignedByUserData = assignedByUserDoc.data();
           const assignedByDisplayName = assignedByUserData?.displayName || 'Unknown';
-          
+
           // Use global notification service for better handling (push + toast)
           await globalNotificationService.sendAssignmentNotification(
             reminderId,
@@ -1326,10 +1347,10 @@ export const reminderService = {
           notificationTimings: updatedReminder.notificationTimings?.map(timing => ({
             type: timing.type,
             value: timing.value,
-            label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`
-          }))
+            label: timing.label || `${timing.value} minutes ${timing.type === 'before' ? 'before' : timing.type === 'after' ? 'after' : 'at'}`,
+          })),
         };
-        await notificationService.updateReminderNotifications(notificationUpdatedReminder);
+        await globalNotificationService.updateReminderNotifications(notificationUpdatedReminder);
       } catch (notificationError) {
         // Don't throw here - the reminder was updated successfully, just notification update failed
       }
@@ -1343,7 +1364,7 @@ export const reminderService = {
     try {
       // Cancel the notification for this occurrence
       try {
-        notificationService.cancelOccurrenceNotification(reminderId, occurrenceDate);
+        globalNotificationService.cancelOccurrenceNotification(reminderId, occurrenceDate);
       } catch (notificationError) {
       }
       // Optionally, reschedule if needed
@@ -1354,7 +1375,7 @@ export const reminderService = {
         const currentData = currentReminder.data() as Reminder;
         const updatedReminder = { ...currentData, ...updates, updatedAt: new Date() };
         try {
-          await notificationService.scheduleOccurrenceNotification(updatedReminder, occurrenceDate);
+          await globalNotificationService.scheduleOccurrenceNotification(updatedReminder, occurrenceDate);
         } catch (notificationError) {
         }
       }
@@ -1368,7 +1389,7 @@ export const reminderService = {
     try {
       // Helper to safely cast repeatPattern
       const normalizeRepeatPattern = (pattern: string | undefined): RepeatPattern | undefined => {
-        if (!pattern) return undefined;
+        if (!pattern) {return undefined;}
         const allowed: RepeatPattern[] = [
           RepeatPattern.DAILY,
           RepeatPattern.WEEKDAYS,
@@ -1396,34 +1417,34 @@ export const reminderService = {
       };
       const nextOccurrence = generateNextOccurrence(extendedReminder);
       if (nextOccurrence) {
-        
+
         // Check if we've reached the end conditions
         let shouldCreateNext = true;
-        
+
         // Check recurring end date
         if (reminder.recurringEndDate && nextOccurrence.dueDate && nextOccurrence.dueDate > reminder.recurringEndDate) {
           shouldCreateNext = false;
         }
-        
+
         // Check recurring end after count
         if (reminder.recurringEndAfter) {
           // Count existing occurrences in this recurring group
           const existingOccurrences = await this.getRecurringGroupReminders(reminder.recurringGroupId || reminder.id);
           const completedCount = existingOccurrences.filter(r => r.completed).length;
-          
-          
+
+
           if (completedCount >= reminder.recurringEndAfter) {
             shouldCreateNext = false;
           }
         }
-        
+
         if (shouldCreateNext) {
           // Use the same recurring group ID for all occurrences
           const nextOccurrenceData = {
             ...nextOccurrence,
             recurringGroupId: reminder.recurringGroupId || reminder.id,
           } as Omit<Reminder, 'id' | 'createdAt' | 'updatedAt'>;
-          
+
           await this.createReminder(nextOccurrenceData);
         } else {
         }
@@ -1439,21 +1460,21 @@ export const reminderService = {
       const now = Date.now();
       const lastCheck = reminderService.lastRecurringCheckTime[userId] || 0;
       const timeSinceLastCheck = now - lastCheck;
-      
+
       // Only check every 5 minutes to prevent excessive generation
       if (timeSinceLastCheck < 5 * 60 * 1000) {
         return;
       }
-      
+
       reminderService.lastRecurringCheckTime[userId] = now;
-      
+
       // Add timeout to prevent hanging
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Recurring reminder check timeout')), 10000); // 10 second timeout
       });
-      
+
       const checkPromise = this.performRecurringReminderCheck(userId, now);
-      
+
       await Promise.race([checkPromise, timeoutPromise]);
     } catch (error) {
     }
@@ -1462,13 +1483,13 @@ export const reminderService = {
   // Separate method to perform the actual check
   async performRecurringReminderCheck(userId: string, now: number): Promise<void> {
     try {
-      
+
       const reminders = await this.getUserReminders(userId);
       const currentDate = new Date();
-      
+
       // Group reminders by recurring group to avoid multiple queries
       const recurringGroups = new Map<string, Reminder[]>();
-      
+
       // First pass: group reminders by recurring group
       for (const reminder of reminders) {
         if (reminder.isRecurring && reminder.repeatPattern && !reminder.completed) {
@@ -1479,36 +1500,36 @@ export const reminderService = {
           recurringGroups.get(recurringGroupId)!.push(reminder);
         }
       }
-      
+
       // Second pass: process each group efficiently
       for (const [recurringGroupId, groupReminders] of recurringGroups) {
         try {
           // Get all reminders in this group in one query
           const allGroupReminders = await this.getRecurringGroupReminders(recurringGroupId);
-          
+
           // Process each overdue reminder in the group
           for (const reminder of groupReminders) {
             const dueDate = reminder.dueDate;
-            
+
             if (dueDate && dueDate <= currentDate) {
               // Check if there's already a future occurrence
-              const hasFutureOccurrence = allGroupReminders.some(r => 
+              const hasFutureOccurrence = allGroupReminders.some(r =>
                 r.id !== reminder.id && // Not the current reminder
-                r.dueDate && 
-                r.dueDate > currentDate && 
-                !r.completed && 
+                r.dueDate &&
+                r.dueDate > currentDate &&
+                !r.completed &&
                 !r.deletedAt
               );
-              
+
               // Track recurring reminder processing for analytics
               if (__DEV__) {
               }
-              
+
               // Check if we've recently processed this recurring reminder (within last 10 minutes)
               const reminderKey = `${reminder.id}-${recurringGroupId}`;
               const lastProcessed = reminderService.recentlyProcessedRecurring[reminderKey] || 0;
               const timeSinceLastProcessed = now - lastProcessed;
-              
+
               if (timeSinceLastProcessed < 10 * 60 * 1000) {
                 if (__DEV__) {
                 }
@@ -1516,19 +1537,19 @@ export const reminderService = {
                 this.trackRecurringReminderEvent('skipped_recently_processed', {
                   reminderId: reminder.id,
                   timeSinceLastProcessed: Math.round(timeSinceLastProcessed / 1000),
-                  title: reminder.title
+                  title: reminder.title,
                 });
               } else if (!hasFutureOccurrence) {
                 if (__DEV__) {
                 }
                 reminderService.recentlyProcessedRecurring[reminderKey] = now;
                 await this.handleRecurringReminder(reminder);
-                
+
                 // Track successful generation for analytics
                 this.trackRecurringReminderEvent('generated_overdue', {
                   reminderId: reminder.id,
                   title: reminder.title,
-                  groupSize: allGroupReminders.length
+                  groupSize: allGroupReminders.length,
                 });
               } else {
                 if (__DEV__) {
@@ -1537,7 +1558,7 @@ export const reminderService = {
                 this.trackRecurringReminderEvent('skipped_future_exists', {
                   reminderId: reminder.id,
                   title: reminder.title,
-                  groupSize: allGroupReminders.length
+                  groupSize: allGroupReminders.length,
                 });
               }
             } else {
@@ -1549,7 +1570,7 @@ export const reminderService = {
           // Continue with other groups even if one fails
         }
       }
-      
+
       if (__DEV__) {
       }
     } catch (error) {
@@ -1597,20 +1618,22 @@ export const reminderService = {
   // Delete all reminders in a recurring group
   async deleteRecurringGroup(recurringGroupId: string): Promise<void> {
     try {
+      console.log('[reminderService] Deleting recurring group:', recurringGroupId);
       const reminders = await this.getRecurringGroupReminders(recurringGroupId);
-      
-      // Cancel notifications for all reminders in the group
-      for (const reminder of reminders) {
-        try {
-          notificationService.cancelReminderNotifications(reminder.id);
-        } catch (notificationError) {
+
+              // Cancel notifications for all reminders in the group
+        for (const reminder of reminders) {
+          try {
+            await globalNotificationService.cancelReminderNotifications(reminder.id);
+          } catch (notificationError) {
+            console.error(`[ReminderService] Error cancelling notifications for reminder ${reminder.id}:`, notificationError);
+          }
         }
-      }
 
       // Soft delete all reminders in the group
       const firestoreInstance = getFirestoreInstance();
       const batch = firestoreInstance.batch();
-      
+
       for (const reminder of reminders) {
         const reminderRef = firestoreInstance.collection('reminders').doc(reminder.id);
         batch.update(reminderRef, {
@@ -1629,13 +1652,15 @@ export const reminderService = {
   // Delete a single occurrence of a recurring reminder
   async deleteRecurringOccurrence(reminderId: string): Promise<void> {
     try {
+      console.log('[reminderService] Deleting recurring occurrence:', reminderId);
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      
+
       // Cancel notifications for this specific reminder
       try {
-        notificationService.cancelReminderNotifications(reminderId);
+        await globalNotificationService.cancelReminderNotifications(reminderId);
       } catch (notificationError) {
+        console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
       }
 
       // Soft delete just this occurrence
@@ -1644,7 +1669,7 @@ export const reminderService = {
         deletedAt: new Date(),
         updatedAt: new Date(),
       });
-      
+
     } catch (error) {
       throw error;
     }
@@ -1653,13 +1678,14 @@ export const reminderService = {
   // Soft delete a reminder (move to trash)
   async deleteReminder(reminderId: string): Promise<void> {
     try {
+      console.log('[reminderService] Deleting reminder:', reminderId);
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
-      
+
       // Get the reminder data to check if it's recurring
       const reminderDoc = await reminderRef.get();
       const reminderData = reminderDoc.data();
-      
+
       if (reminderData?.isRecurring && reminderData?.recurringGroupId) {
         // For recurring reminders, delete the entire group
         // Note: This will be overridden by the confirmation dialog in the UI
@@ -1671,14 +1697,22 @@ export const reminderService = {
           deletedAt: new Date(),
           updatedAt: new Date(),
         });
-        
-        // Cancel all notifications for this reminder
+
+        // Cancel all notifications for this reminder using comprehensive cleanup
         try {
-          notificationService.cancelReminderNotifications(reminderId);
+          const { cleanupReminderNotifications } = await import('../utils/notificationCleanupUtils');
+          const cleanupResult = await cleanupReminderNotifications(reminderId);
+
+          if (cleanupResult.success) {
+            console.log(`[ReminderService] Successfully cleaned up ${cleanupResult.cancelledCount} notifications for reminder ${reminderId}`);
+          } else {
+            console.warn(`[ReminderService] Cleanup had errors for reminder ${reminderId}:`, cleanupResult.errors);
+          }
         } catch (notificationError) {
+          console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
           // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
         }
-        
+
         // Clean up assignment records and scheduled notifications for this reminder
         try {
           await this.cleanupReminderNotifications(reminderId);
@@ -1687,7 +1721,7 @@ export const reminderService = {
           // Don't throw here - the reminder was deleted successfully, just cleanup failed
         }
       }
-      
+
     } catch (error) {
       throw error;
     }
@@ -1711,17 +1745,19 @@ export const reminderService = {
   // Permanently delete a reminder (hard delete)
   async permanentDeleteReminder(reminderId: string): Promise<void> {
     try {
+      console.log('[reminderService] Permanently deleting reminder:', reminderId);
       const firestoreInstance = getFirestoreInstance();
       const reminderRef = firestoreInstance.collection('reminders').doc(reminderId);
       await reminderRef.delete();
-      
+
       // Cancel all notifications for this reminder
       try {
-        notificationService.cancelReminderNotifications(reminderId);
+        await globalNotificationService.cancelReminderNotifications(reminderId);
       } catch (notificationError) {
+        console.error(`[ReminderService] Error cancelling notifications for reminder ${reminderId}:`, notificationError);
         // Don't throw here - the reminder was deleted successfully, just notification cancellation failed
       }
-      
+
       // Clean up assignment records and scheduled notifications for this reminder
       try {
         await this.cleanupReminderNotifications(reminderId);
@@ -1729,7 +1765,7 @@ export const reminderService = {
         console.error('Error cleaning up reminder notifications:', cleanupError);
         // Don't throw here - the reminder was deleted successfully, just cleanup failed
       }
-      
+
     } catch (error) {
       throw error;
     }
@@ -1739,13 +1775,13 @@ export const reminderService = {
   async cleanupReminderNotifications(reminderId: string): Promise<void> {
     try {
       const firestoreInstance = getFirestoreInstance();
-      
+
       // 1. Delete task assignment records
       const assignmentsQuery = await firestoreInstance
         .collection('taskAssignments')
         .where('reminderId', '==', reminderId)
         .get();
-      
+
       if (!assignmentsQuery.empty) {
         const batch = firestoreInstance.batch();
         assignmentsQuery.docs.forEach(doc => {
@@ -1754,13 +1790,13 @@ export const reminderService = {
         await batch.commit();
         console.log(`[ReminderService] Cleaned up ${assignmentsQuery.docs.length} task assignment records for reminder ${reminderId}`);
       }
-      
+
       // 2. Delete scheduled notifications
       const scheduledQuery = await firestoreInstance
         .collection('scheduledNotifications')
         .where('reminderId', '==', reminderId)
         .get();
-      
+
       if (!scheduledQuery.empty) {
         const batch = firestoreInstance.batch();
         scheduledQuery.docs.forEach(doc => {
@@ -1769,14 +1805,14 @@ export const reminderService = {
         await batch.commit();
         console.log(`[ReminderService] Cleaned up ${scheduledQuery.docs.length} scheduled notifications for reminder ${reminderId}`);
       }
-      
+
       // 3. Delete pending FCM notifications
       const fcmQuery = await firestoreInstance
         .collection('fcmNotifications')
         .where('data.reminderId', '==', reminderId)
         .where('status', '==', 'pending')
         .get();
-      
+
       if (!fcmQuery.empty) {
         const batch = firestoreInstance.batch();
         fcmQuery.docs.forEach(doc => {
@@ -1785,7 +1821,7 @@ export const reminderService = {
         await batch.commit();
         console.log(`[ReminderService] Cleaned up ${fcmQuery.docs.length} pending FCM notifications for reminder ${reminderId}`);
       }
-      
+
     } catch (error) {
       console.error(`[ReminderService] Error cleaning up notifications for reminder ${reminderId}:`, error);
       throw error;
@@ -1874,8 +1910,8 @@ export const reminderService = {
         key,
         timestamp: value.timestamp,
         dataLength: value.data.length,
-        familyId: value.familyId
-      }))
+        familyId: value.familyId,
+      })),
     };
   },
 
@@ -1887,18 +1923,18 @@ export const reminderService = {
   // Get reminders with family permissions (optimized with indexes)
   async getRemindersWithFamilyPermissions(userId: string, familyId?: string): Promise<Reminder[]> {
     // Analytics tracking removed to fix Firebase issues
-    
+
     try {
       // Get family members first
       const familyMembers = await this.getFamilyMembers(familyId);
-      
+
       if (!familyMembers || familyMembers.length === 0) {
         return this.getUserReminders(userId);
       }
-      
+
       // Get user's own reminders
       const userReminders = await this.getUserReminders(userId);
-      
+
       // Get reminders assigned to this user (using index)
       let assignedReminders: Reminder[] = [];
       try {
@@ -1913,13 +1949,13 @@ export const reminderService = {
         assignedReminders = assignedSnapshot && !assignedSnapshot.empty
           ? assignedSnapshot.docs.map((doc: any) => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
             } as Reminder))
           : [];
       } catch (error) {
         // Error handled by caller
       }
-      
+
       // Get family-shared reminders
       let familyReminders: Reminder[] = [];
       try {
@@ -1935,19 +1971,19 @@ export const reminderService = {
         familyReminders = familySnapshot.docs
           .map((doc: any) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           } as Reminder))
           .filter(reminder => reminder.userId !== userId); // Filter out user's own
       } catch (error) {
         // Error handled by caller
       }
-      
+
       // Combine all reminders and remove duplicates
       const allReminders = [...userReminders, ...assignedReminders, ...familyReminders];
-      const uniqueReminders = allReminders.filter((reminder, index, self) => 
+      const uniqueReminders = allReminders.filter((reminder, index, self) =>
         index === self.findIndex(r => r.id === reminder.id)
       );
-      
+
       return uniqueReminders;
     } catch (error) {
       throw error;
@@ -1963,15 +1999,15 @@ export const reminderService = {
           .where('userId', '==', memberId);
 
         const memberSnapshot = await memberQuery.get();
-        const memberReminders = memberSnapshot && !memberSnapshot.empty 
+        const memberReminders = memberSnapshot && !memberSnapshot.empty
           ? memberSnapshot.docs.map((doc: any) => ({
               id: doc.id,
-              ...doc.data()
+              ...doc.data(),
             } as Reminder))
           : [];
-        
+
         return memberReminders;
-        
+
       } catch (error) {
         // Return empty array instead of throwing
         return [];
@@ -1981,13 +2017,13 @@ export const reminderService = {
   // Export user data for privacy compliance
   async exportUserData(userId: string): Promise<any> {
     try {
-      
+
       const firestoreInstance = getFirestoreInstance();
-      
+
       // Get user profile
       const userDoc = await firestoreInstance.collection('users').doc(userId).get();
       const userData = userDoc.exists ? userDoc.data() : null;
-      
+
       // Get user reminders
       const remindersQuery = firestoreInstance
         .collection('reminders')
@@ -1995,9 +2031,9 @@ export const reminderService = {
       const remindersSnapshot = await remindersQuery.get();
       const reminders = remindersSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-      
+
       // Get family data
       const familyQuery = firestoreInstance
         .collection('familyMembers')
@@ -2005,9 +2041,9 @@ export const reminderService = {
       const familySnapshot = await familyQuery.get();
       const familyData = familySnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-      
+
       // Get family activities
       const activitiesQuery = firestoreInstance
         .collection('familyActivities')
@@ -2015,9 +2051,9 @@ export const reminderService = {
       const activitiesSnapshot = await activitiesQuery.get();
       const activities = activitiesSnapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       }));
-      
+
       const exportData = {
         exportDate: new Date().toISOString(),
         userId: userId,
@@ -2025,11 +2061,11 @@ export const reminderService = {
         reminders: reminders,
         familyMemberships: familyData,
         familyActivities: activities,
-        exportVersion: '1.0'
+        exportVersion: '1.0',
       };
-      
+
       return exportData;
-      
+
     } catch (error) {
       throw new Error('Failed to export user data');
     }
@@ -2038,10 +2074,10 @@ export const reminderService = {
   // Delete user account and all associated data
   async deleteUserAccount(userId: string): Promise<void> {
     try {
-      
+
       const firestoreInstance = getFirestoreInstance();
       const batch = firestoreInstance.batch();
-      
+
       // Delete user reminders
       const remindersQuery = firestoreInstance
         .collection('reminders')
@@ -2050,7 +2086,7 @@ export const reminderService = {
       remindersSnapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
-      
+
       // Delete family memberships
       const familyQuery = firestoreInstance
         .collection('familyMembers')
@@ -2059,7 +2095,7 @@ export const reminderService = {
       familySnapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
-      
+
       // Delete family activities
       const activitiesQuery = firestoreInstance
         .collection('familyActivities')
@@ -2068,15 +2104,15 @@ export const reminderService = {
       activitiesSnapshot.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
-      
+
       // Delete user profile
       const userRef = firestoreInstance.collection('users').doc(userId);
       batch.delete(userRef);
-      
+
       // Commit the batch
       await batch.commit();
-      
-      
+
+
     } catch (error) {
       throw new Error('Failed to delete user account');
     }
@@ -2085,7 +2121,7 @@ export const reminderService = {
   // Get reminders assigned to a user (with error handling)
   async getAssignedReminders(userId: string): Promise<Reminder[]> {
     try {
-      
+
       const firestoreInstance = getFirestoreInstance();
       const assignedQuery = firestoreInstance
         .collection('reminders')
@@ -2096,12 +2132,12 @@ export const reminderService = {
       const assignedReminders = assignedSnapshot && !assignedSnapshot.empty
         ? assignedSnapshot.docs.map((doc: any) => ({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           } as Reminder))
         : [];
-      
+
       return assignedReminders;
-      
+
     } catch (error) {
       // Return empty array instead of throwing
       return [];
@@ -2117,7 +2153,7 @@ export const reminderService = {
 
       // Use the new getValidFamilyMembers function to filter out invalid users
       return await getValidFamilyMembers(familyId);
-      
+
     } catch (error) {
       return [];
     }
@@ -2128,7 +2164,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-  
+
 
       // Get all family memberships for this user
       const memberQuery = await firestoreInstance
@@ -2160,7 +2196,7 @@ export const reminderService = {
       if (!mostRecentMember) {
         return null;
       }
-      
+
       const familyId = mostRecentMember.familyId;
 
       const familyDoc = await firestoreInstance
@@ -2278,7 +2314,7 @@ export const reminderService = {
       querySnapshot.forEach((doc) => {
         try {
           const data = doc.data();
-          
+
           // Validate required fields
           if (!data.familyId || !data.type || !data.title || !data.description || !data.memberId || !data.memberName) {
             return;
@@ -2407,7 +2443,7 @@ export const reminderService = {
         .onSnapshot(
           (snapshot) => {
             const members: FamilyMember[] = [];
-            
+
             // Add null check for snapshot
             if (snapshot && !snapshot.empty) {
               snapshot.forEach((doc) => {
@@ -2427,7 +2463,7 @@ export const reminderService = {
                 });
               });
             }
-            
+
             callback(members);
           },
           (error) => {
@@ -2456,13 +2492,13 @@ export const reminderService = {
         .onSnapshot(
           (snapshot) => {
             const activities: FamilyActivity[] = [];
-            
+
             // Add null check for snapshot
             if (snapshot && !snapshot.empty) {
               snapshot.forEach((doc) => {
                 try {
                   const data = doc.data();
-                  
+
                   // Validate required fields
                   if (!data.familyId || !data.type || !data.title || !data.description || !data.memberId || !data.memberName) {
                     return;
@@ -2495,7 +2531,7 @@ export const reminderService = {
                 }
               });
             }
-            
+
             callback(activities);
           },
           (error) => {
@@ -2549,7 +2585,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
 
-  
+
 
       const querySnapshot = await firestoreInstance
         .collection('familyInvitations')
@@ -2856,7 +2892,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -2901,10 +2937,10 @@ export const reminderService = {
         try {
           // Filter out undefined values from metadata
           const cleanMetadata: any = {};
-          if (listId) cleanMetadata.listId = listId;
-          if (list.name) cleanMetadata.listName = list.name;
-          if (permissions.isPrivate !== undefined) cleanMetadata.isPrivate = permissions.isPrivate;
-          
+          if (listId) {cleanMetadata.listId = listId;}
+          if (list.name) {cleanMetadata.listName = list.name;}
+          if (permissions.isPrivate !== undefined) {cleanMetadata.isPrivate = permissions.isPrivate;}
+
           await reminderService.createFamilyActivity({
             familyId: userFamilyId,
             type: 'reminder_shared',
@@ -2912,7 +2948,7 @@ export const reminderService = {
             description: `Shared list "${list.name}" with family`,
             memberId: userId,
             memberName: auth().currentUser?.displayName || 'Family Member',
-            metadata: cleanMetadata
+            metadata: cleanMetadata,
           });
         } catch (activityError) {
           // Don't throw here - the permissions were updated successfully
@@ -2947,14 +2983,14 @@ export const reminderService = {
       // Check new permissions system first
       if (list.permissions) {
         const permissions = list.permissions;
-        
+
         // Check if user is in sharedWith array
         if (permissions.sharedWith && permissions.sharedWith.includes(userId)) {
           const canEdit = permissions.canEdit && permissions.canEdit.includes(userId);
           const canDelete = permissions.canDelete && permissions.canDelete.includes(userId);
           return { canView: true, canEdit, canDelete };
         }
-        
+
         // Check if user's family is in sharedFamilies array
         if (permissions.sharedFamilies && permissions.sharedFamilies.length > 0) {
           try {
@@ -2997,7 +3033,7 @@ export const reminderService = {
         familyId: newFamilyId,
         updatedAt: new Date(),
       });
-      
+
     } catch (error) {
       if (handleFirebaseError(error, 'updateListFamilyId')) {
         throw error;
@@ -3011,7 +3047,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -3039,7 +3075,7 @@ export const reminderService = {
 
       // Add new users to sharedWith
       const updatedSharedWith = [...new Set([...currentPermissions.sharedWith, ...userIds])];
-      
+
       // Add to canEdit if requested
       let updatedCanEdit = [...currentPermissions.canEdit];
       if (canEdit) {
@@ -3068,7 +3104,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -3118,7 +3154,7 @@ export const reminderService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -3137,7 +3173,7 @@ export const reminderService = {
 
       const listData = listDoc.data();
       const currentPermissions = listData?.permissions;
-      
+
       if (!currentPermissions) {
         throw new Error('List does not use new permissions system');
       }
@@ -3173,7 +3209,7 @@ export const listService = {
     try {
       const firestoreInstance = getFirestoreInstance();
       const userId = auth().currentUser?.uid;
-      
+
       if (!userId) {
         throw new Error('User not authenticated');
       }
@@ -3199,7 +3235,7 @@ export const listService = {
       };
 
       // Determine if list should be shared with family
-      const shouldShareWithFamily = listData.familyId !== null || 
+      const shouldShareWithFamily = listData.familyId !== null ||
         (userFamilyId && !listData.isPrivate);
 
       const list: Omit<UserList, 'id'> = {
@@ -3220,16 +3256,16 @@ export const listService = {
       const cleanListData = removeUndefinedFields(list);
 
       const docRef = await firestoreInstance.collection('lists').add(cleanListData);
-      
+
       // Create family activity if shared with family
       if (shouldShareWithFamily && userFamilyId) {
         try {
           // Filter out undefined values from metadata
           const cleanMetadata: any = {};
-          if (docRef.id) cleanMetadata.listId = docRef.id;
-          if (listData.name) cleanMetadata.listName = listData.name;
-          if (listData.isPrivate !== undefined) cleanMetadata.isPrivate = listData.isPrivate;
-          
+          if (docRef.id) {cleanMetadata.listId = docRef.id;}
+          if (listData.name) {cleanMetadata.listName = listData.name;}
+          if (listData.isPrivate !== undefined) {cleanMetadata.isPrivate = listData.isPrivate;}
+
           await reminderService.createFamilyActivity({
             familyId: userFamilyId,
             type: 'reminder_created',
@@ -3237,13 +3273,13 @@ export const listService = {
             description: `Created a new shared list: "${listData.name}"`,
             memberId: userId,
             memberName: auth().currentUser?.displayName || 'Family Member',
-            metadata: cleanMetadata
+            metadata: cleanMetadata,
           });
         } catch (activityError) {
           // Don't throw here - the list was created successfully
         }
       }
-      
+
       return docRef.id;
     } catch (error) {
       if (handleFirebaseError(error, 'createList')) {
@@ -3444,7 +3480,7 @@ export const listService = {
 
       const listRef = firestoreInstance.collection('lists').doc(listId);
       console.log('Updating list document:', listId);
-      
+
       await listRef.update({
         items: firestore.FieldValue.arrayUnion(cleanItem),
         updatedAt: new Date(),
@@ -3635,8 +3671,8 @@ export const listService = {
 
       // Return unsubscribe function
       return () => {
-        if (unsubUser) unsubUser();
-        if (unsubFamily) unsubFamily();
+        if (unsubUser) {unsubUser();}
+        if (unsubFamily) {unsubFamily();}
       };
     } catch (error) {
       if (handleFirebaseError(error, 'onUserListsChange')) {
@@ -3706,7 +3742,7 @@ export const listService = {
         familyId: newFamilyId,
         updatedAt: new Date(),
       });
-      
+
     } catch (error) {
       if (handleFirebaseError(error, 'updateListFamilyId')) {
         throw error;
@@ -3725,11 +3761,11 @@ const MAX_FAMILY_SIZE_FOR_REALTIME = 10; // Use polling for families larger than
 const getCachedReminders = (userId: string, familyId?: string): Reminder[] | null => {
   const cacheKey = familyId ? `${userId}_${familyId}` : userId;
   const cached = reminderCache.get(cacheKey);
-  
+
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.data;
   }
-  
+
   return null;
 };
 
@@ -3739,7 +3775,7 @@ const setCachedReminders = (userId: string, reminders: Reminder[], familyId?: st
   reminderCache.set(cacheKey, {
     data: reminders,
     timestamp: Date.now(),
-    familyId
+    familyId,
   });
 };
 
@@ -3786,8 +3822,8 @@ const firebaseService = {
         key,
         timestamp: value.timestamp,
         dataLength: value.data.length,
-        familyId: value.familyId
-      }))
+        familyId: value.familyId,
+      })),
     };
   },
 };
@@ -3811,7 +3847,7 @@ export async function addFamilyNotification(notification: {
     const docRef = firestoreInstance.collection('familyNotifications').doc();
     const notificationId = docRef.id;
     const now = new Date();
-    
+
     // Filter out undefined values to prevent Firestore errors
     const cleanNotification: any = {
       id: notificationId,
@@ -3821,7 +3857,7 @@ export async function addFamilyNotification(notification: {
       message: notification.message,
       createdAt: notification.createdAt || now,
     };
-    
+
     // Only add optional fields if they have values
     if (notification.reminderId) {
       cleanNotification.reminderId = notification.reminderId;
@@ -3829,15 +3865,15 @@ export async function addFamilyNotification(notification: {
     if (notification.assignedTo && notification.assignedTo.length > 0) {
       cleanNotification.assignedTo = notification.assignedTo;
     }
-    
+
     // Add any additional fields from the notification object
     Object.entries(notification).forEach(([key, value]) => {
-      if (value !== undefined && 
+      if (value !== undefined &&
           !['familyId', 'type', 'reminderId', 'assignedTo', 'createdBy', 'createdAt', 'message'].includes(key)) {
         cleanNotification[key] = value;
       }
     });
-    
+
     await docRef.set(cleanNotification);
     return notificationId;
   } catch (error) {
@@ -3860,26 +3896,26 @@ export async function getValidFamilyMembers(familyId: string) {
 
   console.log(`[getValidFamilyMembers] Fetching members for family ${familyId}`);
   const firestoreInstance = getFirestoreInstance();
-  
+
   try {
     const membersSnapshot = await firestoreInstance
       .collection('familyMembers')
       .where('familyId', '==', familyId)
       .get();
-    
+
     const members = membersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyMember));
-    
+
     // Filter out members without userId and cache the result
     const validMembers = members.filter(member => member.userId && member.userId.trim() !== '');
-    
+
     console.log(`[getValidFamilyMembers] Found ${validMembers.length} valid members out of ${members.length} total for family ${familyId}`);
-    
+
     // Cache the result
     validFamilyMembersCache.set(familyId, {
       members: validMembers,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     return validMembers;
   } catch (error) {
     console.error(`[getValidFamilyMembers] Error fetching family members for ${familyId}:`, error);
@@ -3895,7 +3931,7 @@ export function clearFamilyMembersCache(familyId?: string) {
     console.log(`[clearFamilyMembersCache] Cleared cache for family ${familyId}`);
   } else {
     validFamilyMembersCache.clear();
-    console.log(`[clearFamilyMembersCache] Cleared all family members cache`);
+    console.log('[clearFamilyMembersCache] Cleared all family members cache');
   }
 }
 

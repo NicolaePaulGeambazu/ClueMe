@@ -82,14 +82,14 @@ describe('List Family Sharing', () => {
 
     // Mock the service calls
     const { listService, reminderService } = require('../../services/firebaseService');
-    
+
     reminderService.getUserFamily.mockResolvedValue(mockUserFamily);
     // The service should filter out private lists from family members
     listService.getUserLists.mockResolvedValue([...userLists, familyLists[0]]); // Only include public family list
 
     // Test that the service returns both user's lists and family-shared lists
     const result = await listService.getUserLists('user1');
-    
+
     expect(result).toHaveLength(3);
     expect(result.find((l: any) => l.id === 'list1')).toBeDefined(); // User's private list
     expect(result.find((l: any) => l.id === 'list2')).toBeDefined(); // User's shared list
@@ -99,9 +99,9 @@ describe('List Family Sharing', () => {
   it('should not include family lists when user has no family', async () => {
     // Mock user without family
     const { reminderService, listService } = require('../../services/firebaseService');
-    
+
     reminderService.getUserFamily.mockResolvedValue(null);
-    
+
     const userLists = [
       {
         id: 'list1',
@@ -121,7 +121,7 @@ describe('List Family Sharing', () => {
     listService.getUserLists.mockResolvedValue(userLists);
 
     const result = await listService.getUserLists('user1');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('list1');
   });
@@ -138,9 +138,9 @@ describe('List Family Sharing', () => {
     };
 
     const { reminderService, listService } = require('../../services/firebaseService');
-    
+
     reminderService.getUserFamily.mockResolvedValue(mockUserFamily);
-    
+
     // Mock lists including a private family list that shouldn't be shared
     const allLists = [
       {
@@ -175,10 +175,10 @@ describe('List Family Sharing', () => {
     listService.getUserLists.mockResolvedValue([allLists[0]]); // Only include public family list
 
     const result = await listService.getUserLists('user1');
-    
+
     // Should only include the public family list
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('list1');
     expect(result[0].isPrivate).toBe(false);
   });
-}); 
+});

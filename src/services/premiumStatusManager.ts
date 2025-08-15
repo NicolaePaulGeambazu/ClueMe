@@ -63,24 +63,35 @@ class PremiumStatusManager {
 
   // Initialize the manager
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
-    
+    if (this.isInitialized) {return;}
+
     try {
       // Initialize secure key service
       await secureKeyService.initialize();
-      
+
       // Initialize RevenueCat
       await revenueCatService.initialize();
-      
+
+      // Ensure Feature Flags start as free for new users
+      const featureFlags = FeatureFlagService.getInstance();
+      featureFlags.setUserTier('free');
+      featureFlags.setTestingMode(false);
+
       // Set up auth state listener to refresh status when user changes
       auth().onAuthStateChanged(async (user) => {
         console.log('[PremiumStatusManager] Auth state changed, user:', user?.uid, 'isAnonymous:', user?.isAnonymous);
+
+        // For new users, ensure they start as free
+        if (user && !user.isAnonymous) {
+          featureFlags.setUserTier('free');
+        }
+
         await this.refreshStatus();
       });
-      
+
       // Load initial status
       await this.refreshStatus();
-      
+
       this.isInitialized = true;
       console.log('[PremiumStatusManager] Initialized successfully');
     } catch (error) {
@@ -97,13 +108,16 @@ class PremiumStatusManager {
 
   // Refresh premium status from all sources
   async refreshStatus(): Promise<void> {
-    if (this.refreshInProgress) return;
-    
+    if (this.refreshInProgress) {return;}
+
     this.refreshInProgress = true;
-    
+
     try {
       console.log('[PremiumStatusManager] Refreshing premium status...');
-      
+
+      // Clear RevenueCat cache first
+      await revenueCatService.clearCache();
+
       // Check if user is anonymous - anonymous users are always free
       const currentUser = auth().currentUser;
       if (currentUser?.isAnonymous) {
@@ -116,16 +130,16 @@ class PremiumStatusManager {
         });
         return;
       }
-      
+
       // Check RevenueCat first
       const revenueCatStatus = await this.getRevenueCatStatus();
-      
+
       // Check Feature Flags
       const featureFlagStatus = this.getFeatureFlagStatus();
-      
+
       // Determine final status (RevenueCat takes precedence)
       let finalStatus: SubscriptionStatus;
-      
+
       if (revenueCatStatus.isActive) {
         finalStatus = revenueCatStatus;
       } else if (featureFlagStatus.isActive) {
@@ -138,10 +152,10 @@ class PremiumStatusManager {
           isActive: false,
         };
       }
-      
+
       // Update status and notify listeners
       this.setStatus(finalStatus);
-      
+
       console.log('[PremiumStatusManager] Status refreshed:', finalStatus);
     } catch (error) {
       console.error('[PremiumStatusManager] Refresh failed:', error);
@@ -161,12 +175,12 @@ class PremiumStatusManager {
   private async getRevenueCatStatus(): Promise<SubscriptionStatus> {
     try {
       const status = await revenueCatService.getSubscriptionStatus();
-      
+
       if (status.isActive && status.planId) {
         // Map product ID to plan name
         let planName = 'Premium';
         let tier: SubscriptionTier = 'premium';
-        
+
         switch (status.planId) {
           case 'com.clearcue.pro.weekly':
             planName = 'Pro Weekly';
@@ -185,7 +199,7 @@ class PremiumStatusManager {
             tier = 'premium';
             break;
         }
-        
+
         return {
           tier,
           name: planName,
@@ -197,7 +211,7 @@ class PremiumStatusManager {
           willRenew: status.willRenew,
         };
       }
-      
+
       return {
         tier: 'free',
         name: 'Free',
@@ -220,7 +234,7 @@ class PremiumStatusManager {
     try {
       const featureFlags = FeatureFlagService.getInstance();
       const userTier = featureFlags.getUserTier();
-      
+
       if (userTier === 'pro') {
         return {
           tier: 'pro',
@@ -229,7 +243,7 @@ class PremiumStatusManager {
           isActive: true,
         };
       }
-      
+
       return {
         tier: 'free',
         name: 'Free',
@@ -250,7 +264,7 @@ class PremiumStatusManager {
   // Set status and notify listeners
   private setStatus(status: SubscriptionStatus): void {
     const hasChanged = JSON.stringify(this.currentStatus) !== JSON.stringify(status);
-    
+
     if (hasChanged) {
       this.currentStatus = status;
       this.notifyListeners(status);
@@ -260,7 +274,7 @@ class PremiumStatusManager {
   // Add status change listener
   addListener(listener: PremiumStatusListener): () => void {
     this.listeners.push(listener);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.listeners.indexOf(listener);
@@ -293,7 +307,7 @@ class PremiumStatusManager {
         isActive: false,
       };
     }
-    
+
     return { ...this.currentStatus };
   }
 
@@ -403,7 +417,7 @@ class PremiumStatusManager {
 
       // Get user's subscription status
       const subscriptionStatus = await this.getRevenueCatStatus();
-      
+
       if (!subscriptionStatus.isActive) {
         return false;
       }
@@ -456,7 +470,7 @@ class PremiumStatusManager {
 
       // Get user's subscription status
       const subscriptionStatus = await this.getRevenueCatStatus();
-      
+
       if (!subscriptionStatus.isActive) {
         return {
           tier: 'free',
@@ -547,7 +561,7 @@ class PremiumStatusManager {
 
       // Get user's subscription status
       const subscriptionStatus = await this.getRevenueCatStatus();
-      
+
       if (!subscriptionStatus.isActive) {
         return false;
       }
@@ -563,7 +577,7 @@ class PremiumStatusManager {
       try {
         const userFamily = await reminderService.getUserFamily(userId);
         const subscriberFamily = await reminderService.getUserFamily(currentUser.uid);
-        
+
         if (!userFamily || !subscriberFamily) {
           return false;
         }
@@ -583,14 +597,19 @@ class PremiumStatusManager {
   // Force clear all premium status (for testing/debugging)
   async forceClearStatus(): Promise<void> {
     console.log('[PremiumStatusManager] Force clearing premium status...');
-    
-    // Clear RevenueCat data
+
+    // Clear RevenueCat data (only if user is not anonymous)
     try {
-      await revenueCatService.logOut();
+      const currentUser = auth().currentUser;
+      if (currentUser && !currentUser.isAnonymous) {
+        await revenueCatService.logOut();
+      } else {
+        console.log('[PremiumStatusManager] Skipping RevenueCat logout - user is anonymous');
+      }
     } catch (error) {
       console.error('[PremiumStatusManager] RevenueCat logout failed:', error);
     }
-    
+
     // Clear Feature Flags
     try {
       const featureFlags = FeatureFlagService.getInstance();
@@ -599,7 +618,7 @@ class PremiumStatusManager {
     } catch (error) {
       console.error('[PremiumStatusManager] Feature flag reset failed:', error);
     }
-    
+
     // Set to free status
     this.setStatus({
       tier: 'free',
@@ -607,37 +626,37 @@ class PremiumStatusManager {
       description: 'Basic features with ads',
       isActive: false,
     });
-    
+
     console.log('[PremiumStatusManager] Premium status cleared');
   }
 
   // Debug function to show all status sources
   async debugStatus(): Promise<void> {
     console.log('🔍 [PremiumStatusManager] Debug Status...');
-    
+
     const currentUser = auth().currentUser;
     console.log('👤 Current User:', currentUser?.uid, 'isAnonymous:', currentUser?.isAnonymous);
-    
+
     console.log('📊 Current Status:', this.currentStatus);
     console.log('📊 Current Tier:', this.getCurrentTier());
     console.log('📊 Is Premium:', this.isPremium());
     console.log('📊 Is Pro:', this.isPro());
     console.log('📊 Is Active:', this.isActive());
-    
+
     // Check RevenueCat
-    console.log('💰 RevenueCat Status:');
-    try {
-      const revenueCatStatus = await this.getRevenueCatStatus();
-      console.log('- RevenueCat Status:', revenueCatStatus);
-      
-      const customerInfo = await revenueCatService.getCustomerInfo();
-      if (customerInfo) {
-        console.log('- Active Entitlements:', Object.keys(customerInfo.entitlements.active));
-      }
-    } catch (error) {
-      console.log('- RevenueCat Error:', error);
-    }
-    
+    // console.log('💰 RevenueCat Status:');
+    // try {
+    //   const revenueCatStatus = await this.getRevenueCatStatus();
+    //   console.log('- RevenueCat Status:', revenueCatStatus);
+
+    //   const customerInfo = await revenueCatService.getCustomerInfo();
+    //   if (customerInfo) {
+    //     console.log('- Active Entitlements:', Object.keys(customerInfo.entitlements.active));
+    //   }
+    // } catch (error) {
+    //   console.log('- RevenueCat Error:', error);
+    // }
+
     // Check Family Status
     if (currentUser?.uid) {
       console.log('👨‍👩‍👧‍👦 Family Status:');
@@ -651,11 +670,11 @@ class PremiumStatusManager {
         } else {
           console.log('- No family found');
         }
-        
+
         // Check effective premium status
         const effectiveStatus = await this.getEffectivePremiumStatus(currentUser.uid);
         console.log('- Effective Premium Status:', effectiveStatus);
-        
+
         // Check family member benefits
         const hasFamilyBenefits = await this.isFamilyMemberWithBenefits(currentUser.uid);
         console.log('- Has Family Benefits:', hasFamilyBenefits);
@@ -663,14 +682,13 @@ class PremiumStatusManager {
         console.log('- Family Status Error:', error);
       }
     }
-    
+
     // Check Feature Flags
     console.log('🚩 Feature Flags Status:');
     try {
       const featureFlags = FeatureFlagService.getInstance();
       console.log('- User Tier:', featureFlags.getUserTier());
       console.log('- Is Pro User:', featureFlags.isProUser());
-      console.log('- Testing Mode:', featureFlags['isTestingMode']);
     } catch (error) {
       console.log('- Feature Flags Error:', error);
     }
@@ -678,4 +696,4 @@ class PremiumStatusManager {
 }
 
 // Export singleton instance
-export const premiumStatusManager = PremiumStatusManager.getInstance(); 
+export const premiumStatusManager = PremiumStatusManager.getInstance();

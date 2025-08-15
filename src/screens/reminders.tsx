@@ -33,11 +33,11 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState(route.params?.initialTab || 'total');
-  
+
   // Delete modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteModalProps, setDeleteModalProps] = useState<any>(null);
-  
+
   // Sorting state
   const [sortOption, setSortOption] = useState<'chronological' | 'name' | 'priority' | 'created' | 'dueDate'>('chronological');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -72,7 +72,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
         sortOption,
         sortDirection,
         filteredCount: filteredReminders?.length || 0,
-        error
+        error,
       });
     }
   }, [isLoading, reminders, activeTab, sortOption, sortDirection, error]);
@@ -114,7 +114,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
 
   const handleDeleteReminder = useCallback(async (reminderId: string) => {
     const reminder = reminders?.find(r => r.id === reminderId);
-    if (!reminder) return;
+    if (!reminder) {return;}
 
     if (isRecurringReminder(reminder)) {
       // Show recurring delete modal
@@ -196,7 +196,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
     if (!reminders || !isInitialized || reminders.length === 0) {
       return [];
     }
-    
+
     let filtered;
     switch (activeTab) {
       case 'total':
@@ -214,7 +214,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
       default:
         filtered = reminders;
     }
-    
+
     const sorted = getSortedReminders(filtered || []);
     return sorted;
   }, [reminders, activeTab, getSortedReminders]);
@@ -237,21 +237,21 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
   // Extracted empty state for clarity
   const EmptyState = () => {
     const IconComponent = tabs.find(tab => tab.key === activeTab)?.icon || List;
-    
+
     return (
-      <Animated.View 
+      <Animated.View
         style={[
           styles.centerContainer,
           {
             opacity: fadeAnim,
             transform: [{ translateY: slideAnim }],
-          }
+          },
         ]}
       >
         <View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '10' }]}>
           <IconComponent size={56} color={colors.primary} strokeWidth={1.5} />
         </View>
-        <Text style={[styles.emptyText, { color: colors.text }]}> 
+        <Text style={[styles.emptyText, { color: colors.text }]}>
           {emptyMessage}
         </Text>
       </Animated.View>
@@ -280,8 +280,8 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
               </View>
             )}
           </View>
-          <TouchableOpacity 
-            onPress={() => setShowSortModal(true)} 
+          <TouchableOpacity
+            onPress={() => setShowSortModal(true)}
             style={styles.sortButton}
           >
             <View style={[styles.iconButton, { backgroundColor: colors.primary + '15' }]}>
@@ -297,21 +297,21 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
 
       {/* Custom Tabs */}
       <View style={[styles.tabContainer, { backgroundColor: colors.background }]}>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tabsScrollContent}
         >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
             const IconComponent = tab.icon;
-            
+
             return (
               <TouchableOpacity
                 key={tab.key}
                 style={[
                   styles.tab,
-                  { 
+                  {
                     backgroundColor: isActive ? colors.primary : colors.surface,
                     borderColor: isActive ? colors.primary : colors.border,
                   },
@@ -319,14 +319,14 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
                 onPress={() => setActiveTab(tab.key)}
                 activeOpacity={0.7}
               >
-                <IconComponent 
-                  size={18} 
-                  color={isActive ? '#FFFFFF' : colors.textSecondary} 
+                <IconComponent
+                  size={18}
+                  color={isActive ? '#FFFFFF' : colors.textSecondary}
                   strokeWidth={2}
                 />
                 <Text style={[
                   styles.tabLabel,
-                  { 
+                  {
                     color: isActive ? '#FFFFFF' : colors.textSecondary,
                     fontFamily: isActive ? Fonts.text.semibold : Fonts.text.medium,
                   },
@@ -338,8 +338,8 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
           })}
         </ScrollView>
         {isHomeScreen && (
-          <TouchableOpacity 
-            onPress={() => setShowSortModal(true)} 
+          <TouchableOpacity
+            onPress={() => setShowSortModal(true)}
             style={styles.homeSortButton}
           >
             <View style={[styles.iconButton, { backgroundColor: colors.primary + '15' }]}>
@@ -358,7 +358,7 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
         <View style={styles.centerContainer}>
           <View style={[styles.errorContainer, { backgroundColor: colors.error + '10' }]}>
             <AlertCircle size={48} color={colors.error} strokeWidth={1.5} />
-            <Text style={[styles.errorText, { color: colors.error }]}> 
+            <Text style={[styles.errorText, { color: colors.error }]}>
               {t('common.error')}
             </Text>
             <Text style={[styles.errorSubtext, { color: colors.textSecondary }]}>
@@ -390,8 +390,8 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
       />
 
       {/* Floating Action Button */}
-      <TouchableOpacity 
-        onPress={() => navigation.navigate('Add')} 
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Add')}
         style={[styles.fab, { backgroundColor: colors.primary }]}
       >
         <Plus size={28} color={colors.background} strokeWidth={2.5} />
@@ -412,14 +412,14 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
           <Animated.View
             style={[
               styles.sortModalContainer,
-              { 
+              {
                 backgroundColor: colors.surface,
                 shadowColor: colors.shadow,
               },
             ]}
           >
             <View style={styles.modalHandle} />
-            
+
             <View style={styles.sortModalHeader}>
               <Text style={[styles.sortModalTitle, { color: colors.text }]}>
                 {t('reminders.sortBy')}
@@ -430,13 +430,13 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
               {sortOptions.map((option) => {
                 const isActive = sortOption === option.key;
                 const IconComponent = option.icon;
-                
+
                 return (
                   <TouchableOpacity
                     key={option.key}
                     style={[
                       styles.sortOption,
-                      isActive && { 
+                      isActive && {
                         backgroundColor: colors.primary + '10',
                         borderColor: colors.primary,
                       },
@@ -447,14 +447,14 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
                     }}
                     activeOpacity={0.7}
                   >
-                    <IconComponent 
-                      size={20} 
-                      color={isActive ? colors.primary : colors.textSecondary} 
+                    <IconComponent
+                      size={20}
+                      color={isActive ? colors.primary : colors.textSecondary}
                       strokeWidth={2}
                     />
                     <Text style={[
                       styles.sortOptionText,
-                      { 
+                      {
                         color: isActive ? colors.primary : colors.text,
                         fontFamily: isActive ? Fonts.text.semibold : Fonts.text.regular,
                       },
@@ -478,15 +478,15 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
                 <SortAsc size={20} color={sortDirection === 'asc' ? colors.primary : colors.textSecondary} />
                 <Text style={[
                   styles.directionText,
-                  { 
+                  {
                     color: sortDirection === 'asc' ? colors.primary : colors.text,
                     fontFamily: sortDirection === 'asc' ? Fonts.text.semibold : Fonts.text.regular,
-                  }
+                  },
                 ]}>
                   {t('reminders.sortDirection.ascending')}
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[
                   styles.directionOption,
@@ -498,10 +498,10 @@ export default function RemindersScreen({ navigation, route }: RemindersScreenPr
                 <SortDesc size={20} color={sortDirection === 'desc' ? colors.primary : colors.textSecondary} />
                 <Text style={[
                   styles.directionText,
-                  { 
+                  {
                     color: sortDirection === 'desc' ? colors.primary : colors.text,
                     fontFamily: sortDirection === 'desc' ? Fonts.text.semibold : Fonts.text.regular,
-                  }
+                  },
                 ]}>
                   {t('reminders.sortDirection.descending')}
                 </Text>
@@ -711,8 +711,8 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
   };
 
   const isOverdue = () => {
-    if (!reminder.dueDate || reminder.completed) return false;
-    
+    if (!reminder.dueDate || reminder.completed) {return false;}
+
     try {
       return isOverdueUtil(reminder.dueDate, reminder.completed, reminder.dueTime, reminder);
     } catch (error) {
@@ -772,7 +772,7 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
             <View style={styles.reminderLeft}>
               <View style={[
                 styles.typeIconContainer,
-                { backgroundColor: colors.primary + '10' }
+                { backgroundColor: colors.primary + '10' },
               ]}>
                 {typeIcon.emoji ? (
                   <Text style={styles.reminderTypeEmoji}>{typeIcon.emoji}</Text>
@@ -780,7 +780,7 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
                   React.createElement(typeIcon.component, {
                     size: 20,
                     color: colors.primary,
-                    strokeWidth: 2
+                    strokeWidth: 2,
                   })
                 ) : null}
               </View>
@@ -834,15 +834,15 @@ const SwipeableReminder: React.FC<SwipeableReminderProps> = React.memo(({ remind
                     </Text>
                   </View>
                 )}
-                
+
                 {reminder.priority && (
                   <View style={[
                     styles.priorityBadge,
-                    { backgroundColor: getPriorityColor(reminder.priority) + '15' }
+                    { backgroundColor: getPriorityColor(reminder.priority) + '15' },
                   ]}>
                     <Text style={[
                       styles.priorityText,
-                      { color: getPriorityColor(reminder.priority) }
+                      { color: getPriorityColor(reminder.priority) },
                     ]}>
                       {reminder.priority.charAt(0).toUpperCase() + reminder.priority.slice(1)}
                     </Text>

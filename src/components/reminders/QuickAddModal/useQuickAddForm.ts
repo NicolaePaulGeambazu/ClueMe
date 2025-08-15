@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getCurrentTimezone, getTimezoneDisplayName } from '../../../utils/timezoneUtils';
+
 import { formatDate } from '../../../utils/dateUtils';
 import { generateOccurrences, getRecurringDescription } from '../../../design-system/reminders/utils/recurring-utils';
-import { NotificationType } from '../../../design-system/reminders/types';
+import { NotificationType, ReminderType, ReminderPriority, ReminderStatus, RepeatPattern } from '../../../design-system/reminders/types';
 import { cleanReminderForFirestore } from '../../../utils/reminderUtils';
 import { usePremium } from '../../../hooks/usePremium';
 import monetizationService from '../../../services/monetizationService';
+import { format } from 'date-fns';
 
 export interface ReminderData {
   id?: string;
@@ -66,7 +67,7 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     endDate: null as Date | null,
     endOccurrences: undefined as number | undefined,
   });
-  const [timezone, setTimezone] = useState(getCurrentTimezone());
+  const [timezone, setTimezone] = useState('Europe/London');
   const [assignedTo, setAssignedTo] = useState<string[]>([]);
   // Initialize notification timings based on user's premium status
   const getDefaultNotificationTimings = () => {
@@ -95,18 +96,21 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
   const [showLocalDatePicker, setShowLocalDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
+  // New full-page modal state
+  const [showDateTimeModal, setShowDateTimeModal] = useState(false);
+
   // Update form when prefillData changes
   useEffect(() => {
     if (prefillData) {
       setTitle(prefillData.title || '');
       setLocation(prefillData.location || '');
-      
+
       if (prefillData.dueDate) {
         const dueDate = new Date(prefillData.dueDate);
         const now = new Date();
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        
+
         if (dueDate.toDateString() === now.toDateString()) {
           setSelectedDate('today');
         } else if (dueDate.toDateString() === tomorrow.toDateString()) {
@@ -115,7 +119,7 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
           setSelectedDate('custom');
         }
       }
-      
+
       if (prefillData.dueTime) {
         setSelectedTime('custom');
         const [hours, minutes] = prefillData.dueTime.split(':').map(Number);
@@ -128,7 +132,7 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
         setIsRecurring(true);
         setRecurringPattern({
           ...prefillData.recurringPattern,
-          endOccurrences: prefillData.recurringPattern.endOccurrences || undefined
+          endOccurrences: prefillData.recurringPattern.endOccurrences || undefined,
         });
       }
 
@@ -181,42 +185,43 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
   };
 
   const getAdjustedDateForTime = (baseDate: Date, timeString: string): Date => {
-    const adjustedDate = new Date(baseDate);
-    
     if (timeString === 'custom' && customTimeValue) {
+      const adjustedDate = new Date(baseDate);
       const [time, period] = customTimeValue.split(' ');
       const [hours, minutes] = time.split(':').map(Number);
       let adjustedHours = hours;
-      
+
       if (period === 'PM' && hours !== 12) {
         adjustedHours += 12;
       } else if (period === 'AM' && hours === 12) {
         adjustedHours = 0;
       }
-      
+
       adjustedDate.setHours(adjustedHours, minutes, 0, 0);
+      return adjustedDate;
     } else {
       const now = new Date();
       switch (timeString) {
-        case 'in1hour':
-          adjustedDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
-          break;
-        case 'in2hours':
-          adjustedDate.setHours(now.getHours() + 2, now.getMinutes(), 0, 0);
-          break;
-        case 'in4hours':
-          adjustedDate.setHours(now.getHours() + 4, now.getMinutes(), 0, 0);
-          break;
-        case 'tomorrow':
-          adjustedDate.setDate(adjustedDate.getDate() + 1);
-          adjustedDate.setHours(9, 0, 0, 0);
-          break;
-        default:
-          adjustedDate.setHours(now.getHours() + 1, now.getMinutes(), 0, 0);
+        case 'in1hour': {
+          return new Date(now.getTime() + 60 * 60 * 1000); // Add 1 hour in milliseconds
+        }
+        case 'in2hours': {
+          return new Date(now.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours in milliseconds
+        }
+        case 'in4hours': {
+          return new Date(now.getTime() + 4 * 60 * 60 * 1000); // Add 4 hours in milliseconds
+        }
+        case 'tomorrow': {
+          const tomorrowDate = new Date(baseDate);
+          tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+          tomorrowDate.setHours(9, 0, 0, 0);
+          return tomorrowDate;
+        }
+        default: {
+          return new Date(now.getTime() + 60 * 60 * 1000); // Add 1 hour in milliseconds
+        }
       }
     }
-    
-    return adjustedDate;
   };
 
   const getTimeFromSelection = (selection: string, selectedDate?: string): string => {
@@ -224,28 +229,36 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
       const [time, period] = customTimeValue.split(' ');
       const [hours, minutes] = time.split(':').map(Number);
       let adjustedHours = hours;
-      
+
       if (period === 'PM' && hours !== 12) {
         adjustedHours += 12;
       } else if (period === 'AM' && hours === 12) {
         adjustedHours = 0;
       }
-      
+
       return `${adjustedHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
-    
+
     const now = new Date();
     switch (selection) {
-      case 'in1hour':
-        return `${(now.getHours() + 1).toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      case 'in2hours':
-        return `${(now.getHours() + 2).toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      case 'in4hours':
-        return `${(now.getHours() + 4).toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      case 'in1hour': {
+        const futureTime = new Date(now.getTime() + 60 * 60 * 1000); // Add 1 hour in milliseconds
+        return `${futureTime.getHours().toString().padStart(2, '0')}:${futureTime.getMinutes().toString().padStart(2, '0')}`;
+      }
+      case 'in2hours': {
+        const futureTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours in milliseconds
+        return `${futureTime.getHours().toString().padStart(2, '0')}:${futureTime.getMinutes().toString().padStart(2, '0')}`;
+      }
+      case 'in4hours': {
+        const futureTime = new Date(now.getTime() + 4 * 60 * 60 * 1000); // Add 4 hours in milliseconds
+        return `${futureTime.getHours().toString().padStart(2, '0')}:${futureTime.getMinutes().toString().padStart(2, '0')}`;
+      }
       case 'tomorrow':
         return '09:00';
-      default:
-        return `${(now.getHours() + 1).toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      default: {
+        const futureTime = new Date(now.getTime() + 60 * 60 * 1000); // Add 1 hour in milliseconds
+        return `${futureTime.getHours().toString().padStart(2, '0')}:${futureTime.getMinutes().toString().padStart(2, '0')}`;
+      }
     }
   };
 
@@ -254,19 +267,23 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
       return t('quickAdd.noRepeat');
     }
     // Create a mock reminder object for the description function
+    const baseDate = getDateFromSelection(selectedDate);
+    const finalDate = getAdjustedDateForTime(baseDate, selectedTime);
     const mockReminder = {
-      id: '',
-      userId: '',
-      title: '',
-      type: 'reminder',
-      priority: 'medium',
-      status: 'pending',
+      id: 'mock',
+      userId: 'mock',
+      title: 'mock',
+      type: 'reminder' as ReminderType,
+      priority: ReminderPriority.MEDIUM,
+      status: ReminderStatus.PENDING,
       completed: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       recurringPattern: recurringPattern,
+      dueDate: finalDate,
+      repeatPattern: (recurringPattern as any).repeatPattern as RepeatPattern,
     };
-    return getRecurringDescription(mockReminder);
+    return getRecurringDescription(mockReminder as any);
   };
 
   const getAssignedMembersText = () => {
@@ -282,7 +299,7 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
   const handleDateSelect = (value: string) => {
     setSelectedDate(value);
     setShowDateSheet(false);
-    
+
     if (value === 'custom') {
       setShowLocalDatePicker(true);
     }
@@ -291,15 +308,15 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
   const handleTimeSelect = (value: string) => {
     setSelectedTime(value);
     setShowTimeSheet(false);
-    
+
     if (value === 'custom') {
       setShowTimePicker(true);
     }
   };
 
   const handleFamilyMemberToggle = (memberId: string) => {
-    setAssignedTo(prev => 
-      prev.includes(memberId) 
+    setAssignedTo(prev =>
+      prev.includes(memberId)
         ? prev.filter(id => id !== memberId)
         : [...prev, memberId]
     );
@@ -310,12 +327,33 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     const finalDate = getAdjustedDateForTime(baseDate, selectedTime);
     const timeString = getTimeFromSelection(selectedTime, selectedDate);
     
+    // Store the date in a way that preserves the intended local time
+    // Create a date string that represents the local time without timezone conversion
+    const year = finalDate.getFullYear();
+    const month = String(finalDate.getMonth() + 1).padStart(2, '0');
+    const day = String(finalDate.getDate()).padStart(2, '0');
+    const localDueDate = `${year}-${month}-${day}T${timeString}:00`;
+    
+    // Debug logging for date creation
+    console.log('[QuickAddForm] Date creation debug:', {
+      selectedDate,
+      selectedTime,
+      baseDate: baseDate.toISOString(),
+      finalDate: finalDate.toISOString(),
+      timeString,
+      localDueDate,
+      currentTime: new Date().toISOString(),
+      userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      finalDateLocal: finalDate.toString(),
+      finalDateUTC: finalDate.toISOString()
+    });
+    
+    const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const reminderData: ReminderData = {
       title: title.trim(),
       location: location.trim() || undefined,
-      dueDate: finalDate.toISOString(),
       dueTime: timeString,
-      timezone: timezone,
+      timezone: userTimezone,
       assignedTo: assignedTo.length > 0 ? assignedTo : undefined,
       hasNotification: notificationTimings.length > 0,
       notificationTimings: notificationTimings,
@@ -326,14 +364,81 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-
+    
+    // Validate the date
+    if (!isNaN(finalDate.getTime())) {
+      reminderData.dueDate = localDueDate;
+    } else {
+      console.warn('[QuickAddForm] Invalid dueDate generated:', localDueDate, 'from', finalDate, 'selectedDate:', selectedDate, 'selectedTime:', selectedTime);
+    }
+    console.log('[QuickAddForm] Checking recurring condition:', {
+      isRecurring,
+      recurringPatternType: recurringPattern.type,
+      condition: isRecurring && recurringPattern.type !== 'none'
+    });
+    
     if (isRecurring && recurringPattern.type !== 'none') {
+      console.log('[QuickAddForm] Setting up recurring reminder:', {
+        recurringPattern,
+        type: recurringPattern.type,
+        repeatPattern: (recurringPattern as any).repeatPattern
+      });
+
       reminderData.isRecurring = true;
       reminderData.recurringPattern = recurringPattern;
-      reminderData.occurrences = generateOccurrences(recurringPattern, finalDate);
-    }
+      
+      // Convert to the expected format for the calendar
+      reminderData.repeatPattern = recurringPattern.type; // Use the type directly
+      reminderData.customInterval = recurringPattern.interval || 1;
+      reminderData.recurringEndDate = recurringPattern.endDate || undefined;
+      reminderData.recurringEndAfter = recurringPattern.endOccurrences;
+      reminderData.repeatDays = recurringPattern.days;
 
-    return cleanReminderForFirestore(reminderData);
+      // Pass a valid Reminder object to generateOccurrences
+      const reminderForOccurrences = {
+        ...reminderData,
+        id: 'mock',
+        userId: 'mock',
+        title: 'mock',
+        type: 'reminder' as ReminderType,
+        priority: ReminderPriority.MEDIUM,
+        status: ReminderStatus.PENDING,
+        completed: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        dueDate: finalDate,
+        repeatPattern: recurringPattern.type as RepeatPattern, // Use the type directly
+      };
+      
+      console.log('[QuickAddForm] Reminder for occurrences:', {
+        isRecurring: reminderForOccurrences.isRecurring,
+        repeatPattern: reminderForOccurrences.repeatPattern,
+        dueDate: reminderForOccurrences.dueDate
+      });
+
+      const occurrences = generateOccurrences(reminderForOccurrences, 50);
+      console.log('[QuickAddForm] Generated occurrences:', occurrences.length);
+      
+      // Map to { date, description } using reminder.title
+      reminderData.occurrences = occurrences.map(occ => ({
+        date: occ.date,
+        description: occ.reminder?.title || '',
+      }));
+    }
+    // Ensure all required fields are present
+    const cleaned = cleanReminderForFirestore(reminderData as any) as ReminderData;
+    cleaned.title = title.trim();
+    
+    console.log('[QuickAddForm] Final reminder data being returned:', {
+      title: cleaned.title,
+      isRecurring: cleaned.isRecurring,
+      repeatPattern: cleaned.repeatPattern,
+      recurringEndDate: cleaned.recurringEndDate,
+      customInterval: cleaned.customInterval,
+      recurringPattern: cleaned.recurringPattern
+    });
+    
+    return cleaned;
   };
 
   return {
@@ -377,6 +482,10 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     showTimePicker,
     setShowTimePicker,
 
+    // New full-page modal
+    showDateTimeModal,
+    setShowDateTimeModal,
+
     // Options
     dateOptions,
     getTimeOptions,
@@ -392,4 +501,4 @@ export const useQuickAddForm = (prefillData?: ReminderData, prefillDate?: string
     handleFamilyMemberToggle,
     createReminderData,
   };
-}; 
+};

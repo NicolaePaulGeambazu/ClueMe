@@ -133,7 +133,7 @@ export const NotificationTimingSelector: React.FC<NotificationTimingSelectorProp
                   );
                 })}
               </ScrollView>
-              
+
               {/* Premium features */}
               {!canUseMultipleNotifications() && (
                 <View style={styles.premiumSection}>

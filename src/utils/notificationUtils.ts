@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import PushNotification from 'react-native-push-notification';
 
 export interface NotificationData {
@@ -45,4 +44,4 @@ export const cancelNotification = (notificationId: string): void => {
     PushNotification.cancelLocalNotification(notificationId);
   } catch (error) {
   }
-}; 
+};

@@ -9,7 +9,8 @@ import {
   Image,
   Dimensions,
   Alert,
-  Animated
+  Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -79,7 +80,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const { theme } = useTheme();
   const colors = Colors[theme];
   const {  isAnonymous } = useAuth();
-  const { reminders, isLoading, isInitialized, error, loadReminders, deleteReminder } = useReminderContext();
+  const { reminders, isLoading, isInitialized, isDataFullyLoaded, error, loadReminders, deleteReminder, stats } = useReminderContext();
   const { fabPosition, setFabPosition } = useSettings();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
@@ -88,7 +89,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const [selectedReminderId, setSelectedReminderId] = useState('');
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const { isPremium, hasFeature } = usePremium();
-  
+
   // FAB drag state
   const fabTranslateX = useRef(new Animated.Value(0)).current;
   const [showFabHint, setShowFabHint] = useState(true);
@@ -115,7 +116,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
           setTimeout(startHintAnimation, 3000);
         });
       };
-      
+
       startHintAnimation();
     }
   }, [showFabHint, hasDraggedFab]);
@@ -128,27 +129,28 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
 
   // Memoize derived data
   const todayReminders = useMemo(() => {
-    if (!reminders || !isInitialized) return [];
+    if (!reminders || !isInitialized) {return [];}
     const today = getTodayISO();
-    return reminders.filter(reminder => {
-      if (!reminder.dueDate) return false;
-      
+    console.log('[IndexScreen] Filtering reminders for today:', today);
+    console.log('[IndexScreen] Total reminders:', reminders.length);
+    
+    const filtered = reminders.filter(reminder => {
+      if (!reminder.dueDate) {
+        console.log('[IndexScreen] Reminder has no dueDate:', reminder.title);
+        return false;
+      }
+
       // Convert reminder date to YYYY-MM-DD format for comparison
       const reminderDate = new Date(reminder.dueDate);
       const reminderDateString = formatDateFns(reminderDate, 'yyyy-MM-dd');
       
+      console.log('[IndexScreen] Reminder:', reminder.title, 'dueDate:', reminder.dueDate, 'parsed:', reminderDateString, 'matches today:', reminderDateString === today);
+
       return reminderDateString === today;
     });
-  }, [reminders, isInitialized]);
-
-  const stats = useMemo(() => {
-    if (!reminders || !isInitialized) return { total: 0, pending: 0, favorites: 0, overdue: 0 };
-    return {
-      total: reminders.length,
-      pending: filterReminders.byCompleted(reminders, false).length,
-      favorites: filterReminders.byFavorite(reminders).length,
-      overdue: filterReminders.byOverdue(reminders).length,
-    };
+    
+    console.log('[IndexScreen] Today reminders count:', filtered.length);
+    return filtered;
   }, [reminders, isInitialized]);
 
   const getTypeIcon = (type: string) => {
@@ -165,33 +167,33 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
 
   const handleFabDrag = (event: any) => {
     const { translationX } = event.nativeEvent;
-    
+
     // Calculate the center of the screen
     const screenCenter = screenWidth / 2;
     const currentPosition = fabPosition === 'left' ? 0 : screenWidth - 80; // 80 is FAB width + margins
-    
+
     // Update the animated value
     fabTranslateX.setValue(translationX);
   };
 
   const handleFabDragEnd = (event: any) => {
     const { translationX } = event.nativeEvent;
-    
+
     // Determine which side the FAB should snap to
     const screenCenter = screenWidth / 2;
     const newPosition = translationX > 0 ? 'right' : 'left';
-    
+
     // Only update if position actually changed
     if (newPosition !== fabPosition) {
       setFabPosition(newPosition);
     }
-    
+
     // Mark that user has dragged the FAB and hide hint
     if (!hasDraggedFab) {
       setHasDraggedFab(true);
       setShowFabHint(false);
     }
-    
+
     // Reset the animated value
     fabTranslateX.setValue(0);
   };
@@ -219,7 +221,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
 
   const handleDeleteReminder = (reminderId: string) => {
     const reminder = reminders.find(r => r.id === reminderId);
-    if (!reminder) return;
+    if (!reminder) {return;}
 
     if (isRecurringReminder(reminder)) {
       // Show recurring delete modal with proper props
@@ -285,12 +287,12 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
     isFirst: boolean;
   }
 
-  const SwipeableHomeReminder: React.FC<SwipeableHomeReminderProps> = React.memo(({ 
-    reminder, 
-    colors, 
-    onDelete, 
-    onEdit, 
-    isFirst 
+  const SwipeableHomeReminder: React.FC<SwipeableHomeReminderProps> = React.memo(({
+    reminder,
+    colors,
+    onDelete,
+    onEdit,
+    isFirst,
   }) => {
     const translateX = useRef(new Animated.Value(0)).current;
     const deleteOpacity = useRef(new Animated.Value(0)).current;
@@ -455,7 +457,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             borderLeftWidth: 1,
             borderLeftColor: colors.border,
           }}>
-            <Animated.View style={{ 
+            <Animated.View style={{
               opacity: editOpacity,
               transform: [{ scale: editOpacity }],
             }}>
@@ -479,7 +481,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
                 <Edit size={20} color={colors.text} strokeWidth={2.5} />
               </TouchableOpacity>
             </Animated.View>
-            <Animated.View style={{ 
+            <Animated.View style={{
               opacity: deleteOpacity,
               transform: [{ scale: deleteOpacity }],
             }}>
@@ -529,7 +531,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               {
                 borderLeftWidth: 3,
                 borderLeftColor: colors.primary + '20',
-              }
+              },
             ]}
             onPress={handlePress}
           >
@@ -630,9 +632,9 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   // Extracted empty state for clarity
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Image 
-        source={theme === 'dark' 
-          ? require('../assets/images/empty-box-dark.png') 
+      <Image
+        source={theme === 'dark'
+          ? require('../assets/images/empty-box-dark.png')
           : require('../assets/images/empty-box.png')}
         style={styles.emptyImage as import('react-native').ImageStyle}
         resizeMode="contain"
@@ -640,15 +642,15 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
         {t('home.noEventsToday')}
       </Text>
-      <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}> 
+      <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
         {t('home.noEventsTodayDescription')}
       </Text>
       {isAnonymous && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.signInButton, { backgroundColor: colors.primary }]}
           onPress={() => navigation.navigate('Login')}
         >
-          <Text style={[styles.signInButtonText, { color: '#FFFFFF' }]}> 
+          <Text style={[styles.signInButtonText, { color: '#FFFFFF' }]}>
             {t('home.signIn')}
           </Text>
         </TouchableOpacity>
@@ -659,7 +661,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
       {/* Focus Mode Banner */}
-      
+
       {/* Enhanced Hero Header with White Background */}
       <View style={[styles.heroContainer, { backgroundColor: '#FFFFFF' }]}>
         <View style={styles.heroHeader}>
@@ -674,13 +676,13 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               {isAnonymous ? t('home.anonymousBannerDescription') : t('home.subtitle')}
             </Text>
           </View>
-          
+
         </View>
       </View>
 
       <ScrollView
         style={[
-          styles.content, 
+          styles.content,
           { backgroundColor: colors.background },
         ]}
         showsVerticalScrollIndicator={false}
@@ -698,33 +700,48 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface }]}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'total' })}
+            disabled={!isDataFullyLoaded}
           >
             <View style={[styles.statIconContainer, { backgroundColor: `${colors.primary}15` }]}>
               <Bell size={20} color={colors.primary} />
             </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>{stats.total}</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>
+              {isDataFullyLoaded ? stats.total : (
+                <ActivityIndicator size="small" color={colors.primary} />
+              )}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.total')}</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface }]}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'pending' })}
+            disabled={!isDataFullyLoaded}
           >
             <View style={[styles.statIconContainer, { backgroundColor: `${colors.success}15` }]}>
               <Clock size={20} color={colors.success} />
             </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>{stats.pending}</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>
+              {isDataFullyLoaded ? stats.pending : (
+                <ActivityIndicator size="small" color={colors.success} />
+              )}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.pending')}</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: colors.surface }]}
             onPress={() => navigation.navigate('Reminders', { initialTab: 'overdue' })}
+            disabled={!isDataFullyLoaded}
           >
             <View style={[styles.statIconContainer, { backgroundColor: `${colors.error}15` }]}>
               <AlertCircle size={20} color={colors.error} />
             </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>{stats.overdue}</Text>
+            <Text style={[styles.statNumber, { color: colors.text }]}>
+              {isDataFullyLoaded ? stats.overdue : (
+                <ActivityIndicator size="small" color={colors.error} />
+              )}
+            </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.overdue')}</Text>
           </TouchableOpacity>
         </View>
@@ -746,13 +763,13 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
           </View>
           {error ? (
             <View style={styles.loadingContainer}>
-              <Text style={[styles.loadingText, { color: colors.error }]}> 
+              <Text style={[styles.loadingText, { color: colors.error }]}>
                 {t('common.error')}: {error}
               </Text>
             </View>
           ) : !isInitialized ? (
             <View style={styles.loadingContainer}>
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}> 
+              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                 {t('common.loading')}
               </Text>
             </View>
@@ -781,7 +798,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
       {/* Enhanced Floating Action Button */}
       <View style={[
         styles.fabContainer,
-        fabPosition === 'left' ? styles.fabContainerLeft : styles.fabContainerRight
+        fabPosition === 'left' ? styles.fabContainerLeft : styles.fabContainerRight,
       ]}>
         {showFabMenu && (
           <View style={styles.fabMenu}>
@@ -822,18 +839,18 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
           <Animated.View
             style={[
               styles.fab,
-              { 
+              {
                 backgroundColor: colors.success,
                 transform: [
                   { translateX: fabTranslateX },
-                  { 
+                  {
                     scale: fabHintAnim.interpolate({
                       inputRange: [0, 1],
                       outputRange: [1, 1.05],
-                    })
-                  }
-                ]
-              }
+                    }),
+                  },
+                ],
+              },
             ]}
           >
                           <TouchableOpacity
@@ -875,7 +892,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
         />
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

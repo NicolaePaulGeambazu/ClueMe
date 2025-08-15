@@ -43,7 +43,7 @@ const REQUIRED_KEYS = [
   'time.hours',
   'time.hour',
   'time.days',
-  'time.day'
+  'time.day',
 ];
 
 /**
@@ -56,7 +56,7 @@ function loadTranslationFile(filePath) {
     if (!fs.existsSync(filePath)) {
       return null;
     }
-    
+
     const content = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(content);
   } catch (error) {
@@ -73,17 +73,17 @@ function loadTranslationFile(filePath) {
  */
 function getAllKeys(obj, prefix = '') {
   const keys = [];
-  
+
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = prefix ? `${prefix}.${key}` : key;
-    
+
     if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       keys.push(...getAllKeys(value, fullKey));
     } else {
       keys.push(fullKey);
     }
   }
-  
+
   return keys;
 }
 
@@ -96,14 +96,14 @@ function getAllKeys(obj, prefix = '') {
 function keyExists(translations, key) {
   const keys = key.split('.');
   let current = translations;
-  
+
   for (const k of keys) {
     if (!current || typeof current !== 'object' || !(k in current)) {
       return false;
     }
     current = current[k];
   }
-  
+
   return true;
 }
 
@@ -113,33 +113,33 @@ function keyExists(translations, key) {
 function validateCloudFunctionsTranslations() {
   console.log('🌐 Cloud Functions Translation Validation');
   console.log('==========================================');
-  
+
   // Load English file as reference
   const englishFile = path.join(CLOUD_FUNCTIONS_TRANSLATIONS_PATH, 'en.json');
   const englishData = loadTranslationFile(englishFile);
-  
+
   if (!englishData) {
     console.error(`❌ English translation file not found: ${englishFile}`);
     return false;
   }
-  
+
   console.log(`📋 Checking ${REQUIRED_KEYS.length} required keys...`);
-  
+
   let allValid = true;
-  
+
   // Check each language file
   for (const lang of SUPPORTED_LANGUAGES) {
     const langFile = path.join(CLOUD_FUNCTIONS_TRANSLATIONS_PATH, `${lang}.json`);
     const langData = loadTranslationFile(langFile);
-    
+
     if (!langData) {
       console.error(`❌ ${lang.toUpperCase()} translation file not found: ${langFile}`);
       allValid = false;
       continue;
     }
-    
+
     console.log(`\n🔍 Checking ${lang.toUpperCase()} translations...`);
-    
+
     // Check each required key
     const missingKeys = [];
     for (const key of REQUIRED_KEYS) {
@@ -147,7 +147,7 @@ function validateCloudFunctionsTranslations() {
         missingKeys.push(key);
       }
     }
-    
+
     if (missingKeys.length > 0) {
       console.error(`❌ Missing keys in ${lang.toUpperCase()}:`);
       missingKeys.forEach(key => console.error(`   - ${key}`));
@@ -155,7 +155,7 @@ function validateCloudFunctionsTranslations() {
     } else {
       console.log(`✅ ${lang.toUpperCase()} translations complete`);
     }
-    
+
     // Check for extra keys (optional warning)
     const allKeys = getAllKeys(langData);
     const extraKeys = allKeys.filter(key => !REQUIRED_KEYS.includes(key));
@@ -164,9 +164,9 @@ function validateCloudFunctionsTranslations() {
       extraKeys.forEach(key => console.warn(`   - ${key}`));
     }
   }
-  
+
   console.log('\n==========================================');
-  
+
   if (allValid) {
     console.log('✅ All Cloud Functions translation validations passed!');
     console.log('🎉 The i18n-ally warnings should be resolved.');
@@ -189,5 +189,5 @@ if (require.main === module) {
 
 module.exports = {
   validateCloudFunctionsTranslations,
-  REQUIRED_KEYS
-}; 
+  REQUIRED_KEYS,
+};

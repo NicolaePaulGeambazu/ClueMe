@@ -21,4 +21,4 @@ export default function EditReminderScreen({ navigation, route }: any) {
       reminderId={reminderId}
     />
   );
-} 
+}

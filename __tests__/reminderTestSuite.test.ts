@@ -9,4 +9,4 @@ describe('Comprehensive Reminder Test Suite', () => {
       expect(suite.failedTests).toBe(0);
     });
   });
-}); 
+});

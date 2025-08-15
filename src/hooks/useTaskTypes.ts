@@ -85,10 +85,10 @@ export const useTaskTypes = () => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // Use fallback task types since taskTypeService was removed
       setTaskTypes(defaultTaskTypes);
-      
+
     } catch (err) {
       setError('Failed to load task types');
       // Use fallback types on error
@@ -102,7 +102,7 @@ export const useTaskTypes = () => {
   const seedDefaultTaskTypes = useCallback(async () => {
     try {
       setError(null);
-      
+
       // Reset to default types
       setTaskTypes(defaultTaskTypes);
     } catch (err) {

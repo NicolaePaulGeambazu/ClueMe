@@ -1,18 +1,18 @@
 /**
  * Validation Utilities for Reminders
- * 
+ *
  * Comprehensive validation covering all edge cases and user behaviors
  */
 
-import { 
-  Reminder, 
-  ReminderFormData, 
+import {
+  Reminder,
+  ReminderFormData,
   ValidationResult,
   ReminderType,
   ReminderPriority,
   RepeatPattern,
   NotificationType,
-  ReminderStatus
+  ReminderStatus,
 } from '../types';
 import {
   normalizeDate,
@@ -84,7 +84,7 @@ export const validateReminderForm = (data: ReminderFormData): ValidationResult =
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 };
 
@@ -347,7 +347,7 @@ export const validateReminder = (reminder: Reminder): ValidationResult => {
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 };
 
@@ -411,7 +411,7 @@ export const checkDataConsistency = (reminder: Reminder): string[] => {
  * Validate reminder for specific operations
  */
 export const validateReminderForOperation = (
-  reminder: Reminder, 
+  reminder: Reminder,
   operation: 'create' | 'update' | 'delete' | 'complete' | 'cancel'
 ): ValidationResult => {
   const errors: string[] = [];
@@ -464,6 +464,6 @@ export const validateReminderForOperation = (
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
-}; 
+};

@@ -16,8 +16,8 @@ function writeJSON(file, data) {
 }
 
 function deepMerge(baseObj, targetObj) {
-  if (typeof baseObj !== 'object' || baseObj === null) return targetObj;
-  if (typeof targetObj !== 'object' || targetObj === null) targetObj = {};
+  if (typeof baseObj !== 'object' || baseObj === null) {return targetObj;}
+  if (typeof targetObj !== 'object' || targetObj === null) {targetObj = {};}
   const result = Array.isArray(baseObj) ? [...baseObj] : { ...targetObj };
   for (const key of Object.keys(baseObj)) {
     if (typeof baseObj[key] === 'object' && baseObj[key] !== null && !Array.isArray(baseObj[key])) {
@@ -35,4 +35,4 @@ for (const target of targets) {
   const merged = deepMerge(en, t);
   writeJSON(target, merged);
   console.log(`Synced: ${path.basename(target)}`);
-} 
+}

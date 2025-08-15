@@ -102,7 +102,7 @@ export const useFamily = () => {
       const memberId = await reminderService.addFamilyMember(memberData);
 
       // The listeners will automatically update the members list
-      
+
       return memberId;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add family member');
@@ -138,7 +138,7 @@ export const useFamily = () => {
       const activityId = await reminderService.createFamilyActivity(activityData);
 
       // The listeners will automatically update the activities list
-      
+
       return activityId;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create family activity');
@@ -255,14 +255,14 @@ export const useFamily = () => {
     }
 
 
-    
+
     let unsubscribeMembers: (() => void) | null = null;
     let unsubscribeActivities: (() => void) | null = null;
 
     try {
       unsubscribeMembers = reminderService.onFamilyMembersChange(family.id, (newMembers) => {
         try {
-      
+
           setMembers(newMembers);
         } catch (error) {
           // Fallback to manual load on error
@@ -272,7 +272,7 @@ export const useFamily = () => {
 
       unsubscribeActivities = reminderService.onFamilyActivitiesChange(family.id, (newActivities) => {
         try {
-      
+
           setActivities(newActivities);
         } catch (error) {
           // Fallback to manual load on error

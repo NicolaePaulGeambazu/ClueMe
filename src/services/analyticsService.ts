@@ -1,5 +1,6 @@
 // Mock Analytics Service - Firebase Analytics removed to fix build issues
 
+// Restore type/interface definitions needed for the class
 interface AnalyticsParameters {
   [key: string]: string | number | boolean | null | undefined;
 }
@@ -61,4 +62,4 @@ class AnalyticsService {
 }
 
 const analyticsService = new AnalyticsService();
-export default analyticsService; 
+export default analyticsService;

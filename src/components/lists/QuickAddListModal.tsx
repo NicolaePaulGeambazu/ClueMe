@@ -57,14 +57,14 @@ export default function QuickAddListModal({
   const { theme } = useTheme();
   const { user } = useAuth();
   const { family } = useFamily();
-  const { 
-    showFullScreenPaywall, 
-    showSmallPaywall, 
-    paywallMessage, 
+  const {
+    showFullScreenPaywall,
+    showSmallPaywall,
+    paywallMessage,
     paywallTrigger,
     checkListCreation,
     hidePaywall,
-    isLoading: monetizationLoading 
+    isLoading: monetizationLoading,
   } = useMonetization();
   const { canCreateList, incrementListCount } = useUserUsage();
   const colors = Colors[theme];
@@ -121,7 +121,7 @@ export default function QuickAddListModal({
   }, [visible]);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {return;}
 
     console.log('QuickAddListModal - Selected format:', selectedFormat);
     console.log('QuickAddListModal - Format options:', formatOptions.map(opt => ({ value: opt.value, label: opt.label })));
@@ -134,7 +134,7 @@ export default function QuickAddListModal({
         'You\'ve reached your limit of 2 lists. Upgrade to Pro for unlimited lists.',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: 'Upgrade', onPress: () => showFullScreenPaywall }
+          { text: 'Upgrade', onPress: () => showFullScreenPaywall },
         ]
       );
       return;
@@ -142,7 +142,7 @@ export default function QuickAddListModal({
 
     // Check monetization limits before saving
     const monetizationResult = await checkListCreation();
-    
+
     if (monetizationResult.isBlocking) {
       // Don't proceed with saving if blocked
       return;
@@ -157,18 +157,18 @@ export default function QuickAddListModal({
       createdBy: user?.uid,
       familyId: family?.id || null,
     };
-    
+
     console.log('QuickAddListModal - List data being saved:', listData);
     console.log('QuickAddListModal - Format being saved:', listData.format);
 
     try {
       setIsSaving(true);
-      
+
       await onSave(listData);
-      
+
       // Increment usage count after successful creation
       await incrementListCount();
-      
+
       handleClose();
     } catch (error) {
     } finally {
@@ -177,7 +177,7 @@ export default function QuickAddListModal({
   };
 
   const handleClose = () => {
-    
+
     // Reset all internal state
     setName('');
     setDescription('');
@@ -186,43 +186,43 @@ export default function QuickAddListModal({
     setShowFormatSheet(false);
     setShowPrivacySheet(false);
     setIsSaving(false);
-    
+
     // Then call the parent's onClose
     onClose();
   };
 
   const formatOptions = [
-    { 
-      value: 'checkmark', 
-      label: 'Checkmarks', 
+    {
+      value: 'checkmark',
+      label: 'Checkmarks',
       description: 'Check off completed items',
-      icon: CheckSquare 
+      icon: CheckSquare,
     },
-    { 
-      value: 'line', 
-      label: 'Lines', 
+    {
+      value: 'line',
+      label: 'Lines',
       description: 'Simple line items',
-      icon: ListIcon 
+      icon: ListIcon,
     },
-    { 
-      value: 'number', 
-      label: 'Numbers', 
+    {
+      value: 'number',
+      label: 'Numbers',
       description: 'Numbered list items',
-      icon: Hash 
+      icon: Hash,
     },
   ];
 
   // Get the format option for the selected format, with fallback for legacy formats
   const getFormatOption = (format: string) => {
     const option = formatOptions.find(opt => opt.value === format);
-    if (option) return option;
-    
+    if (option) {return option;}
+
     // Fallback for legacy formats or unknown formats
     return {
       value: format,
       label: format.charAt(0).toUpperCase() + format.slice(1),
       description: 'List format',
-      icon: CheckSquare
+      icon: CheckSquare,
     };
   };
 
@@ -231,14 +231,14 @@ export default function QuickAddListModal({
       value: false,
       label: 'Shared with Family',
       description: 'Family members can view this list',
-      icon: Users
+      icon: Users,
     },
     {
       value: true,
       label: 'Private (Owner Only)',
       description: 'Only you can see this list',
-      icon: Lock
-    }
+      icon: Lock,
+    },
   ];
 
   const handleFormatSelect = (value: string) => {
@@ -259,11 +259,11 @@ export default function QuickAddListModal({
       <View style={styles.selectorContainer}>
         <TouchableOpacity
           style={[
-            styles.selector, 
-            { 
+            styles.selector,
+            {
               borderColor: colors.borderLight,
               opacity: editingList ? 0.5 : 1,
-            }
+            },
           ]}
           onPress={() => !editingList && setShowFormatSheet(true)}
           disabled={!!editingList}
@@ -318,7 +318,7 @@ export default function QuickAddListModal({
       onRequestClose={handleClose}
       statusBarTranslucent={true}
     >
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.overlay}
         onPress={handleClose}
         activeOpacity={1}
@@ -326,10 +326,10 @@ export default function QuickAddListModal({
         <Animated.View
           style={[
             styles.modal,
-            { 
+            {
               backgroundColor: colors.background,
-              opacity: opacityAnim 
-            }
+              opacity: opacityAnim,
+            },
           ]}
           onStartShouldSetResponder={() => true}
           onTouchEnd={(e) => e.stopPropagation()}
@@ -343,8 +343,8 @@ export default function QuickAddListModal({
           >
             {/* Header */}
             <View style={styles.header}>
-              <TouchableOpacity 
-                style={styles.closeButton} 
+              <TouchableOpacity
+                style={styles.closeButton}
                 onPress={handleClose}
                 activeOpacity={0.7}
               >
@@ -363,10 +363,10 @@ export default function QuickAddListModal({
                   {t('lists.listName')}
                 </Text>
                 <TextInput
-                  style={[styles.titleInput, { 
+                  style={[styles.titleInput, {
                     borderColor: colors.borderLight,
                     color: colors.text,
-                    backgroundColor: colors.surface
+                    backgroundColor: colors.surface,
                   }]}
                   placeholder={t('forms.placeholders.enterListName')}
                   placeholderTextColor={colors.textTertiary}
@@ -383,10 +383,10 @@ export default function QuickAddListModal({
                   {t('lists.description')}
                 </Text>
                 <TextInput
-                  style={[styles.descriptionInput, { 
+                  style={[styles.descriptionInput, {
                     borderColor: colors.borderLight,
                     color: colors.text,
-                    backgroundColor: colors.surface
+                    backgroundColor: colors.surface,
                   }]}
                   placeholder={t('forms.placeholders.enterDescription')}
                   placeholderTextColor={colors.textTertiary}
@@ -420,10 +420,10 @@ export default function QuickAddListModal({
               <TouchableOpacity
                 style={[
                   styles.createButton,
-                  { 
+                  {
                     backgroundColor: name.trim() && !isSaving ? colors.primary : colors.borderLight,
-                    opacity: name.trim() && !isSaving ? 1 : 0.6
-                  }
+                    opacity: name.trim() && !isSaving ? 1 : 0.6,
+                  },
                 ]}
                 onPress={handleSave}
                 disabled={!name.trim() || isSaving}
@@ -433,7 +433,7 @@ export default function QuickAddListModal({
                     <ActivityIndicator size="small" color={colors.background} />
                     <Text style={[
                       styles.createButtonText,
-                      { color: colors.background }
+                      { color: colors.background },
                     ]}>
                       {t('common.saving')}
                     </Text>
@@ -443,7 +443,7 @@ export default function QuickAddListModal({
                     <Check size={20} color={name.trim() ? colors.background : colors.textTertiary} />
                     <Text style={[
                       styles.createButtonText,
-                      { color: name.trim() ? colors.background : colors.textTertiary }
+                      { color: name.trim() ? colors.background : colors.textTertiary },
                     ]}>
                       {editingList ? t('common.save') : t('lists.createList')}
                     </Text>
@@ -456,19 +456,19 @@ export default function QuickAddListModal({
 
         {/* Format Sheet */}
         {showFormatSheet && (
-          <View style={[styles.sheet, { 
+          <View style={[styles.sheet, {
             backgroundColor: colors.background,
-            paddingBottom: insets.bottom + 16 
-          }]}> 
+            paddingBottom: insets.bottom + 16,
+          }]}>
             <View style={styles.sheetHeader}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>Choose List Format</Text>
             </View>
             {formatOptions.map(opt => {
               const IconComponent = opt.icon;
               return (
-                <TouchableOpacity 
-                  key={opt.value} 
-                  style={styles.sheetOption} 
+                <TouchableOpacity
+                  key={opt.value}
+                  style={styles.sheetOption}
                   onPress={() => handleFormatSelect(opt.value)}
                 >
                   <View style={styles.sheetOptionContent}>
@@ -491,19 +491,19 @@ export default function QuickAddListModal({
 
         {/* Privacy Sheet */}
         {showPrivacySheet && (
-          <View style={[styles.sheet, { 
+          <View style={[styles.sheet, {
             backgroundColor: colors.background,
-            paddingBottom: insets.bottom + 16 
-          }]}> 
+            paddingBottom: insets.bottom + 16,
+          }]}>
             <View style={styles.sheetHeader}>
               <Text style={[styles.sheetTitle, { color: colors.text }]}>Choose Privacy Setting</Text>
             </View>
             {privacyOptions.map(opt => {
               const IconComponent = opt.icon;
               return (
-                <TouchableOpacity 
-                  key={opt.value.toString()} 
-                  style={styles.sheetOption} 
+                <TouchableOpacity
+                  key={opt.value.toString()}
+                  style={styles.sheetOption}
                   onPress={() => handlePrivacySelect(opt.value)}
                 >
                   <View style={styles.sheetOptionContent}>
@@ -739,4 +739,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginTop: 4,
     fontStyle: 'italic',
   },
-}); 
+});

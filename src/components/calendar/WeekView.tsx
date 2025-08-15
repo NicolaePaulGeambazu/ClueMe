@@ -32,12 +32,12 @@ export default function WeekView({ selectedDate, events, onDatePress, onEventPre
   // Group events by date
   const eventsByDate = useMemo(() => {
     const grouped: { [key: string]: CalendarEvent[] } = {};
-    
+
     weekDates.forEach(date => {
       const dateString = format(date, 'yyyy-MM-dd');
       grouped[dateString] = events.filter(event => event.dateString === dateString);
     });
-    
+
     return grouped;
   }, [events, weekDates]);
 
@@ -76,30 +76,30 @@ export default function WeekView({ selectedDate, events, onDatePress, onEventPre
         style={[
           styles.dayHeader,
           isSelected && { backgroundColor: colors.primary },
-          isTodayDate && !isSelected && { backgroundColor: `${colors.primary}15` }
+          isTodayDate && !isSelected && { backgroundColor: `${colors.primary}15` },
         ]}
         onPress={() => onDatePress(dateString)}
       >
         <Text style={[
           styles.dayName,
-          { color: isSelected ? colors.background : colors.textSecondary }
+          { color: isSelected ? colors.background : colors.textSecondary },
         ]}>
           {format(date, 'EEE')}
         </Text>
         <Text style={[
           styles.dayNumber,
-          { color: isSelected ? colors.background : isTodayDate ? colors.primary : colors.text }
+          { color: isSelected ? colors.background : isTodayDate ? colors.primary : colors.text },
         ]}>
           {format(date, 'd')}
         </Text>
         {dayEvents.length > 0 && (
           <View style={[
             styles.eventIndicator,
-            { backgroundColor: isSelected ? colors.background : colors.primary }
+            { backgroundColor: isSelected ? colors.background : colors.primary },
           ]}>
             <Text style={[
               styles.eventCount,
-              { color: isSelected ? colors.primary : colors.background }
+              { color: isSelected ? colors.primary : colors.background },
             ]}>
               {dayEvents.length}
             </Text>
@@ -122,17 +122,17 @@ export default function WeekView({ selectedDate, events, onDatePress, onEventPre
       }
     }
 
-    if (eventHour !== slotHour) return null;
+    if (eventHour !== slotHour) {return null;}
 
     return (
       <TouchableOpacity
         key={event.id}
         style={[
           styles.weekEvent,
-          { 
+          {
             backgroundColor: `${getEventTypeColor(event.type)}15`,
-            borderLeftColor: getEventTypeColor(event.type)
-          }
+            borderLeftColor: getEventTypeColor(event.type),
+          },
         ]}
         onPress={() => onEventPress(event)}
       >
@@ -161,7 +161,7 @@ export default function WeekView({ selectedDate, events, onDatePress, onEventPre
           const dateString = format(date, 'yyyy-MM-dd');
           const dayEvents = eventsByDate[dateString] || [];
           const slotEvents = dayEvents.filter(event => {
-            if (!event.dueTime) return slot.hour === 9; // Default to 9 AM
+            if (!event.dueTime) {return slot.hour === 9;} // Default to 9 AM
             const timeParts = event.dueTime.split(':');
             if (timeParts.length > 0) {
               const hours = parseInt(timeParts[0], 10);

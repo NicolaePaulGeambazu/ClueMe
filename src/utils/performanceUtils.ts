@@ -1,7 +1,5 @@
 // Performance monitoring utilities for family reminders
 
-import analyticsService from '../services/analyticsService';
-
 interface PerformanceMetrics {
   loadTime: number;
   cacheHitRate: number;
@@ -52,14 +50,14 @@ export class PerformanceMonitor {
 
     // Log performance warnings
     this.checkPerformanceWarnings(metric);
-    
+
     // Track performance with analytics (safely)
     try {
-      analyticsService.trackPerformance('reminder_load', metric.loadTime, {
-        cacheHit: metric.cacheHitRate,
-        queryCount: metric.queryCount,
-        familySize: metric.familySize
-      });
+      // analyticsService.trackPerformance('reminder_load', metric.loadTime, {
+      //   cacheHit: metric.cacheHitRate,
+      //   queryCount: metric.queryCount,
+      //   familySize: metric.familySize,
+      // });
     } catch (error) {
       // Silent fail for analytics
     }
@@ -69,41 +67,41 @@ export class PerformanceMonitor {
   checkPerformanceWarnings(metric: PerformanceMetrics): void {
     const now = Date.now();
     const duration = now - this.startTime;
-    
+
     if (metric.loadTime > 3000) {
       if (__DEV__) {
         // Development logging removed
       }
       try {
-        analyticsService.trackPerformance('performance_warning', duration, { 
-          details: `⚠️ Slow reminder load: ${metric.loadTime}ms for family size ${metric.familySize}` 
-        });
+        // analyticsService.trackPerformance('performance_warning', duration, {
+        //   details: `⚠️ Slow reminder load: ${metric.loadTime}ms for family size ${metric.familySize}`,
+        // });
       } catch (error) {
         // Silent fail for analytics
       }
     }
-    
+
     if (metric.queryCount > 10) {
       if (__DEV__) {
         // Development logging removed
       }
       try {
-        analyticsService.trackPerformance('performance_warning', duration, { 
-          details: `⚠️ Too many queries: ${metric.queryCount} queries for family size ${metric.familySize}` 
-        });
+        // analyticsService.trackPerformance('performance_warning', duration, {
+        //   details: `⚠️ Too many queries: ${metric.queryCount} queries for family size ${metric.familySize}`,
+        // });
       } catch (error) {
         // Silent fail for analytics
       }
     }
-    
+
     if (metric.familySize > 20) {
       if (__DEV__) {
         // Development logging removed
       }
       try {
-        analyticsService.trackPerformance('performance_warning', duration, { 
-          details: `⚠️ Large family detected: ${metric.familySize} members - consider pagination` 
-        });
+        // analyticsService.trackPerformance('performance_warning', duration, {
+        //   details: `⚠️ Large family detected: ${metric.familySize} members - consider pagination`,
+        // });
       } catch (error) {
         // Silent fail for analytics
       }
@@ -185,12 +183,12 @@ export const trackPerformance = (operation: string) => {
       try {
         const result = await method.apply(this, args);
         const loadTime = Date.now() - startTime;
-        
+
         // Extract family size from arguments if available
         const familySize = args.find(arg => arg?.memberCount)?.memberCount || 0;
-        
+
         performanceMonitor.trackReminderLoad(loadTime, false, 1, familySize);
-        
+
         return result;
       } catch (error) {
         const loadTime = Date.now() - startTime;
@@ -219,4 +217,4 @@ export const measurePerformance = async <T>(
     performanceMonitor.trackReminderLoad(loadTime, false, 1, familySize);
     throw error;
   }
-}; 
+};

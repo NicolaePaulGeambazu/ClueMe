@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import remoteConfigService from './remoteConfigService';
 import { revenueCatService, PRODUCT_IDS, ProductInfo } from './revenueCatService';
+import { FeatureFlagService } from './featureFlags';
 
 // Premium subscription types
 export type SubscriptionTier = 'free' | 'premium' | 'pro';
@@ -18,7 +19,7 @@ export interface PremiumFeatures {
   customIntervals: boolean;
   multipleDays: boolean;
   endConditions: boolean;
-  timezoneSupport: boolean;
+
   unlimitedLists: boolean;
 }
 
@@ -60,7 +61,7 @@ class PremiumService {
 
   // Initialize the service
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
     try {
       await this.loadRemotePricing();
       await this.refreshPremiumStatus();
@@ -73,16 +74,39 @@ class PremiumService {
   // Refresh premium status from RevenueCat (background, no full reload)
   async refreshPremiumStatus(): Promise<void> {
     try {
+      console.log('[PremiumService] Refreshing premium status...');
+      
+      // Check feature flags first (for simulator/testing)
+      const featureFlags = FeatureFlagService.getInstance();
+      const featureFlagTier = featureFlags.getUserTier();
+      const isProUser = featureFlags.isProUser();
+      
+      console.log('[PremiumService] Feature flag tier:', featureFlagTier, 'Is pro user:', isProUser);
+      
+      // If user is pro via feature flags, set premium status
+      if (isProUser) {
+        console.log('[PremiumService] User has premium via feature flags');
+        this.currentTier = 'pro';
+        this.features = this.getProFeatures();
+        return;
+      }
+      
+      // Check RevenueCat status
       await revenueCatService.initialize();
       const status = await revenueCatService.getSubscriptionStatus();
+      console.log('[PremiumService] RevenueCat status:', status);
+      
       if (status.isActive) {
         this.currentTier = 'premium';
         this.features = this.getPremiumFeatures();
+        console.log('[PremiumService] User has premium via RevenueCat');
       } else {
         this.currentTier = 'free';
         this.features = this.getFreeFeatures();
+        console.log('[PremiumService] User is on free tier');
       }
     } catch (error) {
+      console.error('[PremiumService] Error refreshing premium status:', error);
       // Fallback to free tier
       this.currentTier = 'free';
       this.features = this.getFreeFeatures();
@@ -158,7 +182,7 @@ class PremiumService {
       customIntervals: false,
       multipleDays: false,
       endConditions: false,
-      timezoneSupport: false,
+
       unlimitedLists: false,
     };
   }
@@ -176,7 +200,7 @@ class PremiumService {
       customIntervals: true,
       multipleDays: true,
       endConditions: true,
-      timezoneSupport: true,
+
       unlimitedLists: true,
     };
   }
@@ -190,19 +214,19 @@ class PremiumService {
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     try {
       const products = await revenueCatService.getAvailableProducts();
-      
+
       return products.map(product => {
         // Calculate savings for yearly plans
         let savings: string | undefined;
         let originalPrice: number | undefined;
-        
+
         if (product.interval === 'yearly') {
           // Find corresponding monthly/weekly product to calculate savings
-          const monthlyProduct = products.find((p: ProductInfo) => 
-            p.interval === 'monthly' && 
+          const monthlyProduct = products.find((p: ProductInfo) =>
+            p.interval === 'monthly' &&
             p.isFamilyShareable === product.isFamilyShareable
           );
-          
+
           if (monthlyProduct) {
             const yearlyPrice = monthlyProduct.priceAmount * 12;
             const savingsAmount = yearlyPrice - product.priceAmount;
@@ -229,10 +253,10 @@ class PremiumService {
       });
     } catch (error) {
       console.error('[PremiumService] Failed to get subscription plans from RevenueCat:', error);
-      
+
       // Fallback to hardcoded plans if RevenueCat fails
       const currencySymbol = remoteConfigService.getCurrentCurrencySymbol();
-      
+
       return [
         {
           id: 'premium_monthly',
@@ -293,7 +317,7 @@ class PremiumService {
   async purchasePlan(planId: string): Promise<boolean> {
     try {
       await revenueCatService.initialize();
-      
+
       // Get available offerings to find the correct product
       const offerings = await revenueCatService.getOfferings();
       if (!offerings) {
@@ -302,7 +326,7 @@ class PremiumService {
       }
 
       let targetPackage: any = null;
-      
+
       // Map planId to the correct offering package
       if (planId === 'premium_monthly') {
         // Try to find monthly package
@@ -311,7 +335,7 @@ class PremiumService {
         // Try to find yearly/annual package
         targetPackage = offerings.annual;
       }
-      
+
       if (!targetPackage) {
         console.error('[PremiumService] No matching package found for plan:', planId);
         console.log('[PremiumService] Available offerings:', offerings);
@@ -333,7 +357,7 @@ class PremiumService {
     this.currentTier = tier;
     this.features = this.getFeaturesForTier(tier);
     await this.storeSubscriptionTier(tier);
-    
+
     // TODO: Update Firebase with new subscription status
   }
 
@@ -357,7 +381,7 @@ class PremiumService {
     isActive: boolean;
   }> {
     const plans = await this.getSubscriptionPlans();
-    const currentPlan = plans.find(p => 
+    const currentPlan = plans.find(p =>
       this.currentTier === 'premium' && (p.id === 'premium_monthly' || p.id === 'premium_yearly')
     );
 
@@ -440,4 +464,4 @@ class PremiumService {
 const premiumService = new PremiumService();
 
 // Export the service instance
-export default premiumService; 
+export default premiumService;

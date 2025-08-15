@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, TextInput, Modal, TextInput as RNTextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Plus, Edit, Trash2, CheckSquare, Hash, List as ListIcon, Star, FileText, Check } from 'lucide-react-native';
+import { CheckSquare, Hash, List as ListIcon, FileText } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
-import { useAuth } from '../contexts/AuthContext';
 import { Colors } from '../constants/Colors';
-import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
+import { Fonts } from '../constants/Fonts';
 import { listService, UserList, ListItem } from '../services/firebaseService';
 import { useTranslation } from 'react-i18next';
 import GracePopup from '../components/common/GracePopup';
@@ -13,7 +12,6 @@ import GracePopup from '../components/common/GracePopup';
 export default function ListDetailScreen({ navigation, route }: any) {
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const { user } = useAuth();
   const { listId } = route.params;
   const { t } = useTranslation();
 
@@ -46,14 +44,14 @@ export default function ListDetailScreen({ navigation, route }: any) {
         isLoading,
         listName: list?.name,
         itemsCount: list?.items?.length,
-        error
+        error,
       });
     }
   }, [isLoading, list, error]);
 
   // Memoize sorted items
   const sortedItems = React.useMemo(() => {
-    if (!list) return [];
+    if (!list) {return [];}
     return [...list.items].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   }, [list]);
 
@@ -146,7 +144,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       await listService.updateListItem(listId, item.id, {
         completed: !item.completed,
       });
-      
+
       // The listener will automatically update the list
     } catch (error) {
       Alert.alert('Error', 'Failed to update item. Please try again.');
@@ -158,23 +156,23 @@ export default function ListDetailScreen({ navigation, route }: any) {
       console.log('Cannot add item: missing list or title');
       return;
     }
-    
+
     console.log('Adding item to list:', {
       listId,
       title: newItemTitle.trim(),
       description: newItemDescription.trim(),
       format: list.format,
-      sortOrder: list.items.length
+      sortOrder: list.items.length,
     });
-    
+
     console.log('List format:', list.format);
     console.log('List items before adding:', list.items.map(item => ({ id: item.id, title: item.title, format: item.format })));
-    
+
     setActionLoading(true);
     setError(null);
     try {
       let itemId: string;
-      
+
       if (list.format === 'plain') {
         // For plain text format, update the existing item or create the first one
         if (list.items.length > 0) {
@@ -204,23 +202,23 @@ export default function ListDetailScreen({ navigation, route }: any) {
           sortOrder: list.items.length,
         });
       }
-      
+
       console.log('Item added/updated successfully with ID:', itemId);
-      
+
       // The listener will automatically update the list
-      
+
       // Debug: Check the updated list after adding item
       setTimeout(() => {
         console.log('List items after adding:', list?.items.map(item => ({ id: item.id, title: item.title, format: item.format })));
       }, 1000);
-      
+
       // Store the title before clearing the form
       const addedItemTitle = newItemTitle.trim();
-      
+
       setNewItemTitle('');
       setNewItemDescription('');
       setIsAddModalVisible(false);
-      
+
       // Show success popup
       setGracePopup({
         visible: true,
@@ -268,7 +266,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       setNewItemDescription('');
       setEditingItem(null);
       setIsAddModalVisible(false);
-      
+
       // Show success popup
       setGracePopup({
         visible: true,
@@ -303,9 +301,9 @@ export default function ListDetailScreen({ navigation, route }: any) {
             onPress: async () => {
               try {
                 await listService.deleteListItem(listId, item.id);
-                
+
                 // The listener will automatically update the list
-                
+
                 // Show success popup
                 setGracePopup({
                   visible: true,
@@ -342,7 +340,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
     // Use the item's format, fallback to list format for backward compatibility
     const itemFormat = item.format || list.format;
     const IconComponent = getFormatIcon(itemFormat);
-    
+
     // Debug: Log the format being used for rendering
     console.log(`Rendering item "${item.title}" with format:`, { itemFormat, itemFormatValue: item.format, listFormat: list.format });
 
@@ -643,7 +641,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
               <Text style={[styles.modalButton, { color: colors.textSecondary }]}>Cancel</Text>
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
-              {list?.format === 'plain' 
+              {list?.format === 'plain'
                 ? (editingItem ? 'Edit Content' : 'Write Content')
                 : (editingItem ? t('lists.editItem') : t('lists.addItem'))
               }
@@ -699,7 +697,7 @@ export default function ListDetailScreen({ navigation, route }: any) {
       </Modal>
 
       {error && <ErrorState />}
-      
+
       <GracePopup
         visible={gracePopup.visible}
         message={gracePopup.message}

@@ -207,26 +207,26 @@ export default function PlanSelectionModal({
       // Get current subscription info to identify current plan
       const subscriptionInfo = await premium.getDetailedSubscriptionInfo();
       const allPlans = premium.plans;
-      
+
       // Filter out the current plan
       const filteredPlans = allPlans.filter(plan => {
         // If user has no active subscription, show all plans
-        if (!subscriptionInfo.isActive) return true;
-        
+        if (!subscriptionInfo.isActive) {return true;}
+
         // If user has active subscription, exclude current plan
         if (subscriptionInfo.planName) {
           const currentPlanName = subscriptionInfo.planName.toLowerCase();
           const planName = plan.name.toLowerCase();
-          
+
           // Exclude if it's the same plan type (monthly/yearly/weekly)
-          if (currentPlanName.includes('monthly') && planName.includes('monthly')) return false;
-          if (currentPlanName.includes('yearly') && planName.includes('yearly')) return false;
-          if (currentPlanName.includes('weekly') && planName.includes('weekly')) return false;
+          if (currentPlanName.includes('monthly') && planName.includes('monthly')) {return false;}
+          if (currentPlanName.includes('yearly') && planName.includes('yearly')) {return false;}
+          if (currentPlanName.includes('weekly') && planName.includes('weekly')) {return false;}
         }
-        
+
         return true;
       });
-      
+
       setAvailablePlans(filteredPlans);
     } catch (error) {
       console.error('Failed to load available plans:', error);
@@ -241,7 +241,7 @@ export default function PlanSelectionModal({
   };
 
   const handleConfirmSelection = () => {
-    if (!selectedPlan) return;
+    if (!selectedPlan) {return;}
 
     Alert.alert(
       t('settings.confirmPlanChange'),
@@ -344,21 +344,21 @@ export default function PlanSelectionModal({
                             {plan.priceString}
                           </Text>
                           <Text style={styles.planInterval}>
-                            /{plan.interval === 'monthly' ? t('settings.month') : 
-                              plan.interval === 'yearly' ? t('settings.year') : 
+                            /{plan.interval === 'monthly' ? t('settings.month') :
+                              plan.interval === 'yearly' ? t('settings.year') :
                               t('settings.week')}
                           </Text>
                         </View>
                       </View>
-                      
+
                       <View style={[
                         styles.planBadge,
-                        isCurrent && styles.currentPlanBadge
+                        isCurrent && styles.currentPlanBadge,
                       ]}>
                         {getPlanIcon(plan.id)}
                         <Text style={[
                           styles.planBadgeText,
-                          isCurrent && styles.currentPlanBadgeText
+                          isCurrent && styles.currentPlanBadgeText,
                         ]}>
                           {isCurrent ? t('settings.current') : t('settings.select')}
                         </Text>
@@ -401,12 +401,12 @@ export default function PlanSelectionModal({
                 <TouchableOpacity
                   style={[
                     styles.selectButton,
-                    isCurrentPlan(selectedPlan) && styles.currentPlanButton
+                    isCurrentPlan(selectedPlan) && styles.currentPlanButton,
                   ]}
                   onPress={handleConfirmSelection}
                 >
                   <Text style={styles.selectButtonText}>
-                    {isCurrentPlan(selectedPlan) 
+                    {isCurrentPlan(selectedPlan)
                       ? t('settings.currentPlanSelected')
                       : t('settings.selectThisPlan')
                     }
@@ -423,4 +423,4 @@ export default function PlanSelectionModal({
       </View>
     </Modal>
   );
-} 
+}

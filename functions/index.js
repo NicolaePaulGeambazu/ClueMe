@@ -13,7 +13,7 @@ const apnsConfig = {
   keyId: functions.config().apns?.key_id || '454ZN6QHTD',
   teamId: functions.config().apns?.team_id || 'M657G6YVPW',
   privateKey: fs.readFileSync(path.join(__dirname, 'AuthKey_454ZN6QHTD.p8'), 'utf8'),
-  bundleId: functions.config().apns?.bundle_id || 'org.reactjs.native.example.clueme2'
+  bundleId: functions.config().apns?.bundle_id || 'org.reactjs.native.example.clueme2',
 };
 
 /**
@@ -93,10 +93,10 @@ exports.sendFCMNotification = functions
       const { fcmToken, notification, data, type, userId } = notificationData;
 
       if (!fcmToken) {
-        await snap.ref.update({ 
-          status: 'failed', 
+        await snap.ref.update({
+          status: 'failed',
           error: 'No FCM token provided',
-          processedAt: admin.firestore.FieldValue.serverTimestamp()
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return;
       }
@@ -158,7 +158,7 @@ exports.sendFCMNotification = functions
       // Try sending via legacy API first, then fall back to standard Admin SDK
       let response;
       let methodUsed = 'admin_sdk';
-      
+
       try {
         // First try legacy API with better iOS support
         response = await sendFCMViaLegacy(fcmToken, notification, data);
@@ -166,7 +166,7 @@ exports.sendFCMNotification = functions
         console.log(`FCM notification sent successfully via legacy API: ${response}`);
       } catch (legacyError) {
         console.log(`Legacy API failed, trying standard Admin SDK: ${legacyError.message}`);
-        
+
         try {
           // Fall back to standard Admin SDK
           response = await admin.messaging().send(message);
@@ -174,11 +174,11 @@ exports.sendFCMNotification = functions
           console.log(`FCM notification sent successfully via Admin SDK: ${response}`);
         } catch (fcmError) {
           console.error(`FCM send error: ${fcmError.message}`);
-          
+
                   // If it's an auth error, mark as failed but don't retry
         if (fcmError.message.includes('Auth error from APNS')) {
           console.log('APNS auth error - creating local notification fallback');
-          
+
           // Instead of failing, create a local notification record
           // The client will pick this up and show a local notification
           await snap.ref.update({
@@ -186,9 +186,9 @@ exports.sendFCMNotification = functions
             error: fcmError.message,
             processedAt: admin.firestore.FieldValue.serverTimestamp(),
             reason: 'apns_auth_error',
-            note: 'Using local notification fallback due to APNs configuration issue'
+            note: 'Using local notification fallback due to APNs configuration issue',
           });
-          
+
           // Create a local notification record for the client to process
           await admin.firestore().collection('localNotifications').add({
             userId: notificationData.userId,
@@ -198,13 +198,13 @@ exports.sendFCMNotification = functions
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             status: 'pending',
             fcmToken: fcmToken,
-            originalNotificationId: snap.id
+            originalNotificationId: snap.id,
           });
-          
+
           console.log('Local notification fallback created for user');
           return;
         }
-          
+
           // For other errors, throw to trigger retry
           throw fcmError;
         }
@@ -256,13 +256,13 @@ exports.sendTaskAssignmentNotification = functions
     const assignmentData = snap.data();
 
     try {
-      const { 
-        reminderId, 
-        assignedByUserId, 
-        assignedToUserId, 
-        reminderTitle, 
+      const {
+        reminderId,
+        assignedByUserId,
+        assignedToUserId,
+        reminderTitle,
         assignedByDisplayName,
-        familyId 
+        familyId,
       } = assignmentData;
 
       if (!assignedToUserId || !reminderId) {
@@ -279,10 +279,10 @@ exports.sendTaskAssignmentNotification = functions
 
       const assignedUserData = assignedUserDoc.data();
       const fcmTokens = assignedUserData?.fcmTokens || [];
-      
+
       // Support both old fcmToken (singular) and new fcmTokens (array) for backward compatibility
       let fcmToken = null;
-      
+
       // Prefer fcmTokens array (new format) over fcmToken (old format)
       if (fcmTokens.length > 0) {
         fcmToken = fcmTokens[0]; // Use the first token in the array
@@ -295,7 +295,7 @@ exports.sendTaskAssignmentNotification = functions
         fcmToken: fcmToken,
         fcmTokens: fcmTokens,
         fcmTokenLength: fcmToken?.length,
-        fcmTokensLength: fcmTokens.length
+        fcmTokensLength: fcmTokens.length,
       });
 
       if (!fcmToken) {
@@ -310,7 +310,7 @@ exports.sendTaskAssignmentNotification = functions
       // Create translated notification for task assignment
       const notificationParams = {
         assignedBy: assignedByDisplayName || 'Someone',
-        title: reminderTitle || 'New Task'
+        title: reminderTitle || 'New Task',
       };
 
       const { title, body } = getNotificationText('taskAssigned', userLanguage, notificationParams);
@@ -376,7 +376,7 @@ exports.processScheduledNotification = functions
 
       // Process all priority levels for assigned users, but only high priority for creators
       const isAssignedUser = scheduledNotification.isAssignedUser || false;
-      
+
       if (!isAssignedUser && priority !== 'high') {
         console.log(`Skipping ${priority} priority notification for creator - should be handled client-side`);
         await snap.ref.update({
@@ -400,10 +400,10 @@ exports.processScheduledNotification = functions
       const reminderDoc = await admin.firestore().collection('reminders').doc(reminderId).get();
       if (!reminderDoc.exists) {
         console.log(`Reminder ${reminderId} not found`);
-        await snap.ref.update({ 
-          status: 'failed', 
+        await snap.ref.update({
+          status: 'failed',
           error: 'Reminder not found',
-          processedAt: admin.firestore.FieldValue.serverTimestamp()
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return;
       }
@@ -414,17 +414,17 @@ exports.processScheduledNotification = functions
       const userDoc = await admin.firestore().collection('users').doc(userId).get();
       if (!userDoc.exists) {
         console.log(`User ${userId} not found`);
-        await snap.ref.update({ 
-          status: 'failed', 
+        await snap.ref.update({
+          status: 'failed',
           error: 'User not found',
-          processedAt: admin.firestore.FieldValue.serverTimestamp()
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return;
       }
 
       const userData = userDoc.data();
       const fcmTokens = userData?.fcmTokens || [];
-      
+
       // Support both old fcmToken (singular) and new fcmTokens (array) for backward compatibility
       let fcmToken = userData?.fcmToken;
       if (!fcmToken && fcmTokens.length > 0) {
@@ -433,10 +433,10 @@ exports.processScheduledNotification = functions
 
       if (!fcmToken) {
         console.log(`No FCM token for user ${userId}`);
-        await snap.ref.update({ 
-          status: 'failed', 
+        await snap.ref.update({
+          status: 'failed',
           error: 'No FCM token',
-          processedAt: admin.firestore.FieldValue.serverTimestamp()
+          processedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
         return;
       }
@@ -462,7 +462,7 @@ exports.processScheduledNotification = functions
       const notificationParams = {
         title: reminder.title,
         description: reminder.description || '',
-        assignedBy: assignedByUser?.displayName || 'Someone'
+        assignedBy: assignedByUser?.displayName || 'Someone',
       };
 
       const { title, body } = getNotificationText(notificationType, userLanguage, notificationParams);
@@ -542,10 +542,10 @@ exports.sendScheduledReminders = functions
       // Process notifications in parallel with concurrency limit
       const batchSize = 20; // Increased batch size
       const notifications = scheduledNotificationsSnapshot.docs;
-      
+
       for (let i = 0; i < notifications.length; i += batchSize) {
         const batch = notifications.slice(i, i + batchSize);
-        
+
         // Process batch in parallel
         await Promise.all(batch.map(async (doc) => {
           try {
@@ -637,14 +637,14 @@ exports.scheduleTestNotification = functions
       const { reminderId, userId, scheduledTime, notificationType, priority } = req.body;
 
       if (!reminderId || !userId || !scheduledTime || !notificationType) {
-        res.status(400).json({ 
-          error: 'reminderId, userId, scheduledTime, and notificationType are required' 
+        res.status(400).json({
+          error: 'reminderId, userId, scheduledTime, and notificationType are required',
         });
         return;
       }
 
       const firestore = admin.firestore();
-      
+
       // Create scheduled notification
       const scheduledNotificationRef = await firestore.collection('scheduledNotifications').add({
         reminderId: reminderId,
@@ -669,7 +669,7 @@ exports.scheduleTestNotification = functions
         details: error.message,
       });
     }
-  }); 
+  });
 
 /**
  * Test function to verify APNs configuration
@@ -677,15 +677,15 @@ exports.scheduleTestNotification = functions
 exports.testAPNsConfig = functions.https.onRequest(async (req, res) => {
   try {
     console.log('Testing APNs configuration...');
-    
+
     // Log the APNs config (without sensitive data)
     console.log('APNs Config:', {
       keyId: apnsConfig.keyId,
       teamId: apnsConfig.teamId,
       bundleId: apnsConfig.bundleId,
-      privateKeyLength: apnsConfig.privateKey.length
+      privateKeyLength: apnsConfig.privateKey.length,
     });
-    
+
     res.json({
       success: true,
       message: 'APNs configuration loaded successfully',
@@ -693,17 +693,17 @@ exports.testAPNsConfig = functions.https.onRequest(async (req, res) => {
         keyId: apnsConfig.keyId,
         teamId: apnsConfig.teamId,
         bundleId: apnsConfig.bundleId,
-        privateKeyLoaded: !!apnsConfig.privateKey
-      }
+        privateKeyLoaded: !!apnsConfig.privateKey,
+      },
     });
   } catch (error) {
     console.error('APNs config test error:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
-}); 
+});
 
 /**
  * Cloud Function to clean up orphaned assignment records and scheduled notifications
@@ -721,175 +721,175 @@ exports.cleanupOrphanedNotifications = functions
   .onRequest(async (req, res) => {
     try {
       console.log('Starting cleanup of orphaned notifications...');
-      
+
       const batchSize = 500;
       let totalCleaned = 0;
-      
+
       // 1. Clean up orphaned task assignments (where reminder no longer exists)
       console.log('Cleaning up orphaned task assignments...');
       const assignmentsQuery = await admin.firestore()
         .collection('taskAssignments')
         .get();
-      
+
       const orphanedAssignments = [];
       for (const doc of assignmentsQuery.docs) {
         const assignmentData = doc.data();
         const reminderId = assignmentData.reminderId;
-        
+
         if (reminderId) {
           const reminderDoc = await admin.firestore()
             .collection('reminders')
             .doc(reminderId)
             .get();
-          
+
           if (!reminderDoc.exists) {
             orphanedAssignments.push(doc.id);
           }
         }
       }
-      
+
       // Delete orphaned assignments in batches
       for (let i = 0; i < orphanedAssignments.length; i += batchSize) {
         const batch = admin.firestore().batch();
         const batchIds = orphanedAssignments.slice(i, i + batchSize);
-        
+
         batchIds.forEach(id => {
           batch.delete(admin.firestore().collection('taskAssignments').doc(id));
         });
-        
+
         await batch.commit();
         console.log(`Deleted ${batchIds.length} orphaned task assignments`);
         totalCleaned += batchIds.length;
       }
-      
+
       // 2. Clean up orphaned scheduled notifications (where reminder no longer exists)
       console.log('Cleaning up orphaned scheduled notifications...');
       const scheduledQuery = await admin.firestore()
         .collection('scheduledNotifications')
         .get();
-      
+
       const orphanedScheduled = [];
       for (const doc of scheduledQuery.docs) {
         const scheduledData = doc.data();
         const reminderId = scheduledData.reminderId;
-        
+
         if (reminderId) {
           const reminderDoc = await admin.firestore()
             .collection('reminders')
             .doc(reminderId)
             .get();
-          
+
           if (!reminderDoc.exists) {
             orphanedScheduled.push(doc.id);
           }
         }
       }
-      
+
       // Delete orphaned scheduled notifications in batches
       for (let i = 0; i < orphanedScheduled.length; i += batchSize) {
         const batch = admin.firestore().batch();
         const batchIds = orphanedScheduled.slice(i, i + batchSize);
-        
+
         batchIds.forEach(id => {
           batch.delete(admin.firestore().collection('scheduledNotifications').doc(id));
         });
-        
+
         await batch.commit();
         console.log(`Deleted ${batchIds.length} orphaned scheduled notifications`);
         totalCleaned += batchIds.length;
       }
-      
+
       // 3. Clean up orphaned FCM notifications (where reminder no longer exists)
       console.log('Cleaning up orphaned FCM notifications...');
       const fcmQuery = await admin.firestore()
         .collection('fcmNotifications')
         .get();
-      
+
       const orphanedFCM = [];
       for (const doc of fcmQuery.docs) {
         const fcmData = doc.data();
         const reminderId = fcmData.data?.reminderId;
-        
+
         if (reminderId) {
           const reminderDoc = await admin.firestore()
             .collection('reminders')
             .doc(reminderId)
             .get();
-          
+
           if (!reminderDoc.exists) {
             orphanedFCM.push(doc.id);
           }
         }
       }
-      
+
       // Delete orphaned FCM notifications in batches
       for (let i = 0; i < orphanedFCM.length; i += batchSize) {
         const batch = admin.firestore().batch();
         const batchIds = orphanedFCM.slice(i, i + batchSize);
-        
+
         batchIds.forEach(id => {
           batch.delete(admin.firestore().collection('fcmNotifications').doc(id));
         });
-        
+
         await batch.commit();
         console.log(`Deleted ${batchIds.length} orphaned FCM notifications`);
         totalCleaned += batchIds.length;
       }
-      
+
       // 4. Clean up old completed/processed notifications (older than 30 days)
       console.log('Cleaning up old completed notifications...');
       const thirtyDaysAgo = admin.firestore.Timestamp.fromDate(
         new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
       );
-      
+
       // Clean up old FCM notifications (simplified query)
       const oldFCMQuery = await admin.firestore()
         .collection('fcmNotifications')
         .where('timestamp', '<', thirtyDaysAgo)
         .get();
-      
+
       const oldFCMIds = oldFCMQuery.docs
         .filter(doc => ['sent', 'failed', 'processed'].includes(doc.data().status))
         .map(doc => doc.id);
-      
+
       for (let i = 0; i < oldFCMIds.length; i += batchSize) {
         const batch = admin.firestore().batch();
         const batchIds = oldFCMIds.slice(i, i + batchSize);
-        
+
         batchIds.forEach(id => {
           batch.delete(admin.firestore().collection('fcmNotifications').doc(id));
         });
-        
+
         await batch.commit();
         console.log(`Deleted ${batchIds.length} old FCM notifications`);
         totalCleaned += batchIds.length;
       }
-      
+
       // Clean up old scheduled notifications (simplified query)
       const oldScheduledQuery = await admin.firestore()
         .collection('scheduledNotifications')
         .where('createdAt', '<', thirtyDaysAgo)
         .get();
-      
+
       const oldScheduledIds = oldScheduledQuery.docs
         .filter(doc => ['processed', 'failed', 'skipped'].includes(doc.data().status))
         .map(doc => doc.id);
-      
+
       for (let i = 0; i < oldScheduledIds.length; i += batchSize) {
         const batch = admin.firestore().batch();
         const batchIds = oldScheduledIds.slice(i, i + batchSize);
-        
+
         batchIds.forEach(id => {
           batch.delete(admin.firestore().collection('scheduledNotifications').doc(id));
         });
-        
+
         await batch.commit();
         console.log(`Deleted ${batchIds.length} old scheduled notifications`);
         totalCleaned += batchIds.length;
       }
-      
+
       console.log(`Cleanup completed! Total records cleaned: ${totalCleaned}`);
-      
+
       res.status(200).json({
         success: true,
         message: `Cleanup completed successfully! Total records cleaned: ${totalCleaned}`,
@@ -899,15 +899,15 @@ exports.cleanupOrphanedNotifications = functions
           orphanedFCM: orphanedFCM.length,
           oldFCM: oldFCMIds.length,
           oldScheduled: oldScheduledIds.length,
-          totalCleaned
-        }
+          totalCleaned,
+        },
       });
-      
+
     } catch (error) {
       console.error('Error during cleanup:', error);
       res.status(500).json({
         success: false,
-        error: error.message
+        error: error.message,
       });
     }
-  }); 
+  });

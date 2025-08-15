@@ -17,4 +17,4 @@ jest.mock('react-native-permissions', () => ({
 }));
 jest.mock('react-native-push-notification', () => ({
   localNotificationSchedule: jest.fn(),
-})); 
+}));

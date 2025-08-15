@@ -2,10 +2,10 @@
 
 /**
  * Migration script to move API keys from .env file to react-native-keychain
- * 
+ *
  * This script helps developers migrate their sensitive API keys from environment
  * variables to secure storage using react-native-keychain.
- * 
+ *
  * Usage:
  *   node scripts/migrate-keys-to-keychain.js
  */
@@ -56,7 +56,7 @@ const DEFAULT_VALUES = [
 ];
 
 function isDefaultValue(value) {
-  return DEFAULT_VALUES.some(defaultVal => 
+  return DEFAULT_VALUES.some(defaultVal =>
     value.includes(defaultVal) || value === defaultVal
   );
 }
@@ -85,7 +85,7 @@ function parseEnvFile(envPath) {
 
 function createMigrationCode(envVars) {
   const validKeys = {};
-  
+
   KEYS_TO_MIGRATE.forEach(key => {
     const value = envVars[key];
     if (value && !isDefaultValue(value)) {
@@ -99,41 +99,41 @@ function createMigrationCode(envVars) {
 
   const codeLines = [
     "import secureKeyService from '../src/services/secureKeyService';",
-    "",
-    "// Migration script to move keys from .env to secure storage",
-    "export const migrateKeysToKeychain = async () => {",
-    "  try {",
+    '',
+    '// Migration script to move keys from .env to secure storage',
+    'export const migrateKeysToKeychain = async () => {',
+    '  try {',
     "    console.log('🔐 Starting key migration to secure storage...');",
-    "    ",
-    "    // Initialize secure key service",
-    "    await secureKeyService.initialize();",
-    "    ",
+    '    ',
+    '    // Initialize secure key service',
+    '    await secureKeyService.initialize();',
+    '    ',
   ];
 
   Object.entries(validKeys).forEach(([key, value]) => {
     codeLines.push(`    // Store ${key}`);
     codeLines.push(`    await secureKeyService.storeKey('${key}', '${value}');`);
     codeLines.push(`    console.log('✅ Migrated ${key}');`);
-    codeLines.push("    ");
+    codeLines.push('    ');
   });
 
   codeLines.push("    console.log('🎉 Key migration completed successfully!');");
   codeLines.push("    console.log('📝 You can now remove these keys from your .env file.');");
-  codeLines.push("    ");
-  codeLines.push("    // Validate migration");
-  codeLines.push("    const validation = await secureKeyService.validateKeys();");
-  codeLines.push("    if (validation.valid) {");
+  codeLines.push('    ');
+  codeLines.push('    // Validate migration');
+  codeLines.push('    const validation = await secureKeyService.validateKeys();');
+  codeLines.push('    if (validation.valid) {');
   codeLines.push("      console.log('✅ All keys validated successfully');");
-  codeLines.push("    } else {");
+  codeLines.push('    } else {');
   codeLines.push("      console.log('⚠️  Some keys are missing:', validation.missing);");
-  codeLines.push("    }");
-  codeLines.push("    ");
-  codeLines.push("    return true;");
-  codeLines.push("  } catch (error) {");
+  codeLines.push('    }');
+  codeLines.push('    ');
+  codeLines.push('    return true;');
+  codeLines.push('  } catch (error) {');
   codeLines.push("    console.error('❌ Migration failed:', error);");
-  codeLines.push("    return false;");
-  codeLines.push("  }");
-  codeLines.push("};");
+  codeLines.push('    return false;');
+  codeLines.push('  }');
+  codeLines.push('};');
 
   return codeLines.join('\n');
 }
@@ -143,7 +143,7 @@ function createEnvBackup(envPath, envVars) {
   const backupContent = Object.entries(envVars)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
-  
+
   fs.writeFileSync(backupPath, backupContent);
   return backupPath;
 }
@@ -151,7 +151,7 @@ function createEnvBackup(envPath, envVars) {
 function createCleanEnvFile(envPath, envVars) {
   const lines = fs.readFileSync(envPath, 'utf8').split('\n');
   const newLines = [];
-  
+
   lines.forEach(line => {
     const trimmed = line.trim();
     if (trimmed && !trimmed.startsWith('#')) {
@@ -166,14 +166,14 @@ function createCleanEnvFile(envPath, envVars) {
       newLines.push(line);
     }
   });
-  
+
   return newLines.join('\n');
 }
 
 async function promptUser(question) {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
 
   return new Promise((resolve) => {
@@ -186,11 +186,11 @@ async function promptUser(question) {
 
 async function main() {
   log.header('🔐 ClearCue Key Migration to Secure Storage');
-  
+
   const projectRoot = path.resolve(__dirname, '..');
   const envPath = path.join(projectRoot, '.env');
   const envExamplePath = path.join(projectRoot, 'env');
-  
+
   // Check if .env file exists
   let envVars = {};
   if (fs.existsSync(envPath)) {
@@ -208,7 +208,7 @@ async function main() {
   // Find valid keys to migrate
   const validKeys = {};
   const invalidKeys = [];
-  
+
   KEYS_TO_MIGRATE.forEach(key => {
     const value = envVars[key];
     if (value && !isDefaultValue(value)) {
@@ -241,7 +241,7 @@ async function main() {
   // Ask for confirmation
   console.log('\n');
   const answer = await promptUser('Do you want to proceed with the migration? (y/N): ');
-  
+
   if (answer !== 'y' && answer !== 'yes') {
     log.info('Migration cancelled');
     process.exit(0);
@@ -250,7 +250,7 @@ async function main() {
   // Create migration code
   const migrationCode = createMigrationCode(envVars);
   const migrationPath = path.join(projectRoot, 'src/utils/migrateKeys.ts');
-  
+
   // Ensure utils directory exists
   const utilsDir = path.dirname(migrationPath);
   if (!fs.existsSync(utilsDir)) {
@@ -300,4 +300,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { main, createMigrationCode, parseEnvFile }; 
+module.exports = { main, createMigrationCode, parseEnvFile };

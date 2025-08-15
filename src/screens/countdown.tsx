@@ -1,26 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  RefreshControl, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
   Alert,
   Animated,
   Dimensions,
   Platform,
   Pressable,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Clock, 
-  Calendar, 
-  ArrowLeft, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Clock,
+  Calendar,
+  ArrowLeft,
   AlertCircle,
   Timer,
   Sparkles,
@@ -30,7 +30,7 @@ import {
   Bell,
   Share2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../contexts/ThemeContext';
@@ -255,14 +255,14 @@ export default function CountdownScreen({ navigation, route }: any) {
     const maxDuration = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
     const percentage = Math.min(100, Math.max(0, ((maxDuration - difference) / maxDuration) * 100));
 
-    return { 
-      days, 
-      hours, 
-      minutes, 
-      seconds, 
-      isExpired: false, 
-      totalSeconds: Math.floor(difference / 1000), 
-      percentage 
+    return {
+      days,
+      hours,
+      minutes,
+      seconds,
+      isExpired: false,
+      totalSeconds: Math.floor(difference / 1000),
+      percentage,
     };
   };
 
@@ -318,8 +318,8 @@ export default function CountdownScreen({ navigation, route }: any) {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
+    if (hour < 12) {return 'Good Morning';}
+    if (hour < 17) {return 'Good Afternoon';}
     return 'Good Evening';
   };
 
@@ -355,7 +355,7 @@ export default function CountdownScreen({ navigation, route }: any) {
   const handleShareCountdown = (countdown: Countdown) => {
     const timeRemaining = calculateTimeRemaining(countdown.targetDate, countdown.targetTime);
     const shareText = `${countdown.title} - ${timeRemaining.isExpired ? 'Time\'s up!' : `${timeRemaining.days}d ${timeRemaining.hours}h ${timeRemaining.minutes}m remaining`}`;
-    
+
     // For now, just show an alert. In a real app, you'd use Share API
     Alert.alert(
       'Share Countdown',
@@ -372,7 +372,7 @@ export default function CountdownScreen({ navigation, route }: any) {
 
   const handleNotifyCountdown = (countdown: Countdown) => {
     const timeRemaining = calculateTimeRemaining(countdown.targetDate, countdown.targetTime);
-    
+
     if (timeRemaining.isExpired) {
       Alert.alert('Countdown Expired', 'This countdown has already expired!');
       return;
@@ -402,7 +402,7 @@ export default function CountdownScreen({ navigation, route }: any) {
   const handleCollapse = (countdownId: string) => {
     const animation = getCardAnimation(countdownId);
     const isCurrentlyCollapsed = collapsedCards[countdownId] || false;
-    
+
     // Animate the transition
     Animated.timing(animation, {
       toValue: isCurrentlyCollapsed ? 1 : 0.95,
@@ -418,7 +418,7 @@ export default function CountdownScreen({ navigation, route }: any) {
       acc[countdown.id] = true;
       return acc;
     }, {} as { [key: string]: boolean });
-    
+
     setCollapsedCards(allCollapsed);
   };
 
@@ -444,7 +444,7 @@ export default function CountdownScreen({ navigation, route }: any) {
     <SafeAreaView style={[styles.container, { position: 'relative' }]}>
       {/* Show navigation header when accessed from quick actions */}
       {isFromNavigation && (
-        <Animated.View 
+        <Animated.View
           style={[
             styles.navigationHeader,
             {
@@ -463,7 +463,7 @@ export default function CountdownScreen({ navigation, route }: any) {
 
       {/* Show regular header when not from navigation */}
       {!isFromNavigation && (
-        <Animated.View 
+        <Animated.View
           style={[
             styles.header,
             {
@@ -508,10 +508,10 @@ export default function CountdownScreen({ navigation, route }: any) {
       )}
 
       {isAnonymous && (
-        <Animated.View 
+        <Animated.View
           style={[
             styles.anonymousNotice,
-            { opacity: fadeAnim }
+            { opacity: fadeAnim },
           ]}
         >
           <Sparkles size={20} color={colors.primary} />
@@ -533,10 +533,10 @@ export default function CountdownScreen({ navigation, route }: any) {
         }
       >
         {countdowns.length === 0 ? (
-          <Animated.View 
+          <Animated.View
             style={[
               styles.emptyState,
-              { opacity: fadeAnim }
+              { opacity: fadeAnim },
             ]}
           >
             <View style={styles.emptyIconContainer}>
@@ -599,14 +599,14 @@ export default function CountdownScreen({ navigation, route }: any) {
                     {/* Progress bar */}
                     <View style={styles.progressContainer}>
                       <View style={[styles.progressBar, { backgroundColor: 'rgba(255,255,255,0.3)' }]}>
-                        <View 
+                        <View
                           style={[
-                            styles.progressFill, 
-                            { 
+                            styles.progressFill,
+                            {
                               width: `${timeRemaining.percentage}%`,
-                              backgroundColor: 'rgba(255,255,255,0.8)'
-                            }
-                          ]} 
+                              backgroundColor: 'rgba(255,255,255,0.8)',
+                            },
+                          ]}
                         />
                       </View>
                     </View>

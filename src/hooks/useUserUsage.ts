@@ -11,18 +11,18 @@ interface UseUserUsageReturn {
     countdowns: { current: number; limit: number; remaining: number };
     nextResetDate: Date;
   } | null;
-  
+
   // Permission checks
   canCreateReminder: boolean;
   canCreateList: boolean;
   canCreateCountdown: boolean;
-  
+
   // Actions
   incrementReminderCount: () => Promise<void>;
   incrementListCount: () => Promise<void>;
   incrementCountdownCount: () => Promise<void>;
   refreshUsage: () => Promise<void>;
-  
+
   // Loading state
   isLoading: boolean;
   error: string | null;
@@ -78,8 +78,8 @@ export const useUserUsage = (): UseUserUsageReturn => {
 
   // Increment reminder count
   const incrementReminderCount = useCallback(async () => {
-    if (!user?.uid) return;
-    
+    if (!user?.uid) {return;}
+
     try {
       await userUsageService.incrementReminderCount(user.uid);
       await refreshUsage(); // Refresh to get updated counts
@@ -90,8 +90,8 @@ export const useUserUsage = (): UseUserUsageReturn => {
 
   // Increment list count
   const incrementListCount = useCallback(async () => {
-    if (!user?.uid) return;
-    
+    if (!user?.uid) {return;}
+
     try {
       await userUsageService.incrementListCount(user.uid);
       await refreshUsage(); // Refresh to get updated counts
@@ -102,8 +102,8 @@ export const useUserUsage = (): UseUserUsageReturn => {
 
   // Increment countdown count
   const incrementCountdownCount = useCallback(async () => {
-    if (!user?.uid) return;
-    
+    if (!user?.uid) {return;}
+
     try {
       await userUsageService.incrementCountdownCount(user.uid);
       await refreshUsage(); // Refresh to get updated counts
@@ -130,4 +130,4 @@ export const useUserUsage = (): UseUserUsageReturn => {
     isLoading,
     error,
   };
-}; 
+};

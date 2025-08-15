@@ -1,6 +1,6 @@
 /**
  * Core Reminder Types
- * 
+ *
  * All reminder-related types are centralized here for consistency
  * and better type safety across the application.
  */
@@ -16,7 +16,7 @@ export interface Reminder {
   type: ReminderType;
   priority: ReminderPriority;
   status: ReminderStatus;
-  
+
   // Date and time fields
   dueDate?: Date;
   dueTime?: string;
@@ -24,16 +24,12 @@ export interface Reminder {
   startTime?: string;
   endDate?: Date;
   endTime?: string;
-  
-  // Timezone fields - Critical for proper notification scheduling
-  timezone?: string; // IANA timezone identifier (e.g., 'America/New_York')
-  timezoneOffset?: number; // User's timezone offset in minutes when reminder was created
-  
+
   // Location and metadata
   location?: string;
   tags?: string[];
   isFavorite?: boolean;
-  
+
   // Recurring fields
   isRecurring?: boolean;
   repeatPattern?: RepeatPattern;
@@ -43,30 +39,30 @@ export interface Reminder {
   recurringEndDate?: Date;
   recurringEndAfter?: number; // Number of occurrences before ending (optional)
   recurringGroupId?: string; // ID to group related recurring reminders together
-  
+
   // Notification fields - Updated for premium features
   hasNotification?: boolean;
   notificationTimings?: NotificationTiming[];
   notificationTimes?: number[]; // Legacy field for backward compatibility (minutes before due)
-  
+
   // Premium feature flags
   isPremiumFeature?: boolean; // Indicates if this reminder uses premium features
-  
+
   // Assignment fields
   assignedTo?: string[];
   assignedBy?: string;
-  
+
   // Family sharing fields
   sharedWithFamily?: boolean;
   sharedForEditing?: boolean;
   familyId?: string;
-  
+
   // Task chunking fields - ADHD-friendly feature
   isChunked?: boolean; // Indicates if this task has been broken down into sub-tasks
   subTasks?: SubTask[]; // Array of sub-tasks
   parentTaskId?: string; // ID of parent task (for sub-tasks)
   chunkedProgress?: number; // Progress percentage (0-100) for chunked tasks
-  
+
   // System fields
   completed?: boolean;
   deletedAt?: Date;
@@ -157,7 +153,7 @@ export interface ReminderFormData {
   recurringStartDate?: Date;
   recurringEndDate?: Date;
   assignedTo: string[];
-  
+
   // Task chunking fields
   isChunked?: boolean;
   subTasks?: SubTask[];
@@ -271,4 +267,4 @@ export interface ReminderListProps {
   emptyMessage?: string;
   filter?: ReminderFilter;
   sort?: ReminderSort;
-} 
+}

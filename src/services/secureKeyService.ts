@@ -30,7 +30,7 @@ class SecureKeyService {
    * Initialize the secure key service
    */
   async initialize(): Promise<boolean> {
-    if (this.isInitialized) return true;
+    if (this.isInitialized) {return true;}
 
     try {
       // Check if keychain is available
@@ -63,10 +63,10 @@ class SecureKeyService {
       const key = SECURE_KEYS[keyType];
 
       await Keychain.setGenericPassword(key, value, { service: key });
-      
+
       // Update cache
       this.keyCache.set(key, value);
-      
+
       console.log(`[SecureKeyService] Stored key: ${keyType}`);
       return true;
     } catch (error) {
@@ -92,7 +92,7 @@ class SecureKeyService {
       }
 
       const credentials = await Keychain.getGenericPassword({ service: key });
-      
+
       if (credentials && credentials.password) {
         // Update cache
         this.keyCache.set(key, credentials.password);
@@ -117,10 +117,10 @@ class SecureKeyService {
 
       const key = SECURE_KEYS[keyType];
       await Keychain.resetGenericPassword({ service: key });
-      
+
       // Remove from cache
       this.keyCache.delete(key);
-      
+
       console.log(`[SecureKeyService] Removed key: ${keyType}`);
       return true;
     } catch (error) {
@@ -146,11 +146,11 @@ class SecureKeyService {
    */
   async getAllKeys(): Promise<Record<SecureKeyType, string | null>> {
     const result: Record<SecureKeyType, string | null> = {} as any;
-    
+
     for (const keyType of Object.keys(SECURE_KEYS) as SecureKeyType[]) {
       result[keyType] = await this.getKey(keyType);
     }
-    
+
     return result;
   }
 
@@ -162,7 +162,7 @@ class SecureKeyService {
       for (const keyType of Object.keys(SECURE_KEYS) as SecureKeyType[]) {
         await this.removeKey(keyType);
       }
-      
+
       this.keyCache.clear();
       console.log('[SecureKeyService] Cleared all keys');
       return true;
@@ -179,7 +179,7 @@ class SecureKeyService {
     try {
       // Import Config dynamically to avoid issues if not available
       const Config = require('react-native-config').default;
-      
+
       const envKeys: Record<SecureKeyType, string | undefined> = {
         REVENUECAT_IOS_API_KEY: Config.REVENUECAT_IOS_API_KEY,
         REVENUECAT_ANDROID_API_KEY: Config.REVENUECAT_ANDROID_API_KEY,
@@ -191,7 +191,7 @@ class SecureKeyService {
       };
 
       let migratedCount = 0;
-      
+
       for (const [keyType, value] of Object.entries(envKeys)) {
         if (value && value !== 'your-google-maps-api-key' && !value.includes('YOUR_')) {
           const success = await this.storeKey(keyType as SecureKeyType, value);
@@ -215,14 +215,14 @@ class SecureKeyService {
    */
   async validateKeys(): Promise<{ valid: boolean; missing: SecureKeyType[] }> {
     const missing: SecureKeyType[] = [];
-    
+
     for (const keyType of Object.keys(SECURE_KEYS) as SecureKeyType[]) {
       const hasKey = await this.hasKey(keyType);
       if (!hasKey) {
         missing.push(keyType);
       }
     }
-    
+
     return {
       valid: missing.length === 0,
       missing,
@@ -232,4 +232,4 @@ class SecureKeyService {
 
 // Export singleton instance
 export const secureKeyService = new SecureKeyService();
-export default secureKeyService; 
+export default secureKeyService;

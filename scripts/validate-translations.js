@@ -17,7 +17,7 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m',
   reset: '\x1b[0m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
 // Paths to translation files
@@ -36,7 +36,7 @@ class TranslationValidator {
   // Load all translation files
   loadTranslations() {
     console.log(`${colors.blue}${colors.bold}Loading translation files...${colors.reset}`);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
       const filePath = path.join(LOCALES_DIR, `${lang}.json`);
       try {
@@ -85,22 +85,22 @@ class TranslationValidator {
   // Check for missing keys
   checkMissingKeys() {
     console.log(`\n${colors.blue}${colors.bold}Checking for missing keys...${colors.reset}`);
-    
+
     const baseKeys = this.getAllKeys(this.translations[BASE_LANGUAGE]);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
-      if (lang === BASE_LANGUAGE) return;
-      
+      if (lang === BASE_LANGUAGE) {return;}
+
       this.missingKeys[lang] = [];
       const langKeys = this.getAllKeys(this.translations[lang]);
-      
+
       baseKeys.forEach(key => {
         if (!langKeys.includes(key)) {
           this.missingKeys[lang].push(key);
           this.totalIssues++;
         }
       });
-      
+
       if (this.missingKeys[lang].length > 0) {
         console.log(`${colors.red}✗${colors.reset} ${lang}: ${this.missingKeys[lang].length} missing keys`);
       } else {
@@ -112,51 +112,51 @@ class TranslationValidator {
   // Check for incomplete translations (empty strings, same as English, etc.)
   checkIncompleteTranslations() {
     console.log(`\n${colors.blue}${colors.bold}Checking for incomplete translations...${colors.reset}`);
-    
+
     const baseKeys = this.getAllKeys(this.translations[BASE_LANGUAGE]);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
-      if (lang === BASE_LANGUAGE) return;
-      
+      if (lang === BASE_LANGUAGE) {return;}
+
       this.incompleteTranslations[lang] = [];
-      
+
       baseKeys.forEach(key => {
         const baseValue = this.getNestedValue(this.translations[BASE_LANGUAGE], key);
         const langValue = this.getNestedValue(this.translations[lang], key);
-        
-        if (langValue === undefined) return; // Already caught by missing keys check
-        
+
+        if (langValue === undefined) {return;} // Already caught by missing keys check
+
         // Check for empty strings
         if (langValue === '') {
           this.incompleteTranslations[lang].push({
             key,
             issue: 'empty_string',
-            value: langValue
+            value: langValue,
           });
           this.totalIssues++;
         }
-        
+
         // Check if translation is same as English (likely untranslated)
         else if (langValue === baseValue) {
           this.incompleteTranslations[lang].push({
             key,
             issue: 'same_as_english',
-            value: langValue
+            value: langValue,
           });
           this.totalIssues++;
         }
-        
+
         // Check for placeholder text
         else if (langValue.includes('TODO') || langValue.includes('TRANSLATE')) {
           this.incompleteTranslations[lang].push({
             key,
             issue: 'placeholder_text',
-            value: langValue
+            value: langValue,
           });
           this.totalIssues++;
         }
       });
-      
+
       if (this.incompleteTranslations[lang].length > 0) {
         console.log(`${colors.yellow}⚠${colors.reset} ${lang}: ${this.incompleteTranslations[lang].length} incomplete translations`);
       } else {
@@ -168,23 +168,23 @@ class TranslationValidator {
   // Check for placeholder mismatches
   checkPlaceholderMismatches() {
     console.log(`\n${colors.blue}${colors.bold}Checking for placeholder mismatches...${colors.reset}`);
-    
+
     const baseKeys = this.getAllKeys(this.translations[BASE_LANGUAGE]);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
-      if (lang === BASE_LANGUAGE) return;
-      
+      if (lang === BASE_LANGUAGE) {return;}
+
       this.placeholderMismatches[lang] = [];
-      
+
       baseKeys.forEach(key => {
         const baseValue = this.getNestedValue(this.translations[BASE_LANGUAGE], key);
         const langValue = this.getNestedValue(this.translations[lang], key);
-        
-        if (langValue === undefined) return;
-        
+
+        if (langValue === undefined) {return;}
+
         const basePlaceholders = this.extractPlaceholders(baseValue);
         const langPlaceholders = this.extractPlaceholders(langValue);
-        
+
         // Check for missing placeholders
         const missingPlaceholders = basePlaceholders.filter(p => !langPlaceholders.includes(p));
         if (missingPlaceholders.length > 0) {
@@ -193,11 +193,11 @@ class TranslationValidator {
             issue: 'missing_placeholders',
             missing: missingPlaceholders,
             baseValue,
-            langValue
+            langValue,
           });
           this.totalIssues++;
         }
-        
+
         // Check for extra placeholders
         const extraPlaceholders = langPlaceholders.filter(p => !basePlaceholders.includes(p));
         if (extraPlaceholders.length > 0) {
@@ -206,12 +206,12 @@ class TranslationValidator {
             issue: 'extra_placeholders',
             extra: extraPlaceholders,
             baseValue,
-            langValue
+            langValue,
           });
           this.totalIssues++;
         }
       });
-      
+
       if (this.placeholderMismatches[lang].length > 0) {
         console.log(`${colors.red}✗${colors.reset} ${lang}: ${this.placeholderMismatches[lang].length} placeholder mismatches`);
       } else {
@@ -224,12 +224,12 @@ class TranslationValidator {
   generateReport() {
     console.log(`\n${colors.blue}${colors.bold}=== TRANSLATION VALIDATION REPORT ===${colors.reset}`);
     console.log(`Total issues found: ${colors.bold}${this.totalIssues}${colors.reset}\n`);
-    
+
     if (this.totalIssues === 0) {
       console.log(`${colors.green}${colors.bold}🎉 All translations are complete and valid!${colors.reset}`);
       return;
     }
-    
+
     // Missing keys report
     Object.entries(this.missingKeys).forEach(([lang, keys]) => {
       if (keys.length > 0) {
@@ -240,7 +240,7 @@ class TranslationValidator {
         console.log('');
       }
     });
-    
+
     // Incomplete translations report
     Object.entries(this.incompleteTranslations).forEach(([lang, issues]) => {
       if (issues.length > 0) {
@@ -249,16 +249,16 @@ class TranslationValidator {
           const issueType = {
             'empty_string': 'Empty string',
             'same_as_english': 'Same as English',
-            'placeholder_text': 'Placeholder text'
+            'placeholder_text': 'Placeholder text',
           }[issue.issue];
-          
+
           console.log(`  ${colors.yellow}⚠${colors.reset} ${issue.key} - ${issueType}`);
           console.log(`    Value: "${issue.value}"`);
         });
         console.log('');
       }
     });
-    
+
     // Placeholder mismatches report
     Object.entries(this.placeholderMismatches).forEach(([lang, issues]) => {
       if (issues.length > 0) {
@@ -279,10 +279,10 @@ class TranslationValidator {
 
   // Generate fix suggestions
   generateFixSuggestions() {
-    if (this.totalIssues === 0) return;
-    
+    if (this.totalIssues === 0) {return;}
+
     console.log(`${colors.cyan}${colors.bold}=== FIX SUGGESTIONS ===${colors.reset}`);
-    
+
     // Missing keys suggestions
     Object.entries(this.missingKeys).forEach(([lang, keys]) => {
       if (keys.length > 0) {
@@ -293,7 +293,7 @@ class TranslationValidator {
         });
       }
     });
-    
+
     // Incomplete translations suggestions
     Object.entries(this.incompleteTranslations).forEach(([lang, issues]) => {
       if (issues.length > 0) {
@@ -308,14 +308,14 @@ class TranslationValidator {
   // Run all validations
   validate() {
     console.log(`${colors.bold}Translation Validation Tool${colors.reset}\n`);
-    
+
     this.loadTranslations();
     this.checkMissingKeys();
     this.checkIncompleteTranslations();
     this.checkPlaceholderMismatches();
     this.generateReport();
     this.generateFixSuggestions();
-    
+
     // Exit with error code if issues found
     if (this.totalIssues > 0) {
       console.log(`\n${colors.red}${colors.bold}❌ Translation validation failed with ${this.totalIssues} issues${colors.reset}`);
@@ -334,5 +334,5 @@ validator.validate();
 module.exports = {
   validateTranslations,
   getAllKeys,
-  loadTranslationFile
-}; 
+  loadTranslationFile,
+};

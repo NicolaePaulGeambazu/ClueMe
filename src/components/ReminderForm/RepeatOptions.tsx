@@ -1,22 +1,22 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  TextInput, 
-  Alert, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Alert,
   Modal,
-  Dimensions 
+  Dimensions,
 } from 'react-native';
 import { CustomDateTimePickerModal } from './CustomDateTimePicker';
-import { 
-  Calendar, 
-  Clock, 
-  Repeat, 
-  X, 
-  ChevronRight, 
+import {
+  Calendar,
+  Clock,
+  Repeat,
+  X,
+  ChevronRight,
   Calendar as CalendarIcon,
   CalendarDays,
   CalendarRange,
@@ -24,7 +24,7 @@ import {
   Settings,
   Sparkles,
   Crown,
-  Lock
+  Lock,
 } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Fonts } from '../../constants/Fonts';
@@ -32,6 +32,7 @@ import { formatDateForDisplay } from '../../utils/dateUtils';
 import { DisabledFeature } from '../premium/DisabledFeature';
 import { isProUser } from '../../services/featureFlags';
 import { getRecurringDescription } from '../../design-system/reminders/utils/recurring-utils';
+import RevenueCatPaywall from '../premium/RevenueCatPaywall';
 
 
 interface RepeatOptionsProps {
@@ -67,29 +68,29 @@ const PREMIUM_LIMITS = {
     maxOccurrences: 50,
     maxRepeatDays: 3,
     customIntervals: false,
-    advancedEndConditions: false
+    advancedEndConditions: false,
   },
   ascend: {
     maxInterval: 30,
     maxOccurrences: 50,
     maxRepeatDays: 3,
     customIntervals: true,
-    advancedEndConditions: true
+    advancedEndConditions: true,
   },
   apex: {
     maxInterval: 365,
     maxOccurrences: 999,
     maxRepeatDays: 7,
     customIntervals: true,
-    advancedEndConditions: true
+    advancedEndConditions: true,
   },
   immortal: {
     maxInterval: 365,
     maxOccurrences: 999,
     maxRepeatDays: 7,
     customIntervals: true,
-    advancedEndConditions: true
-  }
+    advancedEndConditions: true,
+  },
 };
 
 const FREQUENCY_OPTIONS = [
@@ -98,13 +99,13 @@ const FREQUENCY_OPTIONS = [
   { id: 'monthly', label: 'Monthly', icon: CalendarIcon, description: 'Every month', premium: false },
   { id: 'yearly', label: 'Yearly', icon: CalendarCheck, description: 'Every year', premium: false },
   { id: 'weekdays', label: 'Weekdays', icon: Calendar, description: 'Mon-Fri only', premium: false },
-  { id: 'custom', label: 'Custom', icon: Settings, description: 'Advanced patterns', premium: true }
+  { id: 'custom', label: 'Custom', icon: Settings, description: 'Advanced patterns', premium: true },
 ];
 
 const END_CONDITIONS = [
   { id: 'never', label: 'No end date', description: 'Repeat indefinitely', premium: false },
   { id: 'on_date', label: 'On date', description: 'End on specific date', premium: true },
-  { id: 'after_occurrences', label: 'After occurrences', description: 'End after X times', premium: true }
+  { id: 'after_occurrences', label: 'After occurrences', description: 'End after X times', premium: true },
 ];
 
 const DAYS_OF_WEEK = [
@@ -114,12 +115,12 @@ const DAYS_OF_WEEK = [
   { id: 4, label: 'Thu', fullLabel: 'Thursday' },
   { id: 5, label: 'Fri', fullLabel: 'Friday' },
   { id: 6, label: 'Sat', fullLabel: 'Saturday' },
-  { id: 0, label: 'Sun', fullLabel: 'Sunday' }
+  { id: 0, label: 'Sun', fullLabel: 'Sunday' },
 ];
 
 const MONTHLY_REPEAT_OPTIONS = [
   { id: 'day_of_month', label: 'Day of month', description: 'e.g., 15th of each month' },
-  { id: 'day_of_week_in_month', label: 'Day of week', description: 'e.g., first Monday' }
+  { id: 'day_of_week_in_month', label: 'Day of week', description: 'e.g., first Monday' },
 ];
 
 export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
@@ -145,7 +146,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   onShowCustomIntervalChange,
   userTier = 'free',
   onClose,
-  visible
+  visible,
 }) => {
   const { t } = useTranslation();
   const styles = createStyles(colors);
@@ -163,18 +164,19 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   const [selectedDays, setSelectedDays] = useState<number[]>(repeatDays);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   const [showLocalDatePicker, setShowLocalDatePicker] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const handleFrequencySelect = useCallback((frequency: string) => {
     const option = FREQUENCY_OPTIONS.find(opt => opt.id === frequency);
-    
+
     if (option?.premium && !isPremiumUser) {
       // Show premium upgrade prompt
       return;
     }
-    
+
     setSelectedFrequency(frequency);
     onRepeatPatternChange(frequency);
-    
+
     // Reset custom settings when switching to non-custom patterns
     if (frequency !== 'custom') {
       setSelectedDays([]);
@@ -195,12 +197,12 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
 
   const handleEndConditionSelect = useCallback((condition: typeof endCondition) => {
     const option = END_CONDITIONS.find(opt => opt.id === condition);
-    
+
     if (option?.premium && !isPremiumUser) {
       // Show premium upgrade prompt
       return;
     }
-    
+
     setEndCondition(condition);
     if (condition === 'never') {
       onRecurringEndDateChange(undefined);
@@ -228,7 +230,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
     //   );
     //   return;
     // }
-    
+
     if (selectedDays.includes(day)) {
       const newDays = selectedDays.filter(d => d !== day);
       setSelectedDays(newDays);
@@ -269,15 +271,15 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
       '🎉 Unlock Pro Features',
       'Upgrade to ClearCue Pro to access advanced recurring patterns, custom intervals, and more powerful scheduling options.',
       [
-        { 
-          text: 'Upgrade to Pro', 
+        {
+          text: 'Upgrade to Pro',
           onPress: () => {
             // For testing, upgrade the user
             // In production, this would navigate to the upgrade flow
           },
-          style: 'default'
+          style: 'default',
         },
-        { text: 'Maybe Later', style: 'cancel' }
+        { text: 'Maybe Later', style: 'cancel' },
       ]
     );
   }, []);
@@ -287,22 +289,22 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   const getSummaryText = useCallback(() => {
     const frequencyText = FREQUENCY_OPTIONS.find(f => f.id === selectedFrequency)?.label || 'Daily';
     const intervalText = interval === 1 ? '' : ` every ${interval} ${selectedFrequency.slice(0, -2)}s`;
-    
+
     let summary = `Every ${frequencyText.toLowerCase()}${intervalText}`;
-    
+
     if (selectedFrequency === 'weekly' && selectedDays.length > 0) {
-      const dayLabels = selectedDays.map(day => 
+      const dayLabels = selectedDays.map(day =>
         DAYS_OF_WEEK.find(d => d.id === day)?.label
       ).join(', ');
       summary += ` on ${dayLabels}`;
     }
-    
+
     if (endCondition === 'on_date' && endDate) {
       summary += ` until ${formatDateForDisplay(endDate)}`;
     } else if (endCondition === 'after_occurrences') {
       summary += ` for ${occurrences} times`;
     }
-    
+
     return summary;
   }, [selectedFrequency, interval, selectedDays, endCondition, endDate, occurrences]);
 
@@ -314,33 +316,33 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           const isSelected = selectedFrequency === option.id;
           // Enable premium restrictions for free users
           const isDisabled = option.premium && !isPremiumUser;
-          
+
           return (
             <TouchableOpacity
               key={option.id}
               style={[
                 styles.optionCard,
                 isSelected && styles.selectedOption,
-                isDisabled && styles.disabledOption
+                isDisabled && styles.disabledOption,
               ]}
               onPress={() => handleFrequencySelect(option.id)}
               disabled={isDisabled}
             >
               <View style={styles.optionContent}>
-                <option.icon 
-                  size={20} 
-                  color={isSelected ? colors.primary : isDisabled ? colors.textSecondary : colors.text} 
+                <option.icon
+                  size={20}
+                  color={isSelected ? colors.primary : isDisabled ? colors.textSecondary : colors.text}
                 />
                 <Text style={[
                   styles.optionLabel,
                   isSelected && styles.selectedOptionText,
-                  isDisabled && styles.disabledText
+                  isDisabled && styles.disabledText,
                 ]}>
                   {option.label}
                 </Text>
                 <Text style={[
                   styles.optionDescription,
-                  isDisabled && styles.disabledText
+                  isDisabled && styles.disabledText,
                 ]}>
                   {option.description}
                 </Text>
@@ -391,8 +393,8 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   );
 
   const renderCustomDaysSelection = () => {
-    if (selectedFrequency !== 'custom') return null;
-    
+    if (selectedFrequency !== 'custom') {return null;}
+
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Repeat on Days</Text>
@@ -400,17 +402,17 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           {DAYS_OF_WEEK.map((day) => {
             const isSelected = selectedDays.includes(day.id);
             // Temporarily disable premium restrictions for testing
-            const isDisabled = false; // !tierLimits.customIntervals && 
-                              // selectedDays.length >= tierLimits.maxRepeatDays && 
+            const isDisabled = false; // !tierLimits.customIntervals &&
+                              // selectedDays.length >= tierLimits.maxRepeatDays &&
                               // !isSelected;
-            
+
             return (
               <TouchableOpacity
                 key={day.id}
                 style={[
                   styles.dayButton,
                   isSelected && styles.selectedDay,
-                  isDisabled && styles.disabledDay
+                  isDisabled && styles.disabledDay,
                 ]}
                 onPress={() => handleDayToggle(day.id)}
                 disabled={isDisabled}
@@ -418,7 +420,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
                 <Text style={[
                   styles.dayButtonText,
                   isSelected && styles.selectedDayText,
-                  isDisabled && styles.disabledText
+                  isDisabled && styles.disabledText,
                 ]}>
                   {day.label}
                 </Text>
@@ -428,7 +430,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
         </View>
         {selectedDays.length > 0 && (
           <Text style={styles.selectedDaysText}>
-            Selected: {selectedDays.map(day => 
+            Selected: {selectedDays.map(day =>
               DAYS_OF_WEEK.find(d => d.id === day)?.fullLabel
             ).join(', ')}
           </Text>
@@ -445,14 +447,14 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           const isSelected = endCondition === option.id;
           // Enable premium restrictions for free users
           const isDisabled = option.premium && !isPremiumUser;
-          
+
           return (
             <TouchableOpacity
               key={option.id}
               style={[
                 styles.optionCard,
                 isSelected && styles.selectedOption,
-                isDisabled && styles.disabledOption
+                isDisabled && styles.disabledOption,
               ]}
               onPress={() => handleEndConditionSelect(option.id as typeof endCondition)}
               disabled={isDisabled}
@@ -461,13 +463,13 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
                 <Text style={[
                   styles.optionLabel,
                   isSelected && styles.selectedOptionText,
-                  isDisabled && styles.disabledText
+                  isDisabled && styles.disabledText,
                 ]}>
                   {option.label}
                 </Text>
                 <Text style={[
                   styles.optionDescription,
-                  isDisabled && styles.disabledText
+                  isDisabled && styles.disabledText,
                 ]}>
                   {option.description}
                 </Text>
@@ -482,7 +484,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           );
         })}
       </View>
-      
+
       {endCondition === 'on_date' && (
         <TouchableOpacity
           style={styles.dateButton}
@@ -497,7 +499,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           <ChevronRight size={16} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
-      
+
       {endCondition === 'after_occurrences' && (
         <View style={styles.occurrencesContainer}>
           <Text style={styles.occurrencesLabel}>End after</Text>
@@ -528,13 +530,13 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
       repeatDays: selectedDays,
       recurringEndDate: endCondition === 'on_date' ? endDate : undefined,
       recurringEndAfter: endCondition === 'after_occurrences' ? occurrences : undefined,
-      timezone: 'America/New_York', // Default for preview
+
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
-    
+
     const description = getRecurringDescription(mockReminder as any);
-    
+
     return (
       <View style={styles.previewSection}>
         <Text style={styles.previewTitle}>Pattern Preview</Text>
@@ -568,7 +570,7 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
           <Text style={styles.summaryText}>{getSummaryText()}</Text>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} pointerEvents={userTier === 'free' ? 'none' : 'auto'}>
           {renderFrequencySelection()}
           {renderIntervalControl()}
           {renderCustomDaysSelection()}
@@ -577,11 +579,11 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
         </ScrollView>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={styles.footer} pointerEvents={userTier === 'free' ? 'none' : 'auto'}>
           <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.doneButton}
             onPress={() => {
               onRecurringChange(true);
@@ -591,17 +593,61 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
             <Text style={styles.doneButtonText}>Done</Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Local Date Picker */}
-      <CustomDateTimePickerModal
-        visible={showLocalDatePicker}
-        onClose={handleDatePickerClose}
-        onConfirm={handleDatePickerSelect}
-        initialDate={endDate || new Date()}
-        mode="date"
-        colors={colors}
-      />
+        {/* Premium Overlay for Free Users */}
+        {userTier === 'free' && (
+          <View style={{
+            position: 'absolute',
+            top: 88, // header height (approx 56) + summaryCard margin/padding (approx 32)
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }} pointerEvents="auto">
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 20,
+                paddingHorizontal: 32,
+                borderRadius: 16,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+              onPress={() => setShowPaywall(true)}
+            >
+              <Text style={{ color: colors.surface, fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
+                Unlock Recurring Schedules
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* RevenueCat Paywall Modal */}
+        <RevenueCatPaywall
+          visible={showPaywall}
+          onClose={() => setShowPaywall(false)}
+          onUpgrade={() => {}}
+          variant="small"
+          message="Unlock recurring reminders and advanced scheduling with Pro!"
+          triggerFeature="recurring-reminders"
+        />
+
+        {/* Local Date Picker */}
+        <CustomDateTimePickerModal
+          visible={showLocalDatePicker}
+          onClose={handleDatePickerClose}
+          onConfirm={handleDatePickerSelect}
+          initialDate={endDate || new Date()}
+          mode="date"
+          colors={colors}
+        />
+      </View>
     </Modal>
   );
 };

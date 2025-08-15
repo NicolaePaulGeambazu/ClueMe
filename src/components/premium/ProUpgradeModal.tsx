@@ -143,7 +143,7 @@ export default function ProUpgradeModal({
           activeOpacity={1}
           onPress={onClose}
         />
-        
+
         <Animated.View
           style={[
             styles.modalContainer,
@@ -162,10 +162,10 @@ export default function ProUpgradeModal({
               <View style={[styles.crownContainer, { backgroundColor: '#FFD700' }]}>
                 <Crown size={32} color="white" fill="white" />
               </View>
-              
+
               <Text style={styles.proTitle}>ClearCue Pro</Text>
               <Text style={styles.proSubtitle}>
-                {triggerFeature 
+                {triggerFeature
                   ? t('pro.unlockFeature', { feature: triggerFeature })
                   : t('pro.unlockEverything')
                 }
@@ -175,7 +175,7 @@ export default function ProUpgradeModal({
             {/* Features Grid */}
             <View style={styles.featuresContainer}>
               <Text style={styles.featuresTitle}>{t('pro.whatYouGet')}</Text>
-              
+
               <View style={styles.featuresGrid}>
                 {proFeatures.map((feature, index) => (
                   <View key={index} style={styles.featureCard}>
@@ -197,7 +197,7 @@ export default function ProUpgradeModal({
                    <Text style={styles.priceAmount}>$4.99</Text>
                    <Text style={styles.pricePeriod}>{t('pro.perMonth')}</Text>
                  </View>
-                
+
                 <View style={styles.priceFeatures}>
                   <View style={styles.priceFeature}>
                     <Check size={16} color="#4CAF50" />
@@ -456,4 +456,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-}); 
+});

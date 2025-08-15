@@ -1,6 +1,5 @@
 import { Reminder } from '../design-system/reminders/types';
 import type { ReminderStatus, RepeatPattern } from '../design-system/reminders/types';
-import { isOverdue } from './dateUtils';
 
 interface ReminderData {
   [key: string]: unknown;
@@ -18,17 +17,17 @@ interface ExtendedReminder extends Reminder {
 
 // Helper function to safely convert dueDate to Date object
 const safeDueDate = (dueDate: Date | string | undefined | unknown): Date | null => {
-  if (!dueDate) return null;
-  
+  if (!dueDate) {return null;}
+
   if (dueDate instanceof Date) {
     return isNaN(dueDate.getTime()) ? null : dueDate;
   }
-  
+
   if (typeof dueDate === 'string') {
     const parsed = new Date(dueDate);
     return isNaN(parsed.getTime()) ? null : parsed;
   }
-  
+
   return null;
 };
 
@@ -48,33 +47,33 @@ export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: str
     case 'hourly':
       nextDate.setHours(nextDate.getHours() + interval);
       break;
-      
+
     case 'daily':
       nextDate.setDate(nextDate.getDate() + interval);
       break;
-      
+
     case 'weekdays':
       // Move to next weekday (skip weekends)
       do {
         nextDate.setDate(nextDate.getDate() + 1);
       } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
       break;
-      
+
     case 'weekly':
       if (repeatDays && repeatDays.length > 0) {
         // Find the next occurrence based on repeat days
         const currentDay = nextDate.getDay();
         const sortedRepeatDays = [...repeatDays].sort((a, b) => a - b);
-        
+
         // Find the next day in the sequence
         let nextDay = sortedRepeatDays.find(day => day > currentDay);
-        
+
         if (nextDay === undefined) {
           // If no day found this week, go to next week
           nextDay = sortedRepeatDays[0];
           nextDate.setDate(nextDate.getDate() + 7);
         }
-        
+
         // Calculate days to add
         const daysToAdd = nextDay - currentDay;
         nextDate.setDate(nextDate.getDate() + daysToAdd);
@@ -83,15 +82,15 @@ export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: str
         nextDate.setDate(nextDate.getDate() + (7 * interval));
       }
       break;
-      
+
     case 'monthly':
       nextDate.setMonth(nextDate.getMonth() + interval);
       break;
-      
+
     case 'yearly':
       nextDate.setFullYear(nextDate.getFullYear() + interval);
       break;
-      
+
     case 'first_monday':
       // Move to first Monday of next month
       nextDate.setDate(1);
@@ -100,7 +99,7 @@ export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: str
         nextDate.setDate(nextDate.getDate() + 1);
       }
       break;
-      
+
     case 'last_friday':
       // Move to last Friday of next month
       nextDate.setDate(1);
@@ -110,7 +109,7 @@ export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: str
         nextDate.setDate(nextDate.getDate() - 1);
       }
       break;
-      
+
     case 'custom':
       // Handle custom patterns
       if (customInterval) {
@@ -121,7 +120,7 @@ export const calculateNextOccurrence = (currentDueDate: Date, repeatPattern: str
         nextDate.setDate(nextDate.getDate() + 1);
       }
       break;
-      
+
     default:
       // Default to daily
       nextDate.setDate(nextDate.getDate() + 1);
@@ -135,19 +134,19 @@ export const shouldGenerateNextOccurrence = (reminder: ExtendedReminder): boolea
   if (!reminder.isRecurring || !reminder.repeatPattern) {
     return false;
   }
-  
+
   const dueDate = safeDueDate(reminder.dueDate);
   if (!dueDate) {
     return false;
   }
-  
+
   const now = new Date();
-  
+
   // Check if we're past the due date
   if (dueDate > now) {
     return false;
   }
-  
+
   // Check if we're within the recurring date range
   if (reminder.recurringStartDate) {
     const startDate = safeDueDate(reminder.recurringStartDate);
@@ -155,41 +154,40 @@ export const shouldGenerateNextOccurrence = (reminder: ExtendedReminder): boolea
       return false; // Haven't reached start date yet
     }
   }
-  
+
   if (reminder.recurringEndDate) {
     const endDate = safeDueDate(reminder.recurringEndDate);
     if (endDate && now > endDate) {
       return false; // Past the end date
     }
   }
-  
+
   return true; // Generate next occurrence if due date has passed and within range
 };
 
 // Generate the next occurrence of a recurring reminder
 export const generateNextOccurrence = (reminder: ExtendedReminder): Partial<ExtendedReminder> | null => {
-  
+
   if (!shouldGenerateNextOccurrence(reminder)) {
     return null;
   }
-  
+
   const currentDueDate = safeDueDate(reminder.dueDate);
   if (!currentDueDate || !reminder.repeatPattern) {
     return null;
   }
-  
+
   // Calculate next occurrence based on pattern type
   let nextDueDate: Date;
-  
+
   if (reminder.repeatPattern === 'custom' && reminder.customFrequencyType) {
     // Handle custom patterns with specific frequency types
-    const tempReminder = { ...reminder, repeatPattern: reminder.customFrequencyType };
     nextDueDate = calculateNextOccurrence(currentDueDate, reminder.customFrequencyType, reminder.customInterval, reminder.repeatDays);
   } else {
     // Handle standard patterns
     nextDueDate = calculateNextOccurrence(currentDueDate, reminder.repeatPattern, reminder.customInterval, reminder.repeatDays);
   }
-  
+
   // Check if the next occurrence would be past the end date
   if (reminder.recurringEndDate) {
     const endDate = safeDueDate(reminder.recurringEndDate);
@@ -197,7 +195,7 @@ export const generateNextOccurrence = (reminder: ExtendedReminder): Partial<Exte
       return null; // Don't generate if it would be past the end date
     }
   }
-  
+
   const nextOccurrence: Partial<ExtendedReminder> = {
     ...reminder,
     id: `${reminder.id}_${Date.now()}`, // Generate unique ID
@@ -229,20 +227,29 @@ export const filterReminders = {
   byFavorite: (reminders: Reminder[]) =>
     reminders.filter(r => r.isFavorite),
 
-  byOverdue: (reminders: Reminder[]) =>
-    reminders.filter(r => {
+  byOverdue: (reminders: Reminder[]) => {
+    // Cache current time to prevent rapid fluctuations
+    const now = new Date();
+    const nowTime = now.getTime();
+
+    return reminders.filter(r => {
       if (r.completed) {return false;}
-      
+
       try {
         // Use the timezone-aware overdue check with reminder object for recurring logic
         const { isOverdue } = require('./dateUtils');
         return isOverdue(r.dueDate, r.completed, r.dueTime, r);
       } catch (error) {
-        // Fallback to date-only comparison
+        // Fallback to date-only comparison with cached time
         const dueDate = safeDueDate(r.dueDate);
-        return dueDate && dueDate < new Date();
+        if (!dueDate) {return false;}
+
+        // Add a small buffer to prevent rapid state changes
+        const bufferMs = 1000; // 1 second buffer
+        return dueDate.getTime() < (nowTime - bufferMs);
       }
-    }),
+    });
+  },
 
   byToday: (reminders: Reminder[]) => {
     const today = new Date();
@@ -316,7 +323,7 @@ export const sortReminders = {
         if (dateComparison !== 0) {
           return direction === 'asc' ? dateComparison : -dateComparison;
         }
-        
+
         // If dates are the same, compare times
         if (a.dueTime && b.dueTime) {
           const aTime = a.dueTime.split(':').map(Number);
@@ -326,15 +333,15 @@ export const sortReminders = {
           const timeComparison = aMinutes - bMinutes;
           return direction === 'asc' ? timeComparison : -timeComparison;
         }
-        
+
         // If one has time and the other doesn't, the one with time comes first
-        if (a.dueTime && !b.dueTime) return direction === 'asc' ? -1 : 1;
-        if (!a.dueTime && b.dueTime) return direction === 'asc' ? 1 : -1;
+        if (a.dueTime && !b.dueTime) {return direction === 'asc' ? -1 : 1;}
+        if (!a.dueTime && b.dueTime) {return direction === 'asc' ? 1 : -1;}
       }
 
       // If one has date and the other doesn't
-      if (aDate && !bDate) return direction === 'asc' ? -1 : 1;
-      if (!aDate && bDate) return direction === 'asc' ? 1 : -1;
+      if (aDate && !bDate) {return direction === 'asc' ? -1 : 1;}
+      if (!aDate && bDate) {return direction === 'asc' ? 1 : -1;}
 
       // If neither has date, sort by creation date
       try {
@@ -351,6 +358,8 @@ export const sortReminders = {
 export const getReminderStats = (reminders: Reminder[]) => {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
+  // Cache current time to prevent rapid fluctuations
+  const nowTime = today.getTime();
 
   return {
     total: reminders.length,
@@ -358,15 +367,19 @@ export const getReminderStats = (reminders: Reminder[]) => {
     pending: reminders.filter(r => !r.completed).length,
     overdue: reminders.filter(r => {
       if (r.completed) {return false;}
-      
+
       try {
         // Use the timezone-aware overdue check with reminder object for recurring logic
         const { isOverdue } = require('./dateUtils');
         return isOverdue(r.dueDate, r.completed, r.dueTime, r);
       } catch (error) {
-        // Fallback to date-only comparison
+        // Fallback to date-only comparison with cached time
         const dueDate = safeDueDate(r.dueDate);
-        return dueDate && dueDate < today;
+        if (!dueDate) {return false;}
+
+        // Add a small buffer to prevent rapid state changes
+        const bufferMs = 1000; // 1 second buffer
+        return dueDate.getTime() < (nowTime - bufferMs);
       }
     }).length,
     today: reminders.filter(r => {
@@ -478,12 +491,12 @@ export const getRecurringPatternDescription = (reminder: ExtendedReminder): stri
       if (reminder.customInterval) {
         const interval = reminder.customInterval;
         const frequencyType = reminder.customFrequencyType || 'daily'; // Default to daily if not specified
-        
+
         // Check if it's a weekly pattern with specific days
         if (frequencyType === 'weekly' && reminder.repeatDays && reminder.repeatDays.length > 0) {
           const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
           const selectedDays = reminder.repeatDays.map(day => dayNames[day]).join(', ');
-          
+
           if (interval === 1) {
             description = `Weekly on ${selectedDays}`;
           } else {
@@ -534,10 +547,10 @@ export const getRecurringPatternDescription = (reminder: ExtendedReminder): stri
   if (reminder.recurringEndDate) {
     const endDate = safeDueDate(reminder.recurringEndDate);
     if (endDate) {
-      const endDateStr = endDate.toLocaleDateString('en-US', { 
-        month: 'short', 
+      const endDateStr = endDate.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
-        year: endDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+        year: endDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
       });
       description += ` until ${endDateStr}`;
     }
@@ -547,12 +560,12 @@ export const getRecurringPatternDescription = (reminder: ExtendedReminder): stri
   if (reminder.recurringStartDate) {
     const startDate = safeDueDate(reminder.recurringStartDate);
     const createdDate = reminder.createdAt instanceof Date ? reminder.createdAt : new Date(reminder.createdAt);
-    
+
     if (startDate && Math.abs(startDate.getTime() - createdDate.getTime()) > 24 * 60 * 60 * 1000) { // More than 1 day difference
-      const startDateStr = startDate.toLocaleDateString('en-US', { 
-        month: 'short', 
+      const startDateStr = startDate.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
-        year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+        year: startDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
       });
       description += ` from ${startDateStr}`;
     }
@@ -571,13 +584,13 @@ export const cleanReminderForFirestore = (reminder: ReminderData): CleanedRemind
   }
 
   const cleaned: CleanedReminderData = {};
-  
+
   for (const [key, value] of Object.entries(reminder)) {
     // Skip undefined values
     if (value === undefined) {
       continue;
     }
-    
+
     // Handle nested objects
     if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
       const cleanedNested = cleanReminderForFirestore(value as ReminderData);
@@ -589,6 +602,6 @@ export const cleanReminderForFirestore = (reminder: ReminderData): CleanedRemind
       cleaned[key] = value;
     }
   }
-  
+
   return cleaned;
 };

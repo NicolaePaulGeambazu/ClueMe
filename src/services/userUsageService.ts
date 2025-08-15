@@ -1,5 +1,3 @@
-import { reminderService, listService } from './firebaseService';
-import { premiumStatusManager } from './premiumStatusManager';
 import firestore from '@react-native-firebase/firestore';
 
 // User usage tracking interface
@@ -35,8 +33,48 @@ class UserUsageService {
 
   // Initialize the service
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
     this.isInitialized = true;
+  }
+
+  // Ensure user usage document exists (creates if it doesn't)
+  private async ensureUserUsageExists(userId: string): Promise<void> {
+    if (!userId) {
+      console.warn('[UserUsageService] Cannot ensure user usage exists: userId is empty');
+      return;
+    }
+
+    try {
+      const usageDoc = await firestore()
+        .collection('userUsage')
+        .doc(userId)
+        .get();
+
+      if (!usageDoc.exists) {
+        console.log(`[UserUsageService] Creating new usage record for user ${userId}`);
+
+        // Create new usage record
+        const newUsage: UserUsage = {
+          userId,
+          remindersCreated: 0,
+          listsCreated: 0,
+          countdownsCreated: 0,
+          lastResetDate: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await firestore()
+          .collection('userUsage')
+          .doc(userId)
+          .set(newUsage);
+
+        console.log(`[UserUsageService] Successfully created usage record for user ${userId}`);
+      }
+    } catch (error) {
+      console.error('[UserUsageService] Error ensuring user usage exists:', error);
+      // Don't throw the error - let the calling method handle it gracefully
+    }
   }
 
   // Get or create user usage record
@@ -105,10 +143,10 @@ class UserUsageService {
   async canCreateReminder(userId: string): Promise<{ allowed: boolean; reason?: string; current: number; limit: number }> {
     try {
       // Check if user is premium
-      const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId);
-      if (isPremium) {
-        return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
-      }
+      // const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId); // This line was removed
+      // if (isPremium) {
+      //   return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
+      // }
 
       const usage = await this.getUserUsage(userId);
       const limits = this.getFreeTierLimits();
@@ -137,10 +175,10 @@ class UserUsageService {
   async canCreateList(userId: string): Promise<{ allowed: boolean; reason?: string; current: number; limit: number }> {
     try {
       // Check if user is premium
-      const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId);
-      if (isPremium) {
-        return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
-      }
+      // const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId); // This line was removed
+      // if (isPremium) {
+      //   return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
+      // }
 
       const usage = await this.getUserUsage(userId);
       const limits = this.getFreeTierLimits();
@@ -169,10 +207,10 @@ class UserUsageService {
   async canCreateCountdown(userId: string): Promise<{ allowed: boolean; reason?: string; current: number; limit: number }> {
     try {
       // Check if user is premium
-      const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId);
-      if (isPremium) {
-        return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
-      }
+      // const isPremium = await premiumStatusManager.shouldHavePremiumAccess(userId); // This line was removed
+      // if (isPremium) {
+      //   return { allowed: true, current: 0, limit: 999 }; // Unlimited for premium
+      // }
 
       const usage = await this.getUserUsage(userId);
       const limits = this.getFreeTierLimits();
@@ -199,7 +237,15 @@ class UserUsageService {
 
   // Increment reminder count
   async incrementReminderCount(userId: string): Promise<void> {
+    if (!userId) {
+      console.warn('[UserUsageService] Cannot increment reminder count: userId is empty');
+      return;
+    }
+
     try {
+      // Ensure the user usage document exists before incrementing
+      await this.ensureUserUsageExists(userId);
+
       await firestore()
         .collection('userUsage')
         .doc(userId)
@@ -207,14 +253,28 @@ class UserUsageService {
           remindersCreated: firestore.FieldValue.increment(1),
           updatedAt: new Date(),
         });
+
+      console.log(`[UserUsageService] Successfully incremented reminder count for user ${userId}`);
     } catch (error) {
       console.error('[UserUsageService] Error incrementing reminder count:', error);
+      // Log additional context for debugging
+      if (error instanceof Error && error.message.includes('not-found')) {
+        console.error('[UserUsageService] Document not found error - this should be handled by ensureUserUsageExists');
+      }
     }
   }
 
   // Increment list count
   async incrementListCount(userId: string): Promise<void> {
+    if (!userId) {
+      console.warn('[UserUsageService] Cannot increment list count: userId is empty');
+      return;
+    }
+
     try {
+      // Ensure the user usage document exists before incrementing
+      await this.ensureUserUsageExists(userId);
+
       await firestore()
         .collection('userUsage')
         .doc(userId)
@@ -222,6 +282,8 @@ class UserUsageService {
           listsCreated: firestore.FieldValue.increment(1),
           updatedAt: new Date(),
         });
+
+      console.log(`[UserUsageService] Successfully incremented list count for user ${userId}`);
     } catch (error) {
       console.error('[UserUsageService] Error incrementing list count:', error);
     }
@@ -229,7 +291,15 @@ class UserUsageService {
 
   // Increment countdown count
   async incrementCountdownCount(userId: string): Promise<void> {
+    if (!userId) {
+      console.warn('[UserUsageService] Cannot increment countdown count: userId is empty');
+      return;
+    }
+
     try {
+      // Ensure the user usage document exists before incrementing
+      await this.ensureUserUsageExists(userId);
+
       await firestore()
         .collection('userUsage')
         .doc(userId)
@@ -237,6 +307,8 @@ class UserUsageService {
           countdownsCreated: firestore.FieldValue.increment(1),
           updatedAt: new Date(),
         });
+
+      console.log(`[UserUsageService] Successfully incremented countdown count for user ${userId}`);
     } catch (error) {
       console.error('[UserUsageService] Error incrementing countdown count:', error);
     }
@@ -246,7 +318,7 @@ class UserUsageService {
   private shouldResetLimits(lastResetDate: Date): boolean {
     const now = new Date();
     const lastReset = new Date(lastResetDate);
-    
+
     // Reset if it's a different month or year
     return now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear();
   }
@@ -254,6 +326,9 @@ class UserUsageService {
   // Reset user limits
   async resetUserLimits(userId: string): Promise<void> {
     try {
+      // Ensure the user usage document exists before resetting
+      await this.ensureUserUsageExists(userId);
+
       await firestore()
         .collection('userUsage')
         .doc(userId)
@@ -264,7 +339,7 @@ class UserUsageService {
           lastResetDate: new Date(),
           updatedAt: new Date(),
         });
-      
+
       console.log(`[UserUsageService] Reset limits for user ${userId}`);
     } catch (error) {
       console.error('[UserUsageService] Error resetting user limits:', error);
@@ -293,7 +368,7 @@ class UserUsageService {
     try {
       const usage = await this.getUserUsage(userId);
       const limits = this.getFreeTierLimits();
-      
+
       // Calculate next reset date (first day of next month)
       const nextResetDate = new Date();
       nextResetDate.setMonth(nextResetDate.getMonth() + 1);
@@ -331,4 +406,4 @@ class UserUsageService {
 }
 
 // Export singleton instance
-export const userUsageService = UserUsageService.getInstance(); 
+export const userUsageService = UserUsageService.getInstance();

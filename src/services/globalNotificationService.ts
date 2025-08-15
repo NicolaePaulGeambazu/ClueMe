@@ -2,7 +2,6 @@ import { AppState, AppStateStatus } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 import PushNotification from 'react-native-push-notification';
 import notificationService from './notificationService';
-import { getFirestoreInstance } from './firebaseService';
 import auth from '@react-native-firebase/auth';
 
 export interface GlobalNotificationData {
@@ -21,7 +20,7 @@ class GlobalNotificationService {
   private toastCallbacks: Array<(notification: GlobalNotificationData) => void> = [];
 
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
 
     try {
       console.log('[GlobalNotificationService] Initializing global notification service...');
@@ -48,7 +47,7 @@ class GlobalNotificationService {
   private handleAppStateChange = (nextAppState: AppStateStatus) => {
     console.log(`[GlobalNotificationService] App state changed from ${this.appState} to ${nextAppState}`);
     this.appState = nextAppState;
-    
+
     // When app comes to foreground, sync assigned task notifications
     if (nextAppState === 'active' && this.appState !== 'active') {
       console.log('[GlobalNotificationService] App came to foreground, syncing assigned task notifications');
@@ -66,7 +65,7 @@ class GlobalNotificationService {
     // Handle foreground messages (when app is open)
     messaging().onMessage(async (remoteMessage) => {
       console.log('[GlobalNotificationService] Received foreground message:', remoteMessage);
-      
+
       if (this.appState === 'active') {
         // Show toast notification for foreground
         this.showToastNotification({
@@ -84,7 +83,7 @@ class GlobalNotificationService {
     // Handle background messages
     messaging().setBackgroundMessageHandler(async (remoteMessage) => {
       console.log('[GlobalNotificationService] Received background message:', remoteMessage);
-      
+
       // For background messages, we rely on the system push notification
       // The notification will be shown by the OS
     });
@@ -115,7 +114,7 @@ class GlobalNotificationService {
   private handleNotificationOpen(notification: any): void {
     // Handle navigation based on notification type
     const reminderId = notification.userInfo?.reminderId || notification.data?.reminderId;
-    
+
     if (reminderId) {
       // Navigate to reminder detail
       console.log('[GlobalNotificationService] Navigating to reminder:', reminderId);
@@ -139,7 +138,7 @@ class GlobalNotificationService {
   // Show toast notification (for foreground)
   private showToastNotification(notification: GlobalNotificationData): void {
     console.log('[GlobalNotificationService] Showing toast notification:', notification);
-    
+
     // Notify all registered callbacks
     this.toastCallbacks.forEach(callback => {
       try {
@@ -160,9 +159,9 @@ class GlobalNotificationService {
   ): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Sending assignment notification');
-      
+
       const currentUser = auth().currentUser;
-      
+
       // Send to assigned users via the notification service
       await notificationService.sendAssignmentNotification(
         reminderId,
@@ -193,7 +192,7 @@ class GlobalNotificationService {
   async sendNotification(notification: GlobalNotificationData, userIds?: string[]): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Sending general notification');
-      
+
       if (userIds && userIds.length > 0) {
         // Send to specific users
         for (const userId of userIds) {
@@ -217,11 +216,64 @@ class GlobalNotificationService {
     }
   }
 
+  // Schedule reminder notifications (delegates to notificationService)
+  async scheduleReminderNotifications(reminderData: any): Promise<void> {
+    try {
+      console.log('[GlobalNotificationService] Scheduling reminder notifications');
+      await notificationService.scheduleReminderNotifications(reminderData);
+    } catch (error) {
+      console.error('[GlobalNotificationService] Error scheduling reminder notifications:', error);
+      throw error;
+    }
+  }
+
+  // Update reminder notifications (delegates to notificationService)
+  async updateReminderNotifications(reminderData: any): Promise<void> {
+    try {
+      console.log('[GlobalNotificationService] Updating reminder notifications');
+      await notificationService.updateReminderNotifications(reminderData);
+    } catch (error) {
+      console.error('[GlobalNotificationService] Error updating reminder notifications:', error);
+      throw error;
+    }
+  }
+
+  // Cancel reminder notifications (delegates to notificationService)
+  async cancelReminderNotifications(reminderId: string): Promise<void> {
+    try {
+      console.log('[GlobalNotificationService] Cancelling reminder notifications');
+      await notificationService.cancelReminderNotifications(reminderId);
+    } catch (error) {
+      console.error('[GlobalNotificationService] Error cancelling reminder notifications:', error);
+      throw error;
+    }
+  }
+
+  // Cancel occurrence notification (delegates to notificationService)
+  cancelOccurrenceNotification(reminderId: string, occurrenceDate: Date): void {
+    try {
+      console.log('[GlobalNotificationService] Cancelling occurrence notification');
+      notificationService.cancelOccurrenceNotification(reminderId, occurrenceDate);
+    } catch (error) {
+      console.error('[GlobalNotificationService] Error cancelling occurrence notification:', error);
+    }
+  }
+
+  // Schedule occurrence notification (delegates to notificationService)
+  scheduleOccurrenceNotification(reminder: any, occurrenceDate: Date): void {
+    try {
+      console.log('[GlobalNotificationService] Scheduling occurrence notification');
+      notificationService.scheduleOccurrenceNotification(reminder, occurrenceDate);
+    } catch (error) {
+      console.error('[GlobalNotificationService] Error scheduling occurrence notification:', error);
+    }
+  }
+
   // Test notification system
   async testNotificationSystem(): Promise<void> {
     try {
       console.log('[GlobalNotificationService] Testing notification system...');
-      
+
       const testNotification: GlobalNotificationData = {
         title: '🧪 Test Notification',
         message: 'This is a test notification from the global notification service',
@@ -260,4 +312,4 @@ class GlobalNotificationService {
 // Create singleton instance
 const globalNotificationService = new GlobalNotificationService();
 
-export default globalNotificationService; 
+export default globalNotificationService;

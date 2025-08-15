@@ -196,7 +196,7 @@ export default function CancellationModal({
             try {
               setIsCancelling(true);
               const result = await revenueCatService.cancelSubscription();
-              
+
               if (result.success) {
                 onConfirmCancellation();
                 onClose();
@@ -207,7 +207,7 @@ export default function CancellationModal({
                   result.manualInstructions,
                   [
                     { text: t('common.ok'), onPress: onClose },
-                    { text: t('settings.tryAgain'), onPress: () => setIsCancelling(false) }
+                    { text: t('settings.tryAgain'), onPress: () => setIsCancelling(false) },
                   ]
                 );
               }
@@ -249,10 +249,10 @@ export default function CancellationModal({
 
             <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
               {/* Warning Icon */}
-              <AlertTriangle 
-                size={48} 
-                color={colors.error} 
-                strokeWidth={2} 
+              <AlertTriangle
+                size={48}
+                color={colors.error}
+                strokeWidth={2}
                 style={styles.warningIcon}
               />
 
@@ -271,21 +271,21 @@ export default function CancellationModal({
                 <Text style={styles.sectionTitle}>
                   {t('settings.whatYouWillLose')}
                 </Text>
-                
+
                 <View style={styles.consequenceItem}>
                   <Calendar size={16} color={colors.error} strokeWidth={2} style={styles.consequenceIcon} />
                   <Text style={styles.consequenceText}>
                     {t('settings.loseUnlimitedReminders')}
                   </Text>
                 </View>
-                
+
                 <View style={styles.consequenceItem}>
                   <Shield size={16} color={colors.error} strokeWidth={2} style={styles.consequenceIcon} />
                   <Text style={styles.consequenceText}>
                     {t('settings.loseAdvancedFeatures')}
                   </Text>
                 </View>
-                
+
                 <View style={styles.consequenceItem}>
                   <Heart size={16} color={colors.error} strokeWidth={2} style={styles.consequenceIcon} />
                   <Text style={styles.consequenceText}>
@@ -299,7 +299,7 @@ export default function CancellationModal({
                 <Text style={styles.alternativesTitle}>
                   {t('settings.considerAlternatives')}
                 </Text>
-                
+
                 <View style={styles.alternativeItem}>
                   <Shield size={16} color={colors.primary} strokeWidth={2} style={styles.alternativeIcon} />
                   <Text style={styles.alternativeText}>
@@ -340,4 +340,4 @@ export default function CancellationModal({
       </View>
     </Modal>
   );
-} 
+}

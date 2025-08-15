@@ -71,4 +71,4 @@ export const useSettings = (): SettingsContextType => {
     throw new Error('useSettings must be used within a SettingsProvider');
   }
   return context;
-}; 
+};

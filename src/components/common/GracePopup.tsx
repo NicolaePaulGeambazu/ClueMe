@@ -123,7 +123,7 @@ export default function GracePopup({
 
   // Handle message interpolation
   const interpolateMessage = (msg: string, params?: Record<string, any>) => {
-    if (!params) return msg;
+    if (!params) {return msg;}
     let result = msg;
     Object.keys(params).forEach(key => {
       const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
@@ -143,7 +143,7 @@ export default function GracePopup({
     });
   }
 
-  if (!visible) return null;
+  if (!visible) {return null;}
 
   return (
     <Animated.View
@@ -181,7 +181,7 @@ export default function GracePopup({
               {displayMessage}
             </Text>
         </View>
-        
+
         {showCloseButton && (
           <TouchableOpacity
             style={styles.closeButton}
@@ -241,4 +241,4 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-}); 
+});

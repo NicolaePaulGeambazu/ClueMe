@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity } from 'react-native';
-import { Calendar, Clock, Repeat, Globe, Users, ChevronRight, Scissors, MapPin } from 'lucide-react-native';
+import { Calendar, Clock, Repeat, Globe, Users, ChevronRight, Scissors, MapPin, Bell, Target } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { QuickAddSelector } from './QuickAddSelector';
-import { getTimezoneDisplayName } from '../../../utils/timezoneUtils';
+
 import { formatDate } from '../../../utils/dateUtils';
 import BannerAdComponent from '../../ads/BannerAdComponent';
 
@@ -17,7 +17,7 @@ interface QuickAddFormProps {
   customTimeValue: string;
   customDateValue: Date | null;
   isRecurring: boolean;
-  timezone: string;
+
   assignedTo: string[];
   notificationTimings: any[];
   isPremium: boolean;
@@ -26,7 +26,6 @@ interface QuickAddFormProps {
   getRecurringDescriptionText: () => string;
   getAssignedMembersText: () => string;
   onDatePress: () => void;
-  onTimePress: () => void;
   onRecurringPress: () => void;
   onNotificationPress: () => void;
   onFamilyPress: () => void;
@@ -47,7 +46,7 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   customTimeValue,
   customDateValue,
   isRecurring,
-  timezone,
+
   assignedTo,
   notificationTimings,
   isPremium,
@@ -56,7 +55,6 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
   getRecurringDescriptionText,
   getAssignedMembersText,
   onDatePress,
-  onTimePress,
   onRecurringPress,
   onNotificationPress,
   onFamilyPress,
@@ -93,25 +91,26 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
     return t('quickAdd.notifications', { count: notificationTimings.length });
   };
 
+  // New compact visual design
   return (
-    <ScrollView 
-      style={styles.content} 
-      showsVerticalScrollIndicator={true}
+    <ScrollView
+      style={styles.content}
+      showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 20 }}
       bounces={true}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Main Input */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          {t('quickAdd.whatToRemember')}
-        </Text>
+      {/* Main Input - Compact */}
+      <View style={[styles.section, { marginTop: 16 }]}>
         <TextInput
           testID="title-input"
-          style={[styles.titleInput, { 
+          style={[styles.titleInput, {
             borderColor: colors.borderLight,
             color: colors.text,
-            backgroundColor: colors.surface
+            backgroundColor: colors.surface,
+            fontSize: 18,
+            paddingVertical: 16,
+            minHeight: 56,
           }]}
           placeholder={t('quickAdd.placeholder')}
           placeholderTextColor={colors.textTertiary}
@@ -123,96 +122,141 @@ export const QuickAddForm: React.FC<QuickAddFormProps> = ({
         />
       </View>
 
-      {/* Date and Time Selectors */}
-      <View style={styles.dateTimeContainer}>
-        <QuickAddSelector
-          testID="date-selector"
-          icon={<Calendar size={20} color={colors.textSecondary} />}
-          label={getDateLabel()}
-          onPress={onDatePress}
-          colors={colors}
-          styles={styles}
-        />
-        <QuickAddSelector
-          testID="time-selector"
-          icon={<Clock size={20} color={colors.textSecondary} />}
-          label={getTimeLabel()}
-          onPress={onTimePress}
-          colors={colors}
-          styles={styles}
-        />
-      </View>
-
-      {/* Location Input - moved here for visibility */}
-      <View style={styles.section}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <MapPin size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}> 
-            {t('quickAdd.location')}
-          </Text>
-        </View>
-        <TextInput
-          testID="location-input"
-          style={[styles.titleInput, { 
-            borderColor: colors.borderLight,
-            color: colors.text,
-            backgroundColor: colors.surface,
-            marginTop: 4
-          }]}
-          placeholder={t('quickAdd.locationPlaceholder')}
-          placeholderTextColor={colors.textTertiary}
-          value={location}
-          onChangeText={setLocation}
-          multiline
-          maxLength={100}
-        />
-      </View>
-
-      {/* Enhanced Recurring and Timezone Selectors */}
-      <View style={styles.dateTimeContainer}>
-        <QuickAddSelector
-          testID="recurring-selector"
-          icon={<Repeat size={20} color={colors.textSecondary} />}
-          label={getRecurringDescriptionText()}
-          onPress={onRecurringPress}
-          colors={colors}
-          styles={styles}
-        />
-        {/* Removed timezone selector */}
-      </View>
-
-      {/* Notification Timing */}
-      <View style={styles.section}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          {t('quickAdd.notificationTiming')}
-        </Text>
+      {/* Visual Date/Time Selector - Compact Cards */}
+      <View style={styles.visualDateTimeContainer}>
         <TouchableOpacity
-          testID="notification-timing-selector"
-          style={[styles.selector, { borderColor: colors.borderLight }]}
-          onPress={onNotificationPress}
+          testID="datetime-selector"
+          style={[styles.visualDateTimeCard, {
+            backgroundColor: colors.surface,
+            borderColor: colors.borderLight,
+          }]}
+          onPress={onDatePress}
         >
-          <Text style={[styles.selectorText, { color: colors.text }]}>
-            🔔 {getNotificationDisplayText()}
-          </Text>
-          <ChevronRight size={16} color={colors.textTertiary} />
+          <View style={styles.visualDateTimeHeader}>
+            <Calendar size={20} color={colors.primary} />
+            <Text style={[styles.visualDateTimeTitle, { color: colors.text }]}>
+              {getDateLabel()}
+            </Text>
+          </View>
+          <View style={styles.visualDateTimeTime}>
+            <Clock size={16} color={colors.textSecondary} />
+            <Text style={[styles.visualDateTimeTimeText, { color: colors.textSecondary }]}>
+              {getTimeLabel()}
+            </Text>
+          </View>
         </TouchableOpacity>
       </View>
 
-      {/* Family Assignment */}
-      <View style={styles.dateTimeContainer}>
-        <QuickAddSelector
-          testID="family-selector"
-          icon={<Users size={20} color={colors.textSecondary} />}
-          label={getAssignedMembersText()}
+      {/* Quick Action Bar - Visual Icons */}
+      <View style={styles.quickActionBar}>
+        <TouchableOpacity
+          style={[styles.quickActionButton, {
+            backgroundColor: isRecurring ? colors.primary + '20' : colors.surface,
+            borderColor: isRecurring ? colors.primary : colors.borderLight,
+          }]}
+          onPress={onRecurringPress}
+        >
+          <Repeat size={20} color={isRecurring ? colors.primary : colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionButton, {
+            backgroundColor: notificationTimings.length > 0 ? colors.primary + '20' : colors.surface,
+            borderColor: notificationTimings.length > 0 ? colors.primary : colors.borderLight,
+          }]}
+          onPress={onNotificationPress}
+        >
+          <Bell size={20} color={notificationTimings.length > 0 ? colors.primary : colors.textSecondary} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickActionButton, {
+            backgroundColor: assignedTo.length > 0 ? colors.primary + '20' : colors.surface,
+            borderColor: assignedTo.length > 0 ? colors.primary : colors.borderLight,
+          }]}
           onPress={onFamilyPress}
-          colors={colors}
-          styles={styles}
-        />
+        >
+          <Users size={20} color={assignedTo.length > 0 ? colors.primary : colors.textSecondary} />
+        </TouchableOpacity>
+
+        {onBreakDownTask && (
+          <TouchableOpacity
+            style={[styles.quickActionButton, {
+              backgroundColor: isChunked ? colors.primary + '20' : colors.surface,
+              borderColor: isChunked ? colors.primary : colors.borderLight,
+            }]}
+            onPress={onBreakDownTask}
+          >
+            <Scissors size={20} color={isChunked ? colors.primary : colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
+
+      {/* Location Input - Compact */}
+      {location.trim() && (
+        <View style={styles.section}>
+          <View style={styles.locationContainer}>
+            <MapPin size={16} color={colors.textSecondary} />
+            <TextInput
+              testID="location-input"
+              style={[styles.locationInput, {
+                color: colors.text,
+                backgroundColor: 'transparent',
+              }]}
+              placeholder={t('quickAdd.locationPlaceholder')}
+              placeholderTextColor={colors.textTertiary}
+              value={location}
+              onChangeText={setLocation}
+              multiline
+              maxLength={100}
+            />
+          </View>
+        </View>
+      )}
+
+      {/* Status Indicators - Visual */}
+      <View style={styles.statusIndicators}>
+        {isRecurring && (
+          <View style={[styles.statusChip, { backgroundColor: colors.primary + '20' }]}>
+            <Repeat size={12} color={colors.primary} />
+            <Text style={[styles.statusChipText, { color: colors.primary }]}>
+              {getRecurringDescriptionText()}
+            </Text>
+          </View>
+        )}
+
+        {notificationTimings.length > 0 && (
+          <View style={[styles.statusChip, { backgroundColor: colors.primary + '20' }]}>
+            <Bell size={12} color={colors.primary} />
+            <Text style={[styles.statusChipText, { color: colors.primary }]}>
+              {notificationTimings.length} notification{notificationTimings.length > 1 ? 's' : ''}
+            </Text>
+          </View>
+        )}
+
+        {assignedTo.length > 0 && (
+          <View style={[styles.statusChip, { backgroundColor: colors.primary + '20' }]}>
+            <Users size={12} color={colors.primary} />
+            <Text style={[styles.statusChipText, { color: colors.primary }]}>
+              {assignedTo.length} assigned
+            </Text>
+          </View>
+        )}
+
+        {isChunked && (
+          <View style={[styles.statusChip, { backgroundColor: colors.primary + '20' }]}>
+            <Scissors size={12} color={colors.primary} />
+            <Text style={[styles.statusChipText, { color: colors.primary }]}>
+              {subTasksCount} subtasks
+            </Text>
+          </View>
+        )}
+      </View>
+
       {/* Banner Ad - Bottom of Quick Add Modal (only for free users) */}
       {!isPremium && (
         <BannerAdComponent style={{ marginTop: 16, marginBottom: 16 }} />
       )}
     </ScrollView>
   );
-}; 
+};

@@ -59,7 +59,7 @@ export const DateTimePickerWrapper: React.FC<DateTimePickerWrapperProps> = ({
       style={[
         styles.picker,
         Platform.OS === 'ios' && styles.iosPicker,
-        style
+        style,
       ]}
     />
   );
@@ -74,4 +74,4 @@ const styles = StyleSheet.create({
     // Additional iOS-specific styling for better visibility
     backgroundColor: '#FFFFFF',
   },
-}); 
+});

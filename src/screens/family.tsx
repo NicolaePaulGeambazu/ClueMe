@@ -14,13 +14,14 @@ import { formatForActivity } from '../utils/dateUtils';
 import { addFamilyNotification, getFirestoreInstance, listService, UserList, FamilyMember } from '../services/firebaseService';
 import SmallPaywallModal from '../components/premium/SmallPaywallModal';
 import FullScreenPaywall from '../components/premium/FullScreenPaywall';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 // Mock analytics service to prevent crashes
 const analyticsService = {
   trackScreen: (screen: string, component: string, params: any) => {
   },
   trackAction: (action: string, params: any) => {
-  }
+  },
 };
 
 // Use the proper FamilyMember interface from firebaseService
@@ -54,14 +55,14 @@ export default function FamilyScreen() {
     isOwner,
     hasPendingInvitations,
   } = useFamily();
-  const { 
-    showFullScreenPaywall, 
-    showSmallPaywall, 
-    paywallMessage, 
+  const {
+    showFullScreenPaywall,
+    showSmallPaywall,
+    paywallMessage,
     paywallTrigger,
     checkFamilyMemberAddition,
     hidePaywall,
-    isLoading: monetizationLoading 
+    isLoading: monetizationLoading,
   } = useMonetization();
   const colors = Colors[theme];
   const styles = createStyles(colors);
@@ -73,7 +74,7 @@ export default function FamilyScreen() {
       is_anonymous: isAnonymous,
       family_id: family?.id,
       members_count: members.length,
-      activities_count: activities.length
+      activities_count: activities.length,
     });
   }, [user?.uid, isAnonymous, family?.id, members.length, activities.length]);
 
@@ -88,8 +89,8 @@ export default function FamilyScreen() {
 
   // Real-time listener for family notifications
   useEffect(() => {
-    if (!family?.id) return;
-    
+    if (!family?.id) {return;}
+
     try {
       const firestoreInstance = getFirestoreInstance();
       const unsubscribe = firestoreInstance
@@ -97,9 +98,9 @@ export default function FamilyScreen() {
         .where('familyId', '==', family.id)
         .orderBy('createdAt', 'desc')
         .onSnapshot(
-          snapshot => {
+          (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
             if (snapshot && snapshot.docs) {
-              const notifications = snapshot.docs.map(doc => {
+              const notifications = snapshot.docs.map((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
                 const data = doc.data();
                 return {
                   ...data,
@@ -111,7 +112,7 @@ export default function FamilyScreen() {
               setFamilyNotifications([]);
             }
           },
-          error => {
+          (error: any) => {
             console.error('Error listening to family notifications:', error);
             setFamilyNotifications([]);
           }
@@ -141,10 +142,10 @@ export default function FamilyScreen() {
           .where('isPrivate', '==', false)
           .orderBy('updatedAt', 'desc')
           .get();
-        
+
         if (snapshot && snapshot.docs) {
           const lists: UserList[] = [];
-          snapshot.forEach(doc => {
+          snapshot.forEach((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
             const data = doc.data();
             lists.push({
               id: doc.id,
@@ -176,33 +177,33 @@ export default function FamilyScreen() {
   }, [family?.id]);
 
   const handleRefresh = useCallback(async () => {
-    analyticsService.trackAction('pull_to_refresh', { 
+    analyticsService.trackAction('pull_to_refresh', {
       screen: 'Family',
       user_id: user?.uid,
-      active_tab: activeTab 
+      active_tab: activeTab,
     });
-    
+
     setIsRefreshing(true);
     await loadFamily();
     setIsRefreshing(false);
   }, [loadFamily, user?.uid, activeTab]);
 
   const handleMemberPress = (member: any) => {
-    analyticsService.trackAction('member_pressed', { 
+    analyticsService.trackAction('member_pressed', {
       screen: 'Family',
       member_id: member.id,
-      member_name: member.name 
+      member_name: member.name,
     });
     // Navigate to member details
   };
 
   const handleMemberMenu = (member: any) => {
-    analyticsService.trackAction('member_menu_opened', { 
+    analyticsService.trackAction('member_menu_opened', {
       screen: 'Family',
       member_id: member.id,
-      member_name: member.name 
+      member_name: member.name,
     });
-    
+
     Alert.alert(
       member.name,
       t('family.memberActions'),
@@ -219,12 +220,12 @@ export default function FamilyScreen() {
 
   const handleRemoveMember = async (member: any) => {
     try {
-      analyticsService.trackAction('member_removed', { 
+      analyticsService.trackAction('member_removed', {
         screen: 'Family',
         member_id: member.id,
-        member_name: member.name 
+        member_name: member.name,
       });
-      
+
       await removeMember(member.id);
       Alert.alert(t('common.success'), t('family.removeSuccess'));
     } catch (error) {
@@ -233,39 +234,39 @@ export default function FamilyScreen() {
   };
 
   const handleActivityPress = (activity: any) => {
-    analyticsService.trackAction('activity_pressed', { 
+    analyticsService.trackAction('activity_pressed', {
       screen: 'Family',
       activity_id: activity.id,
-      activity_type: activity.type 
+      activity_type: activity.type,
     });
     // Navigate to activity details or related screen
   };
 
   const handleInvitations = async () => {
-    analyticsService.trackAction('invitations_opened', { 
+    analyticsService.trackAction('invitations_opened', {
       screen: 'Family',
-      user_id: user?.uid 
+      user_id: user?.uid,
     });
-    
+
     // Check monetization limits before showing invitation modal
     if (family?.id) {
       const monetizationResult = await checkFamilyMemberAddition();
-      
+
       if (monetizationResult.isBlocking) {
         // Don't show invitation modal if blocked
         return;
       }
     }
-    
+
     setShowInvitationModal(true);
   };
 
   const handleLeaveFamily = () => {
-    analyticsService.trackAction('leave_family_prompted', { 
+    analyticsService.trackAction('leave_family_prompted', {
       screen: 'Family',
-      user_id: user?.uid 
+      user_id: user?.uid,
     });
-    
+
     Alert.alert(
       t('family.leaveFamily'),
       t('family.leaveFamilyConfirm'),
@@ -448,7 +449,7 @@ export default function FamilyScreen() {
                   if (!notif || typeof notif !== 'object') {
                     return null;
                   }
-                  
+
                   return (
                     <View key={notif.id || `notif-${index}`} style={[styles.activityCard, { marginBottom: 12 }]}>
                       <Text style={styles.activityTitle}>{notif.message || 'Notification'}</Text>
@@ -501,10 +502,10 @@ export default function FamilyScreen() {
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'members' && styles.activeTabButton]}
           onPress={() => {
-            analyticsService.trackAction('tab_changed', { 
+            analyticsService.trackAction('tab_changed', {
               screen: 'Family',
               tab: 'members',
-              user_id: user?.uid 
+              user_id: user?.uid,
             });
             setActiveTab('members');
           }}
@@ -516,10 +517,10 @@ export default function FamilyScreen() {
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'activity' && styles.activeTabButton]}
           onPress={() => {
-            analyticsService.trackAction('tab_changed', { 
+            analyticsService.trackAction('tab_changed', {
               screen: 'Family',
               tab: 'activity',
-              user_id: user?.uid 
+              user_id: user?.uid,
             });
             setActiveTab('activity');
           }}
@@ -531,10 +532,10 @@ export default function FamilyScreen() {
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'notifications' && styles.activeTabButton]}
           onPress={() => {
-            analyticsService.trackAction('tab_changed', { 
+            analyticsService.trackAction('tab_changed', {
               screen: 'Family',
               tab: 'notifications',
-              user_id: user?.uid 
+              user_id: user?.uid,
             });
             setActiveTab('notifications');
           }}

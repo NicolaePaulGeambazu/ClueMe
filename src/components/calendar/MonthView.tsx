@@ -75,4 +75,4 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, setSelected
   );
 };
 
-export default MonthView; 
+export default MonthView;

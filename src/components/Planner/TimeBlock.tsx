@@ -52,11 +52,11 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
 
   const isOverdue = () => {
     if (!reminder.dueDate || reminder.completed) {return false;}
-    
+
     try {
       // Create a Date object from the due date
       const dueDateTime = new Date(reminder.dueDate);
-      
+
       // If there's a due time, combine it with the due date
       if (reminder.dueTime) {
         const [hours, minutes] = reminder.dueTime.split(':').map(Number);
@@ -64,7 +64,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
           dueDateTime.setHours(hours, minutes, 0, 0);
         }
       }
-      
+
       const now = new Date();
       return dueDateTime < now;
     } catch (error) {
@@ -159,9 +159,9 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
           <View style={styles.assignedTo}>
             <User size={12} color={colors.textSecondary} strokeWidth={2} />
             <Text style={styles.assignedText}>
-              {Array.isArray(reminder.assignedTo) 
-                ? reminder.assignedTo.length === 1 
-                  ? reminder.assignedTo[0] 
+              {Array.isArray(reminder.assignedTo)
+                ? reminder.assignedTo.length === 1
+                  ? reminder.assignedTo[0]
                   : `${reminder.assignedTo[0]} +${reminder.assignedTo.length - 1}`
                 : reminder.assignedTo
               }

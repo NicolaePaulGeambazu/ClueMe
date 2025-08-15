@@ -113,7 +113,7 @@ export default function ToastNotification({
 
   const typeStyles = getTypeStyles();
 
-  if (!visible) return null;
+  if (!visible) {return null;}
 
   return (
     <Animated.View
@@ -135,7 +135,7 @@ export default function ToastNotification({
         <View style={styles.iconContainer}>
           <Bell size={20} color={typeStyles.iconColor} />
         </View>
-        
+
         <View style={styles.textContainer}>
           <Text style={[styles.title, { color: typeStyles.iconColor }]}>
             {title}
@@ -197,4 +197,4 @@ const styles = StyleSheet.create({
     right: 16,
     padding: 4,
   },
-}); 
+});

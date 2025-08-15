@@ -1197,8 +1197,11 @@ PODS:
   - nanopb/decode (2.30909.1)
   - nanopb/encode (2.30909.1)
   - PromisesObjC (2.4.0)
-  - PurchasesHybridCommon (14.2.0):
-    - RevenueCat (= 5.32.0)
+  - PurchasesHybridCommon (16.0.2):
+    - RevenueCat (= 5.33.1)
+  - PurchasesHybridCommonUI (16.0.2):
+    - PurchasesHybridCommon (= 16.0.2)
+    - RevenueCatUI (= 5.33.1)
   - RCT-Folly (2024.01.01.00):
     - boost
     - DoubleConversion
@@ -2740,7 +2743,9 @@ PODS:
     - React-perflogger (= 0.75.5)
     - React-utils (= 0.75.5)
   - RecaptchaInterop (100.0.0)
-  - RevenueCat (5.32.0)
+  - RevenueCat (5.33.1)
+  - RevenueCatUI (5.33.1):
+    - RevenueCat (= 5.33.1)
   - RNCAsyncStorage (1.24.0):
     - React-Core
   - RNCPushNotificationIOS (1.11.0):
@@ -2764,7 +2769,7 @@ PODS:
     - FirebaseCoreExtension
     - React-Core
     - RNFBApp
-  - RNGestureHandler (2.27.1):
+  - RNGestureHandler (2.27.2):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -2806,10 +2811,13 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNPermissions (5.4.1):
+  - RNPaywalls (9.1.0):
+    - PurchasesHybridCommonUI (= 16.0.2)
     - React-Core
-  - RNPurchases (8.11.9):
-    - PurchasesHybridCommon (= 14.2.0)
+  - RNPermissions (5.4.2):
+    - React-Core
+  - RNPurchases (9.1.0):
+    - PurchasesHybridCommon (= 16.0.2)
     - React-Core
   - RNScreens (3.37.0):
     - DoubleConversion
@@ -2918,6 +2926,8 @@ DEPENDENCIES:
   - React-utils (from `../node_modules/react-native/ReactCommon/react/utils`)
   - ReactCodegen (from `build/generated/ios`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - RevenueCat
+  - RevenueCatUI
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCPushNotificationIOS (from `../node_modules/@react-native-community/push-notification-ios`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
@@ -2927,6 +2937,7 @@ DEPENDENCIES:
   - "RNFBMessaging (from `../node_modules/@react-native-firebase/messaging`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNKeychain (from `../node_modules/react-native-keychain`)
+  - RNPaywalls (from `../node_modules/react-native-purchases-ui`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -2959,8 +2970,10 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PurchasesHybridCommon
+    - PurchasesHybridCommonUI
     - RecaptchaInterop
     - RevenueCat
+    - RevenueCatUI
     - SocketRocket
 
 EXTERNAL SOURCES:
@@ -3115,6 +3128,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNKeychain:
     :path: "../node_modules/react-native-keychain"
+  RNPaywalls:
+    :path: "../node_modules/react-native-purchases-ui"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
   RNPurchases:
@@ -3156,7 +3171,8 @@ SPEC CHECKSUMS:
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   nanopb: d4d75c12cd1316f4a64e3c6963f879ecd4b5e0d5
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  PurchasesHybridCommon: f1650b33e9a1dd04d5e8a40dfe757f39e63f935c
+  PurchasesHybridCommon: ae7a0a6e105ecdde3e8816a004e57f0a2a7b9261
+  PurchasesHybridCommonUI: f94430070f5ec1cc9513666402871dc70f42ec36
   RCT-Folly: 4464f4d875961fce86008d45f4ecf6cef6de0740
   RCTDeprecation: 3abf1129f54dbf292986302277f62ad01f7af1b2
   RCTRequired: 67f606e1be40dbb827898c23d9eaee3562b087d1
@@ -3218,7 +3234,8 @@ SPEC CHECKSUMS:
   ReactCodegen: af43092ca6431116ead54b612faa885b8f13ebec
   ReactCommon: cd7165b1efcbd9a7947634f8c9b662a78b0ddf2d
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
-  RevenueCat: 7e1d0768fb287c9983173c9b28e39ccbeeb828a9
+  RevenueCat: b0ed01125b05a45b8264a2951ad68acb61942038
+  RevenueCatUI: e6fad6a8bec67d910da78cd171328f1104afea77
   RNCAsyncStorage: ec53e44dc3e75b44aa2a9f37618a49c3bc080a7a
   RNCPushNotificationIOS: 64218f3c776c03d7408284a819b2abfda1834bc8
   RNDateTimePicker: 5f8f466cebb540aabd442d485e4ce5b27cf54b23
@@ -3226,15 +3243,16 @@ SPEC CHECKSUMS:
   RNFBAuth: ecbb030e0fd3551b8bc36cc85e0ebb1bcfb7685e
   RNFBFirestore: b12e7d4e6a94e08565638442def454984a06c065
   RNFBMessaging: 3fa1114c0868dd21f20dfe186adf42297ea316b1
-  RNGestureHandler: e784e285cfbc6961532b08840925c61396b304ec
+  RNGestureHandler: 45b7a38ee414d05b8d7e44c0bf89621792543fbf
   RNKeychain: a58690e4450434e8e900ed47032fa58c59cc5570
-  RNPermissions: 03b44093fa40a574c176ea832a30041450be5c08
-  RNPurchases: eacca3299dd586b6c64e7fca8f768a20c6dffe76
+  RNPaywalls: db7b33f8835dbf1bea9b850f3dd5d636a44f68be
+  RNPermissions: 232d2fcb99cc562e125745c4d47128d01e5d3911
+  RNPurchases: 5b2961157420e3ea1716d61bad681fa092581c79
   RNScreens: a77d531f86f2f76dc8a02f7a938d560f2a94540f
   RNSVG: 28b61fc4856abe8eaea46794419f848986ee7e80
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 929fa3162dc47b68bdbd4b7b794b6353ef9b53c5
 
-PODFILE CHECKSUM: 119b2a856cfe0b42d0ab0a70303b939c1de5457c
+PODFILE CHECKSUM: babd114096569ba2ea85fa38e2868280702d3ce7
 
 COCOAPODS: 1.16.2

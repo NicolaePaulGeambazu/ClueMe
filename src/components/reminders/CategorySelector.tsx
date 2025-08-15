@@ -109,4 +109,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CategorySelector; 
+export default CategorySelector;

@@ -5,13 +5,7 @@ import firestore from '@react-native-firebase/firestore';
 import messaging from '@react-native-firebase/messaging';
 import { userService, getFirestoreInstance } from './firebaseService';
 import { generateRecurringOccurrences } from '../utils/calendarUtils';
-import { 
-  calculateNotificationTimeWithTimezone,
-  getCurrentTimezone,
-  getCurrentTimezoneOffset,
-  detectTimezoneChange,
-  adjustNotificationsForTimezoneChange
-} from '../utils/timezoneUtils';
+
 import type { ReminderType, ReminderPriority, ReminderStatus, NotificationType, NotificationTiming as DesignSystemNotificationTiming } from '../design-system/reminders/types';
 
 export interface NotificationData {
@@ -59,8 +53,6 @@ export interface ReminderData {
     maxOccurrences?: number;
   };
   notificationTimings?: NotificationTiming[];
-  timezone?: string;
-  timezoneOffset?: number;
   type?: ReminderType;
   status?: ReminderStatus;
   coOwners?: string[]; // Array of user IDs who can manage this reminder
@@ -185,7 +177,7 @@ class NotificationService {
   }
 
   /**
-   * Calculate notification time based on reminder and timing
+   * Calculate notification time based on reminder and timing with proper timezone handling
    */
   private calculateNotificationTime(reminder: ReminderData, timing: NotificationTiming): Date {
     try {
@@ -215,23 +207,26 @@ class NotificationService {
         baseTime = new Date(reminder.dueDate || Date.now());
       }
 
-      // Apply timing offset
+      // Apply timing offset - FIXED: Remove the * 60 multiplication
       const notificationTime = new Date(baseTime);
       
       switch (timing.type) {
         case 'before':
-          notificationTime.setMinutes(notificationTime.getMinutes() - timing.value * 60);
+          notificationTime.setMinutes(notificationTime.getMinutes() - timing.value);
           break;
         case 'after':
-          notificationTime.setMinutes(notificationTime.getMinutes() + timing.value * 60);
+          notificationTime.setMinutes(notificationTime.getMinutes() + timing.value);
           break;
         case 'exact':
         default:
           break;
       }
 
+
+
       return notificationTime;
     } catch (error) {
+      console.error('[NotificationService] Error calculating notification time:', error);
       // Return current time as fallback
       return new Date();
     }
@@ -335,9 +330,7 @@ class NotificationService {
           escalationTier,
         };
         
-        if (reminder.timezone) {
-          // Add timezone info to userInfo if needed
-        }
+
         
         PushNotification.localNotificationSchedule({
           id: notificationId,
@@ -365,15 +358,10 @@ class NotificationService {
   }
 
   /**
-   * Schedule notifications for a reminder with timezone awareness
+   * Schedule notifications for a reminder
    */
   public async scheduleReminderNotifications(reminder: ReminderData): Promise<void> {
     try {
-      // Ensure reminder has timezone information
-      if (!reminder.timezone) {
-        reminder.timezone = getCurrentTimezone();
-        reminder.timezoneOffset = getCurrentTimezoneOffset();
-      }
 
       // Cancel any existing notifications for this reminder
       this.cancelReminderNotifications(reminder.id);
@@ -572,12 +560,12 @@ class NotificationService {
   }
 
   /**
-   * Schedule recurring reminder notifications
+   * Schedule recurring reminder notifications with improved timezone handling
    */
   private async scheduleRecurringReminderNotifications(reminder: ReminderData, notificationTimings: NotificationTiming[]): Promise<void> {
     try {
-      // Generate recurring occurrences (limit to next 14 days for performance)
-      const reminderWithDates = {
+      // Convert to design system format for consistent handling
+      const designSystemReminder = {
         ...reminder,
         userId: reminder.userId || '',
         type: (reminder.type || 'task') as ReminderType,
@@ -587,31 +575,41 @@ class NotificationService {
         notificationTimings: reminder.notificationTimings as DesignSystemNotificationTiming[] | undefined,
         createdAt: reminder.createdAt ? new Date(reminder.createdAt) : new Date(),
         updatedAt: reminder.updatedAt ? new Date(reminder.updatedAt) : new Date(),
+        isRecurring: true,
+        repeatPattern: reminder.recurring?.pattern || 'daily',
+        customInterval: reminder.recurring?.interval || 1,
+        recurringEndDate: reminder.recurring?.endDate ? new Date(reminder.recurring.endDate) : undefined,
+        recurringEndAfter: reminder.recurring?.maxOccurrences,
       };
-      const occurrences = generateRecurringOccurrences(reminderWithDates, new Date(), undefined, 14);
+
+      // Use design system utility for consistent recurring logic
+      const { generateOccurrences } = require('../design-system/reminders/utils/recurring-utils');
+      const occurrences = generateOccurrences(designSystemReminder, 30); // Generate up to 30 occurrences
+      
+      console.log(`[NotificationService] Generated ${occurrences.length} recurring occurrences for reminder ${reminder.id}`);
       
       // Schedule notifications for each occurrence
       occurrences.forEach((occurrence: any, index: number) => {
         const reminderWithOccurrence = {
           ...reminder,
-          dueDate: occurrence.date ? occurrence.date : (occurrence instanceof Date ? occurrence.toISOString() : ''),
+          dueDate: occurrence.date ? occurrence.date.toISOString() : (occurrence instanceof Date ? occurrence.toISOString() : ''),
         };
 
         notificationTimings.forEach((timing: NotificationTiming) => {
           // Schedule local notification for the creator
           this.scheduleLocalNotification(reminderWithOccurrence, timing);
-
-          // NOTE: Assigned user notifications are now handled by each user's device
-          // when they load their assigned tasks. This prevents cross-device notification issues.
-          if (reminder.assignedTo && reminder.assignedTo.length > 0 && reminder.userId) {
-            console.log(`[NotificationService] Recurring reminder ${reminder.id} has ${reminder.assignedTo.length} assigned users`);
-            console.log(`[NotificationService] Each assigned user's device will schedule their own notifications when they load this task`);
-          }
         });
       });
 
-      // Scheduled notifications for recurring reminder
+      // Schedule notifications for assigned users (handled by each user's device)
+      if (reminder.assignedTo && reminder.assignedTo.length > 0 && reminder.userId) {
+        console.log(`[NotificationService] Recurring reminder ${reminder.id} has ${reminder.assignedTo.length} assigned users`);
+        console.log(`[NotificationService] Each assigned user's device will schedule their own notifications when they load this task`);
+      }
+
+      console.log(`[NotificationService] Successfully scheduled recurring notifications for ${occurrences.length} occurrences`);
     } catch (error) {
+      console.error('[NotificationService] Error scheduling recurring notifications:', error);
       // Error handled by caller
     }
   }
@@ -692,20 +690,29 @@ class NotificationService {
   /**
    * Cancel notifications for a specific reminder
    */
-  public cancelReminderNotifications(reminderId: string): void {
+  public async cancelReminderNotifications(reminderId: string): Promise<void> {
     try {
-      // Get all scheduled notifications
-      PushNotification.getScheduledLocalNotifications((notifications) => {
-        notifications.forEach((notification: any) => {
-          const notifId = notification.id;
-          const notifReminderId = notification.userInfo?.reminderId;
-          if (notifReminderId === reminderId) {
-            PushNotification.cancelLocalNotification(notifId);
-          }
-        });
-      });
+      console.log(`[NotificationService] Cancelling notifications for reminder: ${reminderId}`);
+      
+      // Get all scheduled notifications and wait for the result
+      const notifications = await this.getScheduledNotifications();
+      
+      let cancelledCount = 0;
+      for (const notification of notifications) {
+        const notifId = notification.id;
+        const notifReminderId = notification.userInfo?.reminderId;
+        
+        if (notifReminderId === reminderId) {
+          console.log(`[NotificationService] Cancelling notification: ${notifId} for reminder: ${reminderId}`);
+          PushNotification.cancelLocalNotification(notifId);
+          cancelledCount++;
+        }
+      }
+      
+      console.log(`[NotificationService] Successfully cancelled ${cancelledCount} notifications for reminder: ${reminderId}`);
     } catch (error) {
-      // Error handled by caller
+      console.error(`[NotificationService] Error cancelling notifications for reminder ${reminderId}:`, error);
+      throw error;
     }
   }
 
@@ -1051,7 +1058,7 @@ class NotificationService {
         return;
       }
       
-      const members = membersQuery.docs.map(doc => ({
+      const members = membersQuery.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as { id: string; userId: string; name: string; email: string; role: string }));
@@ -1301,7 +1308,7 @@ class NotificationService {
         return;
       }
       
-      const reminders = remindersQuery.docs.map(doc => ({
+      const reminders = remindersQuery.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       } as { id: string; title: string; dueDate: any; assignedTo: string[]; status: string }));
@@ -1515,41 +1522,7 @@ class NotificationService {
     }
   }
 
-  /**
-   * Check for timezone changes and reschedule notifications if needed
-   */
-  public async checkTimezoneChanges(): Promise<void> {
-    try {
-      // Get all active reminders from storage/database
-      const activeReminders = await this.getActiveReminders();
-      
-      for (const reminder of activeReminders) {
-        if (reminder.timezone && reminder.timezoneOffset !== undefined) {
-          const timezoneChange = detectTimezoneChange(reminder.timezone, reminder.timezoneOffset);
-          
-          if (timezoneChange.hasChanged) {
-            
-            // Cancel existing notifications
-            this.cancelReminderNotifications(reminder.id);
-            
-            // Update reminder with new timezone info
-            const updatedReminder = {
-              ...reminder,
-              timezone: timezoneChange.newTimezone,
-              timezoneOffset: timezoneChange.newOffset,
-            };
-            
-            // Reschedule notifications with new timezone
-            await this.scheduleReminderNotifications(updatedReminder);
-            
-            // Update the reminder in storage/database
-            await this.updateReminder(updatedReminder);
-          }
-        }
-      }
-    } catch (error) {
-    }
-  }
+
 
   /**
    * Get active reminders (placeholder - implement based on your storage)

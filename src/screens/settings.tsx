@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch, TouchableOpacity, Alert, TextInput, Modal, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -24,7 +24,7 @@ import {
   CheckCircle,
   Users,
   MapPin,
-  Brain,
+
   BarChart3,
   Sparkles,
 } from 'lucide-react-native';
@@ -41,11 +41,13 @@ import PrivacySettings from '../components/PrivacySettings';
 import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
 import { usePremiumStatus } from '../hooks/usePremiumStatus';
 import { useUserUsage } from '../hooks/useUserUsage';
-import FullScreenPaywall from '../components/premium/FullScreenPaywall';
+import revenueCatPaywallService from '../services/revenueCatPaywallService';
+import RevenueCatDashboardPaywall from '../components/premium/RevenueCatDashboardPaywall';
 import SubscriptionManagementModal from '../components/premium/SubscriptionManagementModal';
 import { useSettings } from '../contexts/SettingsContext';
 import notificationService from '../services/notificationService';
 import { useReminderContext } from '../contexts/ReminderContext';
+
 
 
 const { width } = Dimensions.get('window');
@@ -54,7 +56,41 @@ const { width } = Dimensions.get('window');
 const useSubscription = () => {
   const premium = usePremiumStatus();
   const userUsage = useUserUsage();
-  
+
+  // Track if all data sources are loaded and stable
+  const [isDataStable, setIsDataStable] = useState(false);
+  const [stabilizationTimeout, setStabilizationTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Check if all data sources are loaded
+  const allDataLoaded = !premium.isLoading && !userUsage.isLoading;
+
+  // Use effect to track when data stabilizes
+  useEffect(() => {
+    if (allDataLoaded) {
+      // Clear any existing timeout
+      if (stabilizationTimeout) {
+        clearTimeout(stabilizationTimeout);
+      }
+
+      // Set a timeout to mark data as stable after a short delay
+      // This allows for any final RevenueCat health reports to complete
+      const timeout = setTimeout(() => {
+        setIsDataStable(true);
+      }, 2000); // 2 second delay to allow RevenueCat calls to complete
+
+      setStabilizationTimeout(timeout);
+    } else {
+      setIsDataStable(false);
+    }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (stabilizationTimeout) {
+        clearTimeout(stabilizationTimeout);
+      }
+    };
+  }, [allDataLoaded, premium.status, userUsage.usageStats]);
+
   // Get subscription details based on premium status and usage
   const getSubscriptionDetails = () => {
     if (premium.isPremium) {
@@ -97,6 +133,10 @@ const useSubscription = () => {
     },
     usageStats: userUsage.usageStats,
     nextResetDate: userUsage.usageStats?.nextResetDate,
+    // Loading states
+    isLoading: !allDataLoaded,
+    isDataStable,
+    allDataLoaded,
   };
 };
 
@@ -785,6 +825,64 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  // Loading states
+  usageHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  loadingIndicator: {
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  loadingText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.caption2,
+    color: colors.primary,
+  },
+  stabilizingIndicator: {
+    backgroundColor: colors.warning + '15',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  stabilizingText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: FontSizes.caption2,
+    color: colors.warning,
+  },
+  loadingSkeleton: {
+    gap: 12,
+  },
+  skeletonItem: {
+    marginBottom: 12,
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  skeletonLabel: {
+    width: 100,
+    height: 14,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+  },
+  skeletonCount: {
+    width: 40,
+    height: 14,
+    backgroundColor: colors.border,
+    borderRadius: 4,
+  },
+  skeletonProgressBar: {
+    height: 12,
+    backgroundColor: colors.border + '40',
+    borderRadius: 6,
+  },
 
 });
 
@@ -801,6 +899,7 @@ export default function SettingsScreen({ navigation }: any) {
   const subscription = useSubscription();
   const premium = usePremiumStatus();
   const { fabPosition, setFabPosition } = useSettings();
+
   const colors = Colors[theme];
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -812,14 +911,15 @@ export default function SettingsScreen({ navigation }: any) {
 
 
 
-  // Name editing state
+    // Name editing state
   const [showNameEditModal, setShowNameEditModal] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [isUpdatingName, setIsUpdatingName] = useState(false);
 
   // Upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  
+  const [revenueCatOfferings, setRevenueCatOfferings] = useState<any>(null);
+
   // Privacy settings modal state
   const [showPrivacySettings, setShowPrivacySettings] = useState(false);
 
@@ -922,10 +1022,75 @@ export default function SettingsScreen({ navigation }: any) {
     i18n.changeLanguage(languageCode);
   };
 
-  const handleUpgrade = () => {
-    // This will be called when user successfully upgrades
-    console.log('User upgraded to premium');
-    // You can add any post-upgrade logic here
+  const handleUpgrade = async () => {
+    try {
+      // console.log('Loading RevenueCat offerings...');
+      const result = await revenueCatPaywallService.showPaywall();
+
+      if (result.success && result.offerings) {
+        // console.log('RevenueCat offerings loaded successfully');
+        // Show the paywall modal with RevenueCat data
+        setShowUpgradeModal(true);
+        setRevenueCatOfferings(result.offerings);
+      } else {
+        console.error('Failed to load RevenueCat offerings:', result.error);
+        Alert.alert('Error', 'Unable to load subscription plans. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error loading offerings:', error);
+      Alert.alert('Error', 'Unable to load subscription plans. Please try again.');
+    }
+  };
+
+
+
+  // Force refresh premium status
+  const handleForceRefresh = async () => {
+    try {
+      const { premiumStatusManager } = require('../services/premiumStatusManager');
+      await premiumStatusManager.forceClearStatus();
+      await premiumStatusManager.refreshStatus();
+      console.log('Premium status refreshed');
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+    }
+  };
+
+  // Initialize RevenueCat manually
+  const handleInitRevenueCat = async () => {
+    try {
+      const { revenueCatService } = require('../services/revenueCatService');
+      const { user } = useAuth();
+
+      if (user && !user.isAnonymous) {
+        await revenueCatService.initialize();
+        await revenueCatService.setUserID(user.uid);
+        // console.log('RevenueCat initialized for user:', user.uid);
+
+        // Refresh premium status after RevenueCat init
+        const { premiumStatusManager } = require('../services/premiumStatusManager');
+        await premiumStatusManager.refreshStatus();
+      } else {
+        console.log('No registered user found');
+      }
+    } catch (error) {
+      console.error('RevenueCat init failed:', error);
+    }
+  };
+
+  // Clear RevenueCat cache
+  const handleClearCache = async () => {
+    try {
+      const { revenueCatService } = require('../services/revenueCatService');
+      const { premiumStatusManager } = require('../services/premiumStatusManager');
+
+      // console.log('[Settings] Clearing RevenueCat cache...');
+      await revenueCatService.clearCache();
+      await premiumStatusManager.refreshStatus();
+      // console.log('[Settings] Cache cleared successfully');
+    } catch (error) {
+      console.error('[Settings] Failed to clear cache:', error);
+    }
   };
 
   const renderProfileSection = () => (
@@ -951,7 +1116,11 @@ export default function SettingsScreen({ navigation }: any) {
               <Text style={styles.displayName}>
                 {user?.displayName || t('settings.welcomeUser')}
               </Text>
-              {premium.isPremium && (
+              {premium.isLoading ? (
+                <View style={styles.proBadge}>
+                  <Text style={styles.proBadgeText}>Loading...</Text>
+                </View>
+              ) : premium.isPremium && (
                 <View style={styles.proBadge}>
                   <Crown size={10} color="#FFD700" strokeWidth={2} />
                   <Text style={styles.proBadgeText}>PRO</Text>
@@ -965,9 +1134,18 @@ export default function SettingsScreen({ navigation }: any) {
 
           {/* Inline upgrade button for signed-in non-pro users */}
           {!premium.isPremium && !isAnonymous && (
-            <TouchableOpacity style={styles.inlineUpgradeButton} onPress={() => setShowUpgradeModal(true)}>
+            <TouchableOpacity
+              style={[
+                styles.inlineUpgradeButton,
+                premium.isLoading && styles.disabledButton,
+              ]}
+              onPress={handleUpgrade}
+              disabled={premium.isLoading}
+            >
               <Sparkles size={16} color={colors.primary} strokeWidth={2} />
-              <Text style={styles.inlineUpgradeText}>Upgrade</Text>
+              <Text style={styles.inlineUpgradeText}>
+                {premium.isLoading ? 'Loading...' : 'Upgrade'}
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -991,94 +1169,136 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           {/* Usage Stats - Only show for signed-in free users */}
           <View style={styles.usageSection}>
-            <Text style={styles.usageTitle}>Current Usage</Text>
-            
-            <View style={styles.usageItem}>
-              <View style={styles.usageHeader}>
-                <Text style={styles.usageLabel}>Monthly Reminders</Text>
-                <Text style={styles.usageCount}>
-                  {subscription.remainingReminders}/{subscription.maxReminders}
-                </Text>
-              </View>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${((subscription.maxReminders - subscription.remainingReminders) / subscription.maxReminders) * 100}%`,
-                      backgroundColor: subscription.remainingReminders < 2 ? colors.warning : colors.primary
-                    }
-                  ]}
-                >
-                  {/* Glossy highlight overlay */}
-                  <View style={styles.progressHighlight} />
+            <View style={styles.usageHeaderRow}>
+              <Text style={styles.usageTitle}>Current Usage</Text>
+              {subscription.isLoading && (
+                <View style={styles.loadingIndicator}>
+                  <Text style={styles.loadingText}>Loading...</Text>
                 </View>
-              </View>
-              {subscription.remainingReminders < 2 && (
-                <Text style={styles.usageWarning}>
-                  Only {subscription.remainingReminders} reminders left this month
-                </Text>
+              )}
+              {subscription.allDataLoaded && !subscription.isDataStable && (
+                <View style={styles.stabilizingIndicator}>
+                  <Text style={styles.stabilizingText}>Will stabilize...</Text>
+                </View>
               )}
             </View>
 
-            <View style={styles.usageItem}>
-              <View style={styles.usageHeader}>
-                <Text style={styles.usageLabel}>Lists</Text>
-                <Text style={styles.usageCount}>
-                  {subscription.remainingLists}/{subscription.maxLists}
-                </Text>
-              </View>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${((subscription.maxLists - subscription.remainingLists) / subscription.maxLists) * 100}%`,
-                      backgroundColor: subscription.remainingLists < 1 ? colors.warning : colors.primary
-                    }
-                  ]}
-                >
-                  {/* Glossy highlight overlay */}
-                  <View style={styles.progressHighlight} />
+            {subscription.isLoading ? (
+              // Show loading skeleton
+              <View style={styles.loadingSkeleton}>
+                <View style={styles.skeletonItem}>
+                  <View style={styles.skeletonHeader}>
+                    <View style={styles.skeletonLabel} />
+                    <View style={styles.skeletonCount} />
+                  </View>
+                  <View style={styles.skeletonProgressBar} />
+                </View>
+                <View style={styles.skeletonItem}>
+                  <View style={styles.skeletonHeader}>
+                    <View style={styles.skeletonLabel} />
+                    <View style={styles.skeletonCount} />
+                  </View>
+                  <View style={styles.skeletonProgressBar} />
+                </View>
+                <View style={styles.skeletonItem}>
+                  <View style={styles.skeletonHeader}>
+                    <View style={styles.skeletonLabel} />
+                    <View style={styles.skeletonCount} />
+                  </View>
+                  <View style={styles.skeletonProgressBar} />
                 </View>
               </View>
-              {subscription.remainingLists < 1 && (
-                <Text style={styles.usageWarning}>
-                  No lists remaining. Upgrade to Pro for unlimited lists.
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.usageItem}>
-              <View style={styles.usageHeader}>
-                <Text style={styles.usageLabel}>Family Members</Text>
-                <Text style={styles.usageCount}>
-                  {subscription.maxFamilyMembers - subscription.remainingFamilyMembers}/{subscription.maxFamilyMembers}
-                </Text>
-              </View>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${((subscription.maxFamilyMembers - subscription.remainingFamilyMembers) / subscription.maxFamilyMembers) * 100}%`,
-                      backgroundColor: colors.primary
-                    }
-                  ]}
-                >
-                  {/* Glossy highlight overlay */}
-                  <View style={styles.progressHighlight} />
+            ) : (
+              // Show actual usage data
+              <>
+                <View style={styles.usageItem}>
+                  <View style={styles.usageHeader}>
+                    <Text style={styles.usageLabel}>Monthly Reminders</Text>
+                    <Text style={styles.usageCount}>
+                      {subscription.remainingReminders}/{subscription.maxReminders}
+                    </Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${(subscription.remainingReminders / subscription.maxReminders) * 100}%`,
+                          backgroundColor: subscription.remainingReminders < 2 ? colors.warning : colors.primary,
+                        },
+                      ]}
+                    >
+                      {/* Glossy highlight overlay */}
+                      <View style={styles.progressHighlight} />
+                    </View>
+                  </View>
+                  {subscription.remainingReminders < 2 && (
+                    <Text style={styles.usageWarning}>
+                      Only {subscription.remainingReminders} reminders left this month
+                    </Text>
+                  )}
                 </View>
-              </View>
-            </View>
 
-            {/* Next reset date */}
-            {subscription.nextResetDate && (
-              <View style={styles.resetInfo}>
-                <Text style={styles.resetText}>
-                  Limits reset on {subscription.nextResetDate.toLocaleDateString()}
-                </Text>
-              </View>
+                <View style={styles.usageItem}>
+                  <View style={styles.usageHeader}>
+                    <Text style={styles.usageLabel}>Lists</Text>
+                    <Text style={styles.usageCount}>
+                      {subscription.remainingLists}/{subscription.maxLists}
+                    </Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${(subscription.remainingLists / subscription.maxLists) * 100}%`,
+                          backgroundColor: subscription.remainingLists < 1 ? colors.warning : colors.primary,
+                        },
+                      ]}
+                    >
+                      {/* Glossy highlight overlay */}
+                      <View style={styles.progressHighlight} />
+                    </View>
+                  </View>
+                  {subscription.remainingLists < 1 && (
+                    <Text style={styles.usageWarning}>
+                      No lists remaining. Upgrade to Pro for unlimited lists.
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.usageItem}>
+                  <View style={styles.usageHeader}>
+                    <Text style={styles.usageLabel}>Family Members</Text>
+                    <Text style={styles.usageCount}>
+                      {subscription.maxFamilyMembers - subscription.remainingFamilyMembers}/{subscription.maxFamilyMembers}
+                    </Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${(subscription.remainingFamilyMembers / subscription.maxFamilyMembers) * 100}%`,
+                          backgroundColor: colors.primary,
+                        },
+                      ]}
+                    >
+                      {/* Glossy highlight overlay */}
+                      <View style={styles.progressHighlight} />
+                    </View>
+                  </View>
+                </View>
+
+                {/* Next reset date */}
+                {subscription.nextResetDate && (
+                  <View style={styles.resetInfo}>
+                    <Text style={styles.resetText}>
+                      Limits reset on {subscription.nextResetDate.toLocaleDateString()}
+                    </Text>
+                  </View>
+                )}
+              </>
             )}
           </View>
         </View>
@@ -1095,18 +1315,34 @@ export default function SettingsScreen({ navigation }: any) {
                 <Crown size={20} color={colors.primary} strokeWidth={2} />
               </View>
               <View style={styles.subscriptionContent}>
-                <Text style={styles.subscriptionTitle}>{subscription.subscriptionStatus.name}</Text>
-                <Text style={styles.subscriptionDescription}>
-                  {subscription.subscriptionStatus.isActive ? t('settings.activeSubscription') : t('settings.inactiveSubscription')}
+                <Text style={styles.subscriptionTitle}>
+                  {subscription.isLoading ? 'Loading...' : subscription.subscriptionStatus.name}
                 </Text>
+                <Text style={styles.subscriptionDescription}>
+                  {subscription.isLoading
+                    ? 'Loading subscription details...'
+                    : subscription.subscriptionStatus.isActive
+                      ? t('settings.activeSubscription')
+                      : t('settings.inactiveSubscription')
+                  }
+                </Text>
+                {subscription.allDataLoaded && !subscription.isDataStable && (
+                  <Text style={styles.stabilizingText}>Will stabilize...</Text>
+                )}
               </View>
             </View>
-            
-            <TouchableOpacity 
-              style={styles.manageSubscriptionButton}
+
+            <TouchableOpacity
+              style={[
+                styles.manageSubscriptionButton,
+                subscription.isLoading && styles.disabledButton,
+              ]}
               onPress={() => setShowSubscriptionManagement(true)}
+              disabled={subscription.isLoading}
             >
-              <Text style={styles.manageSubscriptionText}>{t('settings.manageSubscription')}</Text>
+              <Text style={styles.manageSubscriptionText}>
+                {subscription.isLoading ? 'Loading...' : t('settings.manageSubscription')}
+              </Text>
               <ChevronRight size={16} color={colors.primary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
@@ -1188,21 +1424,33 @@ export default function SettingsScreen({ navigation }: any) {
       {/* Debug Section - Only in development */}
       {__DEV__ && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Debug</Text>
-          <View style={styles.settingItem}>
+          {/* Force Refresh Button - Temporary */}
+          <TouchableOpacity style={styles.settingItem} onPress={handleForceRefresh}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
-                <Brain size={20} color={colors.warning} strokeWidth={2} />
+                <Zap size={20} color={colors.warning} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Debug Premium Status</Text>
-                <Text style={styles.settingDescription}>Check why user shows as Pro</Text>
+                <Text style={styles.settingLabel}>Force Refresh Premium Status</Text>
+                <Text style={styles.settingDescription}>Reset to free and refresh status</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={premium.debugStatus}>
-              <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
-            </TouchableOpacity>
-          </View>
+            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+          </TouchableOpacity>
+
+          {/* Initialize RevenueCat Button */}
+          <TouchableOpacity style={styles.settingItem} onPress={handleInitRevenueCat}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
+                <Crown size={20} color={colors.primary} strokeWidth={2} />
+              </View>
+              <View style={styles.settingContent}>
+                <Text style={styles.settingLabel}>Initialize RevenueCat</Text>
+                <Text style={styles.settingDescription}>Connect your account to RevenueCat</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
+          </TouchableOpacity>
           <View style={styles.settingItem}>
             <View style={styles.settingLeft}>
               <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -1237,11 +1485,11 @@ export default function SettingsScreen({ navigation }: any) {
                 <Shield size={20} color={colors.warning} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
-                <Text style={styles.settingLabel}>Clear RevenueCat Data</Text>
+                <Text style={styles.settingLabel}>Clear RevenueCat Cache</Text>
                 <Text style={styles.settingDescription}>Clear cached subscription data</Text>
               </View>
             </View>
-            <TouchableOpacity onPress={premium.forceClearStatus}>
+            <TouchableOpacity onPress={handleClearCache}>
               <ChevronRight size={20} color={colors.textTertiary} strokeWidth={2} />
             </TouchableOpacity>
           </View>
@@ -1282,7 +1530,7 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <TouchableOpacity style={styles.settingItem} onPress={() => navigation.navigate('Login')}>
             <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}> 
+              <View style={[styles.settingIcon, { backgroundColor: colors.primary + '15' }]}>
                 <User size={20} color={colors.primary} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
@@ -1297,7 +1545,7 @@ export default function SettingsScreen({ navigation }: any) {
         <View style={styles.section}>
           <TouchableOpacity style={styles.settingItem} onPress={handleSignOut}>
             <View style={styles.settingLeft}>
-              <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}> 
+              <View style={[styles.settingIcon, { backgroundColor: colors.error + '15' }]}>
                 <LogOut size={20} color={colors.error} strokeWidth={2} />
               </View>
               <View style={styles.settingContent}>
@@ -1319,8 +1567,8 @@ export default function SettingsScreen({ navigation }: any) {
       {/* Banner Ad - Integrated at bottom of content (only for free users) */}
       {!premium.isPremium && (
         <View style={styles.bannerContainer}>
-          <BannerAdComponent 
-            style={{ marginTop: 16 }} 
+          <BannerAdComponent
+            style={{ marginTop: 16 }}
             backgroundType="transparent"
           />
         </View>
@@ -1422,17 +1670,18 @@ export default function SettingsScreen({ navigation }: any) {
             </View>
           </View>
         </View>
-      </Modal>
+              </Modal>
 
-      {/* Full Screen Paywall */}
-      <FullScreenPaywall
-        visible={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        onUpgrade={handleUpgrade}
-        triggerFeature="Premium Features"
-      />
+        {/* RevenueCat Paywall with actual RevenueCat data */}
+        <RevenueCatDashboardPaywall
+          visible={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleUpgrade}
+          triggerFeature="Premium Features"
+          revenueCatOfferings={revenueCatOfferings}
+        />
 
-      {/* Subscription Management Modal */}
+        {/* Subscription Management Modal */}
       <SubscriptionManagementModal
         visible={showSubscriptionManagement}
         onClose={() => setShowSubscriptionManagement(false)}
@@ -1451,6 +1700,8 @@ export default function SettingsScreen({ navigation }: any) {
         visible={showPrivacySettings}
         onClose={() => setShowPrivacySettings(false)}
       />
+
+
     </SafeAreaView>
   );
 }

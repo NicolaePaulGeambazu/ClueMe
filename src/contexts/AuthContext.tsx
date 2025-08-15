@@ -54,7 +54,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.warn('Failed to create/update user profile:', profileError);
                 // Don't fail the auth state change if profile creation fails
               }
-              
+
+              // Initialize RevenueCat with user ID if not anonymous
+              if (!firebaseUser.isAnonymous) {
+                try {
+                  const { revenueCatService } = require('../services/revenueCatService');
+                  await revenueCatService.initialize();
+                  await revenueCatService.setUserID(firebaseUser.uid);
+                  console.log('[AuthContext] RevenueCat initialized for user:', firebaseUser.uid);
+                } catch (rcError) {
+                  console.warn('[AuthContext] Failed to initialize RevenueCat:', rcError);
+                }
+              }
+
               const convertedUser = convertFirebaseUserToUser(firebaseUser);
               setUser(convertedUser);
             } else {
@@ -107,6 +119,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Don't fail the sign in if profile creation fails
       }
 
+      // Initialize RevenueCat for the signed-in user
+      try {
+        const { revenueCatService } = require('../services/revenueCatService');
+        const { premiumStatusManager } = require('../services/premiumStatusManager');
+
+        await revenueCatService.initialize();
+        await revenueCatService.setUserID(firebaseUser.uid);
+
+        // Clear cache and refresh status for the signed-in user
+        await revenueCatService.clearCache();
+        await premiumStatusManager.refreshStatus();
+
+        console.log('[AuthContext] RevenueCat initialized for signed-in user:', firebaseUser.uid);
+      } catch (rcError) {
+        console.warn('[AuthContext] Failed to initialize RevenueCat during sign in:', rcError);
+      }
+
       // Force update the user state since onAuthStateChanged might not trigger immediately
       const convertedUser = convertFirebaseUserToUser(firebaseUser);
       setUser(convertedUser);
@@ -127,6 +156,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Update display name if provided
       if (displayName) {
         await firebaseUser.updateProfile({ displayName });
+      }
+
+      // Reset premium status to free for new users
+      try {
+        const { premiumStatusManager } = require('../services/premiumStatusManager');
+        const { FeatureFlagService } = require('../services/featureFlags');
+        const { revenueCatService } = require('../services/revenueCatService');
+
+        // Reset feature flags to free
+        const featureFlags = FeatureFlagService.getInstance();
+        featureFlags.setUserTier('free');
+        featureFlags.setTestingMode(false);
+
+        // Clear RevenueCat cache and force clear premium status
+        await revenueCatService.clearCache();
+        await premiumStatusManager.forceClearStatus();
+
+        console.log('[AuthContext] Reset premium status to free for new user');
+      } catch (error) {
+        console.error('[AuthContext] Failed to reset premium status:', error);
       }
 
       // Try to create user profile in Firebase

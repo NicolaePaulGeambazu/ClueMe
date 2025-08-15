@@ -15,7 +15,7 @@ import {
   AlertTriangle,
   Repeat,
   Eye,
-  EyeOff
+  EyeOff,
 } from 'lucide-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,7 +34,7 @@ import {
   createMarkedDates,
   getEventTypeColor,
   assignEventsToTimeBlocks,
-  CalendarEvent
+  CalendarEvent,
 } from '../utils/calendarUtils';
 import BannerAdComponent from '../components/ads/BannerAdComponent';
 import InterstitialAdTrigger from '../components/ads/InterstitialAdTrigger';
@@ -52,7 +52,7 @@ export default function CalendarScreen({ navigation }: any) {
   const { showLoginPrompt, setShowLoginPrompt } = useAuthGuard();
   const { reminders, loadReminders } = useReminderContext();
   const { isPremium } = usePremium();
-  
+
   // State management
   const [selectedDate, setSelectedDate] = useState(getTodayISO());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -75,20 +75,20 @@ export default function CalendarScreen({ navigation }: any) {
 
   // Memoize all calendar events with filtering
   const allCalendarEvents = useMemo((): CalendarEvent[] => {
-    if (!reminders || reminders.length === 0) return [];
-    
+    if (!reminders || reminders.length === 0) {return [];}
+
     let events = getAllCalendarEvents(reminders);
-    
+
     // Apply type filter
     if (filterType !== 'all') {
       events = events.filter(event => event.type === filterType);
     }
-    
+
     // Apply completed filter
     if (!showCompletedEvents) {
       events = events.filter(event => !event.completed);
     }
-    
+
     return events;
   }, [reminders, filterType, showCompletedEvents]);
 
@@ -216,8 +216,8 @@ export default function CalendarScreen({ navigation }: any) {
     ];
 
     return (
-      <ScrollView 
-        horizontal 
+      <ScrollView
+        horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.filterContainer}
         contentContainerStyle={styles.filterContent}
@@ -231,17 +231,17 @@ export default function CalendarScreen({ navigation }: any) {
               style={[
                 styles.filterChip,
                 { backgroundColor: colors.surface },
-                isSelected && { backgroundColor: colors.primary }
+                isSelected && { backgroundColor: colors.primary },
               ]}
               onPress={() => setFilterType(filter.type)}
             >
-              <IconComponent 
-                size={14} 
-                color={isSelected ? colors.background : colors.textSecondary} 
+              <IconComponent
+                size={14}
+                color={isSelected ? colors.background : colors.textSecondary}
               />
               <Text style={[
                 styles.filterChipText,
-                { color: isSelected ? colors.background : colors.textSecondary }
+                { color: isSelected ? colors.background : colors.textSecondary },
               ]}>
                 {filter.label}
               </Text>
@@ -271,17 +271,17 @@ export default function CalendarScreen({ navigation }: any) {
               style={[
                 styles.viewModeButton,
                 { backgroundColor: colors.surface },
-                isSelected && { backgroundColor: colors.primary }
+                isSelected && { backgroundColor: colors.primary },
               ]}
               onPress={() => setViewMode(mode.mode)}
             >
-              <IconComponent 
-                size={16} 
-                color={isSelected ? colors.background : colors.textSecondary} 
+              <IconComponent
+                size={16}
+                color={isSelected ? colors.background : colors.textSecondary}
               />
               <Text style={[
                 styles.viewModeText,
-                { color: isSelected ? colors.background : colors.textSecondary }
+                { color: isSelected ? colors.background : colors.textSecondary },
               ]}>
                 {mode.label}
               </Text>
@@ -297,10 +297,10 @@ export default function CalendarScreen({ navigation }: any) {
       key={`${event.id}_${index}`}
       style={[
         styles.eventCard,
-        { 
+        {
           backgroundColor: colors.surface,
           borderLeftColor: getEventTypeColor(event.type),
-        }
+        },
       ]}
       onPress={() => handleEventPress(event)}
     >
@@ -326,7 +326,7 @@ export default function CalendarScreen({ navigation }: any) {
           {event.completed && <CheckCircle size={14} color={colors.success} />}
         </View>
       </View>
-      
+
       {(event.dueTime || event.location) && (
         <View style={styles.eventCardMeta}>
           {event.dueTime && (
@@ -360,7 +360,7 @@ export default function CalendarScreen({ navigation }: any) {
             </Text>
             <View style={[styles.timeLine, { backgroundColor: colors.borderLight }]} />
           </View>
-          
+
           <View style={styles.eventsContainer}>
             {block.events.length === 0 ? (
               <View style={styles.emptyTimeSlot}>
@@ -414,7 +414,7 @@ export default function CalendarScreen({ navigation }: any) {
         >
           <ChevronLeft size={24} color={colors.primary} strokeWidth={2.5} />
         </TouchableOpacity>
-        
+
         <View style={styles.headerContent}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             Calendar
@@ -435,7 +435,7 @@ export default function CalendarScreen({ navigation }: any) {
               <EyeOff size={20} color={colors.textSecondary} />
             )}
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.headerActionButton, { backgroundColor: colors.background }]}
             onPress={() => setShowFilters(!showFilters)}
@@ -470,7 +470,7 @@ export default function CalendarScreen({ navigation }: any) {
             theme={calendarTheme}
             style={styles.calendar}
           />
-          
+
           {/* Quick Event Preview for Month View */}
           {selectedDateEvents.length > 0 && (
             <View style={[styles.eventPreview, { backgroundColor: colors.surface }]}>
@@ -489,10 +489,10 @@ export default function CalendarScreen({ navigation }: any) {
                       key={`preview_${event.id}_${index}`}
                       style={[
                         styles.eventPreviewCard,
-                        { 
+                        {
                           backgroundColor: `${getEventTypeColor(event.type)}15`,
-                          borderLeftColor: getEventTypeColor(event.type)
-                        }
+                          borderLeftColor: getEventTypeColor(event.type),
+                        },
                       ]}
                       onPress={() => handleEventPress(event)}
                     >
@@ -547,8 +547,8 @@ export default function CalendarScreen({ navigation }: any) {
       />
 
       {/* Enhanced Floating Action Button */}
-      <TouchableOpacity 
-        onPress={handleAddReminder} 
+      <TouchableOpacity
+        onPress={handleAddReminder}
         style={[styles.fab, { backgroundColor: colors.primary }]}
       >
         <Plus size={28} color={colors.background} strokeWidth={2.5} />

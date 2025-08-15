@@ -1,5 +1,3 @@
-import { UserProfile, Family } from '../services/firebaseService';
-
 export interface UserEntitlements {
   maxReminders: number;
   maxFamilyMembers: number;
@@ -20,8 +18,8 @@ export interface EntitlementCheckResult {
 /**
  * Get user entitlements based on subscription tier
  */
-export function getUserEntitlements(user: UserProfile): UserEntitlements {
-  const isPaid = user.subscriptionTier === 'paid' && 
+export function getUserEntitlements(user: any): UserEntitlements {
+  const isPaid = user.subscriptionTier === 'paid' &&
     (!user.subscriptionExpiresAt || new Date() < user.subscriptionExpiresAt);
 
   if (isPaid) {
@@ -51,11 +49,11 @@ export function getUserEntitlements(user: UserProfile): UserEntitlements {
  * Check if user can create a new reminder
  */
 export function canCreateReminder(
-  user: UserProfile, 
+  user: any,
   currentReminderCount: number
 ): EntitlementCheckResult {
   const entitlements = getUserEntitlements(user);
-  
+
   if (entitlements.maxReminders === -1) {
     return { allowed: true };
   }
@@ -75,9 +73,9 @@ export function canCreateReminder(
 /**
  * Check if user can create a recurring reminder
  */
-export function canCreateRecurringReminder(user: UserProfile): EntitlementCheckResult {
+export function canCreateRecurringReminder(user: any): EntitlementCheckResult {
   const entitlements = getUserEntitlements(user);
-  
+
   if (!entitlements.allowRecurring) {
     return {
       allowed: false,
@@ -92,11 +90,11 @@ export function canCreateRecurringReminder(user: UserProfile): EntitlementCheckR
  * Check if user can add a family member
  */
 export function canAddFamilyMember(
-  user: UserProfile, 
+  user: any,
   currentFamilySize: number
 ): EntitlementCheckResult {
   const entitlements = getUserEntitlements(user);
-  
+
   if (entitlements.maxFamilyMembers === -1) {
     return { allowed: true };
   }
@@ -117,11 +115,11 @@ export function canAddFamilyMember(
  * Check if user can create a countdown
  */
 export function canCreateCountdown(
-  user: UserProfile, 
+  user: any,
   currentCountdownCount: number
 ): EntitlementCheckResult {
   const entitlements = getUserEntitlements(user);
-  
+
   if (entitlements.maxCountdowns === -1) {
     return { allowed: true };
   }
@@ -142,11 +140,11 @@ export function canCreateCountdown(
  * Check if user can create a list
  */
 export function canCreateList(
-  user: UserProfile, 
+  user: any,
   currentListCount: number
 ): EntitlementCheckResult {
   const entitlements = getUserEntitlements(user);
-  
+
   if (entitlements.maxLists === -1) {
     return { allowed: true };
   }
@@ -181,15 +179,15 @@ export function getUpgradePrompt(feature: string): string {
 /**
  * Check if user has active subscription
  */
-export function hasActiveSubscription(user: UserProfile): boolean {
-  return user.subscriptionTier === 'paid' && 
+export function hasActiveSubscription(user: any): boolean {
+  return user.subscriptionTier === 'paid' &&
     (!user.subscriptionExpiresAt || new Date() < user.subscriptionExpiresAt);
 }
 
 /**
  * Get subscription status for display
  */
-export function getSubscriptionStatus(user: UserProfile): {
+export function getSubscriptionStatus(user: any): {
   tier: string;
   status: 'active' | 'expired' | 'free';
   expiresAt?: Date;
@@ -214,4 +212,4 @@ export function getSubscriptionStatus(user: UserProfile): {
     tier: 'Free',
     status: 'free',
   };
-} 
+}

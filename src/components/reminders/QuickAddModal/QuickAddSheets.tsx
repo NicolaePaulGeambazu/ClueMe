@@ -65,18 +65,18 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
     <>
       {/* Date Sheet */}
       {showDateSheet && (
-        <View style={[styles.sheet, { 
+        <View style={[styles.sheet, {
           backgroundColor: colors.background,
-          paddingBottom: insets.bottom + 16 
-        }]}> 
+          paddingBottom: insets.bottom + 16,
+        }]}>
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.whenShouldThisHappen')}</Text>
           </View>
           {dateOptions.map(opt => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={opt.value}
               testID={`date-option-${opt.value}`}
-              style={styles.sheetOption} 
+              style={styles.sheetOption}
               onPress={() => onDateSelect(opt.value)}
             >
               <View style={styles.sheetOptionContent}>
@@ -95,18 +95,18 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
 
       {/* Time Sheet */}
       {showTimeSheet && (
-        <View style={[styles.sheet, { 
+        <View style={[styles.sheet, {
           backgroundColor: colors.background,
-          paddingBottom: insets.bottom + 16 
-        }]}> 
+          paddingBottom: insets.bottom + 16,
+        }]}>
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.whenShouldThisHappen')}</Text>
           </View>
           {timeOptions.map(opt => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={opt.value}
               testID={`time-option-${opt.value}`}
-              style={styles.sheetOption} 
+              style={styles.sheetOption}
               onPress={() => onTimeSelect(opt.value)}
             >
               <View style={styles.sheetOptionContent}>
@@ -126,18 +126,18 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
 
       {/* Family Member Picker Modal */}
       {showFamilyPicker && (
-        <View style={[styles.sheet, { 
+        <View style={[styles.sheet, {
           backgroundColor: colors.background,
-          paddingBottom: insets.bottom + 16 
-        }]}> 
+          paddingBottom: insets.bottom + 16,
+        }]}>
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{t('quickAdd.assignToFamilyMembers')}</Text>
           </View>
           {members.map((member) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={member.id}
               testID={`family-member-${member.id}`}
-              style={styles.sheetOption} 
+              style={styles.sheetOption}
               onPress={() => onFamilyMemberToggle(member.userId)}
             >
               <View style={styles.sheetOptionContent}>
@@ -158,4 +158,4 @@ export const QuickAddSheets: React.FC<QuickAddSheetsProps> = ({
       )}
     </>
   );
-}; 
+};

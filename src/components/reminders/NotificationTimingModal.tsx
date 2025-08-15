@@ -32,50 +32,50 @@ const notificationOptions: NotificationTimingOption[] = [
     type: NotificationType.BEFORE,
     value: 0,
     label: 'Just in time',
-    description: 'Right when the reminder is due'
+    description: 'Right when the reminder is due',
   },
   {
     type: NotificationType.BEFORE,
     value: 5,
     label: '5 minutes before',
-    description: 'Quick heads up'
+    description: 'Quick heads up',
   },
   {
     type: NotificationType.BEFORE,
     value: 15,
     label: '15 minutes before',
-    description: 'Standard reminder'
+    description: 'Standard reminder',
   },
   {
     type: NotificationType.BEFORE,
     value: 30,
     label: '30 minutes before',
-    description: 'Early warning'
+    description: 'Early warning',
   },
   {
     type: NotificationType.BEFORE,
     value: 60,
     label: '1 hour before',
-    description: 'Well prepared'
+    description: 'Well prepared',
   },
   {
     type: NotificationType.BEFORE,
     value: 120,
     label: '2 hours before',
-    description: 'Plenty of time'
+    description: 'Plenty of time',
   },
   {
     type: NotificationType.BEFORE,
     value: 1440,
     label: '1 day before',
-    description: 'Day ahead'
+    description: 'Day ahead',
   },
   {
     type: NotificationType.BEFORE,
     value: 2880,
     label: '2 days before',
-    description: 'Weekend planning'
-  }
+    description: 'Weekend planning',
+  },
 ];
 
 export default function NotificationTimingModal({
@@ -141,10 +141,10 @@ export default function NotificationTimingModal({
                 key={option.value}
                 style={[
                   styles.option,
-                  { 
+                  {
                     borderColor: colors.borderLight,
-                    backgroundColor: isSelected(option) ? colors.primary + '10' : colors.surface
-                  }
+                    backgroundColor: isSelected(option) ? colors.primary + '10' : colors.surface,
+                  },
                 ]}
                 onPress={() => toggleSelect(option)}
               >
@@ -286,4 +286,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontFamily: Fonts.text?.bold,
     fontSize: 16,
   },
-}); 
+});

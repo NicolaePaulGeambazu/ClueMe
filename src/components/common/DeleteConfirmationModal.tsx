@@ -98,11 +98,11 @@ export default function DeleteConfirmationModal({
   };
 
   const getRecurringDescription = () => {
-    if (!reminder || !reminder.isRecurring) return null;
+    if (!reminder || !reminder.isRecurring) {return null;}
 
     const pattern = reminder.repeatPattern;
     const interval = reminder.customInterval || 1;
-    
+
     let description = '';
     switch (pattern) {
       case 'daily':
@@ -123,10 +123,10 @@ export default function DeleteConfirmationModal({
 
     if (reminder.recurringEndDate) {
       const endDate = new Date(reminder.recurringEndDate);
-      const endDateStr = endDate.toLocaleDateString('en-US', { 
-        month: 'short', 
+      const endDateStr = endDate.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
-        year: endDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+        year: endDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
       });
       description += ` until ${endDateStr}`;
     }
@@ -134,7 +134,7 @@ export default function DeleteConfirmationModal({
     return description;
   };
 
-  if (!visible) return null;
+  if (!visible) {return null;}
 
   return (
     <Modal
@@ -419,4 +419,4 @@ const createStyles = (colors: typeof Colors.light) =>
       lineHeight: LineHeights.body,
       color: colors.background,
     },
-  }); 
+  });

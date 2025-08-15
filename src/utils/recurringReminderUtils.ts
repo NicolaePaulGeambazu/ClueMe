@@ -1,16 +1,5 @@
-import { addDays, addWeeks, addMonths, addYears, startOfMonth, endOfMonth, getDay, isBefore, isAfter, isEqual, startOfDay, endOfDay, parseISO, format } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, startOfMonth, endOfMonth, isBefore, isAfter, startOfDay, parseISO, format } from 'date-fns';
 import { Reminder, NotificationTiming } from '../design-system/reminders/types';
-
-/**
- * Comprehensive Recurring Reminder Utilities
- * 
- * This module provides robust handling of recurring reminders with proper:
- * - End date handling
- * - Timezone consistency
- * - Edge case handling
- * - Performance optimization
- * - Comprehensive testing support
- */
 
 export interface RecurringPattern {
   type: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'weekdays' | 'weekends' | 'custom' | 'first_monday' | 'last_friday';
@@ -77,7 +66,7 @@ export function parseRecurringPattern(reminder: Reminder): RecurringPattern {
     if (reminder.repeatPattern === 'custom') {
       // For custom patterns, use the repeatPattern as the type
       pattern.type = 'custom';
-      
+
       // For custom weekly patterns, also include the days
       if ((reminder as ReminderWithRepeatDays).repeatDays) {
         pattern.daysOfWeek = (reminder as ReminderWithRepeatDays).repeatDays;
@@ -113,7 +102,7 @@ export function calculateNextOccurrenceDate(
 
   while (iterations < maxIterations) {
     iterations++;
-    
+
     // Calculate the next date based on pattern type
     switch (pattern.type) {
       case 'daily':
@@ -163,12 +152,12 @@ export function calculateNextOccurrenceDate(
           // Specific week and day (e.g., 2nd Monday of every month)
           nextDate = addMonths(nextDate, pattern.interval || 1);
           nextDate = startOfMonth(nextDate);
-          
+
           // Find the specified week and day
           let weekCount = 0;
           const targetWeek = pattern.weekOfMonth;
           const targetDay = pattern.dayOfWeek;
-          
+
           while (weekCount < targetWeek) {
             if (nextDate.getDay() === targetDay) {
               weekCount++;
@@ -187,7 +176,7 @@ export function calculateNextOccurrenceDate(
         nextDate = addYears(nextDate, pattern.interval || 1);
         // Handle leap year edge case: if original date was Feb 29 and next year is not a leap year,
         // move to March 1st
-        if (currentDate.getMonth() === 1 && currentDate.getDate() === 29 && 
+        if (currentDate.getMonth() === 1 && currentDate.getDate() === 29 &&
             nextDate.getMonth() === 1 && nextDate.getDate() === 28) {
           nextDate.setDate(1);
           nextDate.setMonth(2); // March
@@ -198,7 +187,7 @@ export function calculateNextOccurrenceDate(
         // First Monday of every month
         nextDate = addMonths(nextDate, pattern.interval || 1);
         nextDate = startOfMonth(nextDate);
-        
+
         // Find the first Monday
         while (nextDate.getDay() !== 1) { // 1 = Monday
           nextDate = addDays(nextDate, 1);
@@ -209,7 +198,7 @@ export function calculateNextOccurrenceDate(
         // Last Friday of every month
         nextDate = addMonths(nextDate, pattern.interval || 1);
         nextDate = endOfMonth(nextDate);
-        
+
         // Find the last Friday
         while (nextDate.getDay() !== 5) { // 5 = Friday
           nextDate = addDays(nextDate, -1);
@@ -234,10 +223,10 @@ export function calculateNextOccurrenceDate(
 
     // Check if we've reached the end date
     if (pattern.endDate) {
-      const endDate = typeof pattern.endDate === 'string' 
-        ? parseISO(pattern.endDate) 
+      const endDate = typeof pattern.endDate === 'string'
+        ? parseISO(pattern.endDate)
         : pattern.endDate;
-      
+
       if (isAfter(nextDate, endDate)) {
         return null; // Past the end date
       }
@@ -366,17 +355,17 @@ export function generateOccurrences(
   startDate?: Date
 ): RecurringOccurrence[] {
   const occurrences: RecurringOccurrence[] = [];
-  
+
   try {
     const pattern = parseRecurringPattern(reminder);
     let currentDate = startDate || parseDateSafely(reminder.dueDate) || new Date();
-    
+
     // For generating future occurrences, we want to start from the next occurrence after the current due date
     const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
     if (!nextDate) {
       return []; // No more occurrences
     }
-    
+
     currentDate = nextDate;
 
     let iterations = 0;
@@ -421,10 +410,10 @@ export function generateOccurrences(
 
       // Check if we've reached the end date
       if (pattern.endDate) {
-        const endDate = typeof pattern.endDate === 'string' 
-          ? parseISO(pattern.endDate) 
+        const endDate = typeof pattern.endDate === 'string'
+          ? parseISO(pattern.endDate)
           : pattern.endDate;
-        
+
         if (isAfter(nextOccurrenceDate, endDate)) {
           break; // Past the end date
         }
@@ -455,10 +444,10 @@ export function getRecurringPatternDescription(reminder: Reminder): string {
   }
 
   const pattern = parseRecurringPattern(reminder);
-  
+
   switch (pattern.type) {
     case 'daily':
-      return pattern.interval && pattern.interval > 1 
+      return pattern.interval && pattern.interval > 1
         ? `Every ${pattern.interval} days`
         : 'Daily';
 
@@ -472,11 +461,11 @@ export function getRecurringPatternDescription(reminder: Reminder): string {
       if (pattern.daysOfWeek && pattern.daysOfWeek.length > 0) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const selectedDays = pattern.daysOfWeek.map(day => dayNames[day]).join(', ');
-        return pattern.interval && pattern.interval > 1 
+        return pattern.interval && pattern.interval > 1
           ? `Every ${pattern.interval} weeks on ${selectedDays}`
           : `Weekly on ${selectedDays}`;
       }
-      return pattern.interval && pattern.interval > 1 
+      return pattern.interval && pattern.interval > 1
         ? `Every ${pattern.interval} weeks`
         : 'Weekly';
 
@@ -513,7 +502,7 @@ export function getRecurringPatternDescription(reminder: Reminder): string {
         : 'Last Friday of every month';
 
     case 'custom':
-      return pattern.interval && pattern.interval > 1 
+      return pattern.interval && pattern.interval > 1
         ? `Every ${pattern.interval} days`
         : 'Custom';
 
@@ -634,84 +623,84 @@ export function testAllRecurringPatterns(): {
     {
       name: 'Daily',
       pattern: { type: 'daily' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Every 3 Days',
       pattern: { type: 'daily' as const, interval: 3 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Weekdays',
       pattern: { type: 'weekdays' as const },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Weekends',
       pattern: { type: 'weekends' as const },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Weekly',
       pattern: { type: 'weekly' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Every 2 Weeks',
       pattern: { type: 'weekly' as const, interval: 2 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Weekly on Monday, Wednesday, Friday',
       pattern: { type: 'weekly' as const, interval: 1, daysOfWeek: [1, 3, 5] },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Monthly',
       pattern: { type: 'monthly' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Every 2 Months',
       pattern: { type: 'monthly' as const, interval: 2 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Yearly',
       pattern: { type: 'yearly' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Every 2 Years',
       pattern: { type: 'yearly' as const, interval: 2 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'First Monday',
       pattern: { type: 'first_monday' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Last Friday',
       pattern: { type: 'last_friday' as const, interval: 1 },
-      expectedCount: 5
+      expectedCount: 5,
     },
     {
       name: 'Custom Daily',
       pattern: { type: 'custom' as const, interval: 1 },
-      expectedCount: 5
-    }
+      expectedCount: 5,
+    },
   ];
 
   for (const test of testPatterns) {
     try {
       const occurrences: Date[] = [];
       let currentDate = new Date(baseDate);
-      
+
       for (let i = 0; i < test.expectedCount; i++) {
         const nextDate = calculateNextOccurrenceDate(currentDate, test.pattern);
-        if (!nextDate) break;
-        
+        if (!nextDate) {break;}
+
         occurrences.push(nextDate);
         currentDate = nextDate;
       }
@@ -720,14 +709,14 @@ export function testAllRecurringPatterns(): {
         pattern: test.name,
         description: `Generated ${occurrences.length} occurrences`,
         nextOccurrences: occurrences,
-        success: occurrences.length > 0
+        success: occurrences.length > 0,
       });
     } catch (error) {
       results.push({
         pattern: test.name,
         description: `Error: ${error}`,
         nextOccurrences: [],
-        success: false
+        success: false,
       });
     }
   }
@@ -752,11 +741,11 @@ export function testRecurringPattern(
   try {
     const occurrences: Date[] = [];
     let currentDate = new Date(startDate);
-    
+
     for (let i = 0; i < maxOccurrences; i++) {
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
-      if (!nextDate) break;
-      
+      if (!nextDate) {break;}
+
       occurrences.push(nextDate);
       currentDate = nextDate;
     }
@@ -765,7 +754,7 @@ export function testRecurringPattern(
       pattern,
       startDate,
       occurrences,
-      success: occurrences.length > 0
+      success: occurrences.length > 0,
     };
   } catch (error) {
     return {
@@ -773,7 +762,7 @@ export function testRecurringPattern(
       startDate,
       occurrences: [],
       success: false,
-      error: error instanceof Error ? error.message : String(error)
+      error: error instanceof Error ? error.message : String(error),
     };
   }
-} 
+}

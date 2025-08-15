@@ -159,7 +159,7 @@ export default function AddCountdownScreen({ navigation, route }: any) {
 
   // Helper functions for formatting display values
   const formatDisplayDate = (dateString: string) => {
-    if (!dateString) return '';
+    if (!dateString) {return '';}
     try {
       const date = new Date(dateString);
       return formatDate(date);
@@ -169,7 +169,7 @@ export default function AddCountdownScreen({ navigation, route }: any) {
   };
 
   const formatDisplayTime = (timeString: string) => {
-    if (!timeString) return '';
+    if (!timeString) {return '';}
     try {
       const [hours, minutes] = timeString.split(':');
       const date = new Date();
@@ -234,7 +234,7 @@ export default function AddCountdownScreen({ navigation, route }: any) {
             <Calendar size={20} color={colors.textSecondary} />
             <Text style={[
               styles.dateTimeInputText,
-              !formData.targetDate && styles.placeholderText
+              !formData.targetDate && styles.placeholderText,
             ]}>
               {formData.targetDate ? formatDisplayDate(formData.targetDate) : t('countdown.targetDatePlaceholder')}
             </Text>
@@ -251,7 +251,7 @@ export default function AddCountdownScreen({ navigation, route }: any) {
             <Clock size={20} color={colors.textSecondary} />
             <Text style={[
               styles.dateTimeInputText,
-              !formData.targetTime && styles.placeholderText
+              !formData.targetTime && styles.placeholderText,
             ]}>
               {formData.targetTime ? formatDisplayTime(formData.targetTime) : t('countdown.targetTimePlaceholder')}
             </Text>
@@ -358,4 +358,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   placeholderText: {
     color: colors.textTertiary,
   },
-}); 
+});

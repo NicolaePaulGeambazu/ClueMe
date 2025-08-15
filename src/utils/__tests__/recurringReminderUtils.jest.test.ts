@@ -1,4 +1,4 @@
-import { 
+import {
   parseRecurringPattern,
   calculateNextOccurrenceDate,
   shouldGenerateNextOccurrence,
@@ -8,7 +8,7 @@ import {
   getRecurringPatternDescription,
   validateRecurringPattern,
   RecurringPattern,
-  RecurringOccurrence
+  RecurringOccurrence,
 } from '../recurringReminderUtils';
 import { Reminder } from '../../services/firebaseService';
 
@@ -39,7 +39,7 @@ const createMockReminder = (overrides: Partial<Reminder> = {}): Reminder => ({
   customFrequencyType: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
-  ...overrides
+  ...overrides,
 } as Reminder);
 
 describe('RecurringReminderUtils', () => {
@@ -47,9 +47,9 @@ describe('RecurringReminderUtils', () => {
     it('should parse daily pattern', () => {
       const reminder = createMockReminder({
         repeatPattern: 'daily',
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const pattern = parseRecurringPattern(reminder);
       expect(pattern.type).toBe('daily');
       expect(pattern.interval).toBeUndefined();
@@ -59,9 +59,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         repeatPattern: 'weekly',
         isRecurring: true,
-        repeatDays: [1, 3, 5] // Monday, Wednesday, Friday
+        repeatDays: [1, 3, 5], // Monday, Wednesday, Friday
       });
-      
+
       const pattern = parseRecurringPattern(reminder);
       expect(pattern.type).toBe('weekly');
       expect(pattern.daysOfWeek).toEqual([1, 3, 5]);
@@ -71,9 +71,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         repeatPattern: 'daily',
         customInterval: 3,
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const pattern = parseRecurringPattern(reminder);
       expect(pattern.type).toBe('daily');
       expect(pattern.interval).toBe(3);
@@ -83,9 +83,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         repeatPattern: 'daily',
         recurringEndDate: new Date('2024-12-31'),
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const pattern = parseRecurringPattern(reminder);
       expect(pattern.type).toBe('daily');
       expect(pattern.endDate).toEqual(new Date('2024-12-31'));
@@ -96,7 +96,7 @@ describe('RecurringReminderUtils', () => {
     it('should calculate next daily occurrence', () => {
       const currentDate = new Date('2024-01-15');
       const pattern: RecurringPattern = { type: 'daily' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getDate()).toBe(16); // Next day
@@ -104,11 +104,11 @@ describe('RecurringReminderUtils', () => {
 
     it('should calculate next weekly occurrence', () => {
       const currentDate = new Date('2024-01-15'); // Monday
-      const pattern: RecurringPattern = { 
+      const pattern: RecurringPattern = {
         type: 'weekly',
-        daysOfWeek: [3] // Wednesday
+        daysOfWeek: [3], // Wednesday
       };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getDay()).toBe(3); // Wednesday
@@ -116,16 +116,16 @@ describe('RecurringReminderUtils', () => {
 
     it('should respect end date', () => {
       const currentDate = new Date('2024-01-15');
-      const pattern: RecurringPattern = { 
+      const pattern: RecurringPattern = {
         type: 'daily',
-        endDate: new Date('2024-01-16')
+        endDate: new Date('2024-01-16'),
       };
-      
+
       // Should get next occurrence
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getDate()).toBe(16);
-      
+
       // Should return null after end date
       const afterEndDate = new Date('2024-01-17');
       const noNextDate = calculateNextOccurrenceDate(afterEndDate, pattern);
@@ -135,7 +135,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle weekdays pattern', () => {
       const currentDate = new Date('2024-01-15'); // Monday
       const pattern: RecurringPattern = { type: 'weekdays' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getDay()).toBeGreaterThanOrEqual(1); // Tuesday or later
@@ -145,7 +145,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle weekends pattern', () => {
       const currentDate = new Date('2024-01-15'); // Monday
       const pattern: RecurringPattern = { type: 'weekends' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect([0, 6]).toContain(nextDate!.getDay()); // Sunday or Saturday
@@ -154,7 +154,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle monthly pattern', () => {
       const currentDate = new Date('2024-01-15');
       const pattern: RecurringPattern = { type: 'monthly' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getMonth()).toBe(1); // February
@@ -164,7 +164,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle yearly pattern', () => {
       const currentDate = new Date('2024-01-15');
       const pattern: RecurringPattern = { type: 'yearly' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getFullYear()).toBe(2025);
@@ -175,7 +175,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle leap year', () => {
       const currentDate = new Date('2024-02-29'); // Leap year
       const pattern: RecurringPattern = { type: 'yearly' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getFullYear()).toBe(2025);
@@ -186,7 +186,7 @@ describe('RecurringReminderUtils', () => {
     it('should handle month end dates', () => {
       const currentDate = new Date('2024-01-31'); // January 31st
       const pattern: RecurringPattern = { type: 'monthly' };
-      
+
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern);
       expect(nextDate).toBeInstanceOf(Date);
       expect(nextDate!.getMonth()).toBe(1); // February
@@ -199,18 +199,18 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         isRecurring: true,
         repeatPattern: 'daily',
-        completed: false
+        completed: false,
       });
-      
+
       expect(shouldGenerateNextOccurrence(reminder)).toBeTruthy();
     });
 
     it('should return false for non-recurring reminders', () => {
       const reminder = createMockReminder({
         isRecurring: false,
-        completed: false
+        completed: false,
       });
-      
+
       expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
     });
 
@@ -218,9 +218,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         isRecurring: true,
         repeatPattern: 'daily',
-        completed: true
+        completed: true,
       });
-      
+
       expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
     });
 
@@ -229,9 +229,9 @@ describe('RecurringReminderUtils', () => {
         isRecurring: true,
         repeatPattern: 'daily',
         recurringEndDate: new Date('2024-01-01'), // Past date
-        completed: false
+        completed: false,
       });
-      
+
       expect(shouldGenerateNextOccurrence(reminder)).toBeFalsy();
     });
   });
@@ -242,9 +242,9 @@ describe('RecurringReminderUtils', () => {
         isRecurring: true,
         repeatPattern: 'daily',
         dueDate: new Date('2024-01-15'),
-        completed: false
+        completed: false,
       });
-      
+
       const nextOccurrence = generateNextOccurrence(reminder);
       expect(nextOccurrence).toBeInstanceOf(Object);
       expect(nextOccurrence!.dueDate).toBeInstanceOf(Date);
@@ -255,9 +255,9 @@ describe('RecurringReminderUtils', () => {
     it('should return null for non-recurring reminders', () => {
       const reminder = createMockReminder({
         isRecurring: false,
-        completed: false
+        completed: false,
       });
-      
+
       const nextOccurrence = generateNextOccurrence(reminder);
       expect(nextOccurrence).toBeNull();
     });
@@ -266,9 +266,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         isRecurring: true,
         repeatPattern: 'daily',
-        completed: true
+        completed: true,
       });
-      
+
       const nextOccurrence = generateNextOccurrence(reminder);
       expect(nextOccurrence).toBeNull();
     });
@@ -280,9 +280,9 @@ describe('RecurringReminderUtils', () => {
         isRecurring: true,
         repeatPattern: 'daily',
         dueDate: new Date('2024-01-15'),
-        completed: false
+        completed: false,
       });
-      
+
       const occurrences = generateOccurrences(reminder, 5);
       expect(occurrences).toHaveLength(5);
       expect(occurrences[0].dueDate.getDate()).toBe(16); // First occurrence
@@ -294,9 +294,9 @@ describe('RecurringReminderUtils', () => {
         isRecurring: true,
         repeatPattern: 'daily',
         dueDate: new Date('2024-01-15'),
-        completed: false
+        completed: false,
       });
-      
+
       const occurrences = generateOccurrences(reminder, 3);
       expect(occurrences).toHaveLength(3);
     });
@@ -307,9 +307,9 @@ describe('RecurringReminderUtils', () => {
         repeatPattern: 'daily',
         dueDate: new Date('2024-01-15'),
         recurringEndDate: new Date('2024-01-17'), // Only 2 more days
-        completed: false
+        completed: false,
       });
-      
+
       const occurrences = generateOccurrences(reminder, 10);
       expect(occurrences).toHaveLength(2); // Should stop at end date
     });
@@ -319,17 +319,17 @@ describe('RecurringReminderUtils', () => {
     it('should return true for recurring reminders', () => {
       const reminder = createMockReminder({
         isRecurring: true,
-        repeatPattern: 'daily'
+        repeatPattern: 'daily',
       });
-      
+
       expect(isRecurringReminder(reminder)).toBeTruthy();
     });
 
     it('should return false for non-recurring reminders', () => {
       const reminder = createMockReminder({
-        isRecurring: false
+        isRecurring: false,
       });
-      
+
       expect(isRecurringReminder(reminder)).toBeFalsy();
     });
   });
@@ -338,9 +338,9 @@ describe('RecurringReminderUtils', () => {
     it('should describe daily pattern', () => {
       const reminder = createMockReminder({
         repeatPattern: 'daily',
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const description = getRecurringPatternDescription(reminder);
       expect(description).toContain('Daily');
     });
@@ -349,9 +349,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         repeatPattern: 'weekly',
         repeatDays: [1, 3, 5],
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const description = getRecurringPatternDescription(reminder);
       expect(description).toContain('Weekly');
       expect(description).toContain('Monday');
@@ -363,9 +363,9 @@ describe('RecurringReminderUtils', () => {
       const reminder = createMockReminder({
         repeatPattern: 'daily',
         customInterval: 3,
-        isRecurring: true
+        isRecurring: true,
       });
-      
+
       const description = getRecurringPatternDescription(reminder);
       expect(description).toContain('Every 3 days');
     });
@@ -374,9 +374,9 @@ describe('RecurringReminderUtils', () => {
   describe('validateRecurringPattern', () => {
     it('should validate valid pattern', () => {
       const pattern: RecurringPattern = {
-        type: 'daily'
+        type: 'daily',
       };
-      
+
       const result = validateRecurringPattern(pattern);
       expect(result.isValid).toBeTruthy();
       expect(result.errors).toHaveLength(0);
@@ -384,9 +384,9 @@ describe('RecurringReminderUtils', () => {
 
     it('should catch invalid pattern type', () => {
       const pattern: RecurringPattern = {
-        type: 'invalid' as any
+        type: 'invalid' as any,
       };
-      
+
       const result = validateRecurringPattern(pattern);
       expect(result.isValid).toBeFalsy();
       expect(result.errors.length).toBeGreaterThan(0);
@@ -395,9 +395,9 @@ describe('RecurringReminderUtils', () => {
     it('should catch invalid interval', () => {
       const pattern: RecurringPattern = {
         type: 'daily',
-        interval: 0
+        interval: 0,
       };
-      
+
       const result = validateRecurringPattern(pattern);
       expect(result.isValid).toBeFalsy();
       expect(result.errors.length).toBeGreaterThan(0);
@@ -407,17 +407,17 @@ describe('RecurringReminderUtils', () => {
   describe('Performance', () => {
     it('should not exceed max iterations', () => {
       const currentDate = new Date('2024-01-15');
-      const pattern: RecurringPattern = { 
+      const pattern: RecurringPattern = {
         type: 'daily',
-        endDate: new Date('2025-01-15') // Far future
+        endDate: new Date('2025-01-15'), // Far future
       };
-      
+
       const startTime = Date.now();
       const nextDate = calculateNextOccurrenceDate(currentDate, pattern, 5); // Max 5 iterations
       const endTime = Date.now();
-      
+
       expect(nextDate).toBeInstanceOf(Date);
       expect(endTime - startTime).toBeLessThanOrEqual(100); // Should be fast
     });
   });
-}); 
+});

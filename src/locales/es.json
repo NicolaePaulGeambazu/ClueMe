@@ -52,7 +52,17 @@
     "assignedToMultiple": "Asignado a {count} personas",
     "assignedTo1": "Asignado a {{name}}",
     "location": "Ubicación",
-    "locationPlaceholder": "Agregar ubicación"
+    "locationPlaceholder": "Agregar ubicación",
+    "noNotifications": "Sin notificaciones",
+    "date": "Fecha",
+    "time": "Hora",
+    "selectDate": "Seleccionar fecha",
+    "selectTime": "Seleccionar hora",
+    "create": "Crear",
+    "update": "Actualizar",
+    "enterTitleToContinue": "Ingresa un título para continuar",
+    "tapToCreateReminder": "Toca para crear recordatorio",
+    "quickAddHint": "Agregar rápidamente tu recordatorio"
   },
   "taskChunking": {
     "sectionTitle": "Dividir Tarea",

@@ -1,6 +1,6 @@
 /**
  * Error Handling Utilities for Reminders
- * 
+ *
  * Comprehensive error handling, recovery, and user feedback system
  * All user-facing messages use translation keys for internationalization
  */
@@ -55,7 +55,7 @@ export const createError = (
     messageKey,
     details,
     recoverable,
-    timestamp: new Date()
+    timestamp: new Date(),
   };
 };
 
@@ -64,15 +64,15 @@ export const createError = (
  */
 export const handleValidationError = (validation: ValidationResult): AppError[] => {
   const errors: AppError[] = [];
-  
+
   for (const error of validation.errors) {
     errors.push(createError(ErrorType.VALIDATION, error, { validation }, false));
   }
-  
+
   for (const warning of validation.warnings) {
     errors.push(createError(ErrorType.VALIDATION, warning, { validation }, true));
   }
-  
+
   return errors;
 };
 
@@ -85,15 +85,15 @@ export const handleNetworkError = (
 ): AppError => {
   const maxRetries = 3;
   const canRetry = retryCount < maxRetries;
-  
+
   return createError(
     ErrorType.NETWORK,
     ERROR_MESSAGE_KEYS.NETWORK_ERROR,
-    { 
+    {
       originalError: error,
       retryCount,
       maxRetries,
-      canRetry
+      canRetry,
     },
     canRetry
   );
@@ -105,7 +105,7 @@ export const handleNetworkError = (
 export const handleDataCorruptionError = (reminder: Reminder): AppError[] => {
   const errors: AppError[] = [];
   const issues = checkDataConsistency(reminder);
-  
+
   for (const issue of issues) {
     errors.push(createError(
       ErrorType.DATA_CORRUPTION,
@@ -114,7 +114,7 @@ export const handleDataCorruptionError = (reminder: Reminder): AppError[] => {
       true
     ));
   }
-  
+
   return errors;
 };
 
@@ -123,7 +123,7 @@ export const handleDataCorruptionError = (reminder: Reminder): AppError[] => {
  */
 export const handleRecurringError = (reminder: Reminder): AppError[] => {
   const errors: AppError[] = [];
-  
+
   try {
     const occurrences = generateOccurrences(reminder);
     if (occurrences.length === 0) {
@@ -142,7 +142,7 @@ export const handleRecurringError = (reminder: Reminder): AppError[] => {
       true
     ));
   }
-  
+
   return errors;
 };
 
@@ -151,7 +151,7 @@ export const handleRecurringError = (reminder: Reminder): AppError[] => {
  */
 export const handleNotificationError = (reminder: Reminder): AppError[] => {
   const errors: AppError[] = [];
-  
+
   try {
     const notificationTimes = generateNotificationTimes(reminder);
     if (reminder.hasNotification && notificationTimes.length === 0) {
@@ -170,7 +170,7 @@ export const handleNotificationError = (reminder: Reminder): AppError[] => {
       true
     ));
   }
-  
+
   return errors;
 };
 
@@ -181,24 +181,24 @@ export const attemptErrorRecovery = async (error: AppError): Promise<ErrorRecove
   switch (error.type) {
     case ErrorType.NETWORK:
       return handleNetworkRecovery(error);
-    
+
     case ErrorType.DATA_CORRUPTION:
       return handleDataCorruptionRecovery(error);
-    
+
     case ErrorType.RECURRING:
       return handleRecurringRecovery(error);
-    
+
     case ErrorType.NOTIFICATION:
       return handleNotificationRecovery(error);
-    
+
     case ErrorType.VALIDATION:
       return handleValidationRecovery(error);
-    
+
     default:
       return {
         canRecover: false,
         recoveryStepKeys: ['errors.contactSupport'],
-        userActionRequired: true
+        userActionRequired: true,
       };
   }
 };
@@ -209,31 +209,31 @@ export const attemptErrorRecovery = async (error: AppError): Promise<ErrorRecove
 const handleNetworkRecovery = (error: AppError): ErrorRecovery => {
   const retryCount = error.retryCount || 0;
   const maxRetries = error.details?.maxRetries || 3;
-  
+
   if (retryCount < maxRetries) {
     return {
       canRecover: true,
       recoveryStepKeys: [
         'errors.recovery.checkingNetwork',
         'errors.recovery.retrying',
-        `errors.recovery.attempt${retryCount + 1}Of${maxRetries}`
+        `errors.recovery.attempt${retryCount + 1}Of${maxRetries}`,
       ],
       automaticRecovery: async () => {
         // Simulate retry delay
         await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
         return true; // Assume success for now
-      }
+      },
     };
   }
-  
+
   return {
     canRecover: false,
     recoveryStepKeys: [
       'errors.recovery.checkInternet',
       'errors.recovery.tryAgainLater',
-      'errors.recovery.contactSupport'
+      'errors.recovery.contactSupport',
     ],
-    userActionRequired: true
+    userActionRequired: true,
   };
 };
 
@@ -242,21 +242,21 @@ const handleNetworkRecovery = (error: AppError): ErrorRecovery => {
  */
 const handleDataCorruptionRecovery = (error: AppError): ErrorRecovery => {
   const reminder = error.details?.reminder;
-  
+
   if (!reminder) {
     return {
       canRecover: false,
       recoveryStepKeys: ['errors.recovery.dataCorrupted'],
-      userActionRequired: true
+      userActionRequired: true,
     };
   }
-  
+
   return {
     canRecover: true,
     recoveryStepKeys: [
       'errors.recovery.fixingInconsistencies',
       'errors.recovery.validatingData',
-      'errors.recovery.applyingCorrections'
+      'errors.recovery.applyingCorrections',
     ],
     automaticRecovery: async () => {
       try {
@@ -266,7 +266,7 @@ const handleDataCorruptionRecovery = (error: AppError): ErrorRecovery => {
       } catch {
         return false;
       }
-    }
+    },
   };
 };
 
@@ -279,19 +279,19 @@ const handleRecurringRecovery = (error: AppError): ErrorRecovery => {
     recoveryStepKeys: [
       'errors.recovery.checkingRecurringConfig',
       'errors.recovery.regeneratingOccurrences',
-      'errors.recovery.validatingPattern'
+      'errors.recovery.validatingPattern',
     ],
     automaticRecovery: async () => {
       try {
         const reminder = error.details?.reminder;
-        if (!reminder) return false;
-        
+        if (!reminder) {return false;}
+
         const occurrences = generateOccurrences(reminder);
         return occurrences.length > 0;
       } catch {
         return false;
       }
-    }
+    },
   };
 };
 
@@ -304,19 +304,19 @@ const handleNotificationRecovery = (error: AppError): ErrorRecovery => {
     recoveryStepKeys: [
       'errors.recovery.checkingNotificationSettings',
       'errors.recovery.reschedulingNotifications',
-      'errors.recovery.validatingTimings'
+      'errors.recovery.validatingTimings',
     ],
     automaticRecovery: async () => {
       try {
         const reminder = error.details?.reminder;
-        if (!reminder) return false;
-        
+        if (!reminder) {return false;}
+
         const notificationTimes = generateNotificationTimes(reminder);
         return notificationTimes.length > 0;
       } catch {
         return false;
       }
-    }
+    },
   };
 };
 
@@ -329,9 +329,9 @@ const handleValidationRecovery = (error: AppError): ErrorRecovery => {
     recoveryStepKeys: [
       'errors.recovery.correctValidationErrors',
       'errors.recovery.checkRequiredFields',
-      'errors.recovery.ensureValidDates'
+      'errors.recovery.ensureValidDates',
     ],
-    userActionRequired: true
+    userActionRequired: true,
   };
 };
 
@@ -340,39 +340,39 @@ const handleValidationRecovery = (error: AppError): ErrorRecovery => {
  */
 const fixDataCorruption = async (reminder: Reminder): Promise<Reminder> => {
   const fixed = { ...reminder };
-  
+
   // Fix orphaned recurring reminders
   if (fixed.isRecurring && !fixed.repeatPattern) {
     fixed.isRecurring = false;
   }
-  
+
   // Fix notifications without timings
   if (fixed.hasNotification && (!fixed.notificationTimings || fixed.notificationTimings.length === 0)) {
     fixed.hasNotification = false;
   }
-  
+
   // Fix invalid dates
   if (fixed.dueDate && isNaN(fixed.dueDate.getTime())) {
     fixed.dueDate = undefined;
   }
-  
+
   if (fixed.startDate && isNaN(fixed.startDate.getTime())) {
     fixed.startDate = undefined;
   }
-  
+
   if (fixed.endDate && isNaN(fixed.endDate.getTime())) {
     fixed.endDate = undefined;
   }
-  
+
   // Fix status inconsistencies
   if (fixed.status === 'completed' && !fixed.completed) {
     fixed.completed = true;
   }
-  
+
   if (fixed.status === 'cancelled' && !fixed.deletedAt) {
     fixed.deletedAt = new Date();
   }
-  
+
   return fixed;
 };
 
@@ -387,7 +387,7 @@ export const logError = (error: AppError): void => {
       errorType: error.type,
       recoverable: error.recoverable,
       retryCount: error.retryCount,
-      details: error.details
+      details: error.details,
     }
   );
 };
@@ -399,25 +399,25 @@ export const getUserFriendlyMessageKey = (error: AppError): string => {
   switch (error.type) {
     case ErrorType.NETWORK:
       return 'errors.userFriendly.network';
-    
+
     case ErrorType.PERMISSION:
       return 'errors.userFriendly.permission';
-    
+
     case ErrorType.VALIDATION:
       return error.messageKey;
-    
+
     case ErrorType.DATA_CORRUPTION:
       return 'errors.userFriendly.dataCorruption';
-    
+
     case ErrorType.NOTIFICATION:
       return 'errors.userFriendly.notification';
-    
+
     case ErrorType.RECURRING:
       return 'errors.userFriendly.recurring';
-    
+
     case ErrorType.TIMEOUT:
       return 'errors.userFriendly.timeout';
-    
+
     default:
       return 'errors.userFriendly.unknown';
   }
@@ -434,9 +434,9 @@ export const isCriticalError = (error: AppError): boolean => {
  * Get error priority for UI display
  */
 export const getErrorPriority = (error: AppError): 'low' | 'medium' | 'high' | 'critical' => {
-  if (isCriticalError(error)) return 'critical';
-  if (error.type === ErrorType.NETWORK) return 'high';
-  if (error.type === ErrorType.VALIDATION) return 'medium';
+  if (isCriticalError(error)) {return 'critical';}
+  if (error.type === ErrorType.NETWORK) {return 'high';}
+  if (error.type === ErrorType.VALIDATION) {return 'medium';}
   return 'low';
 };
 
@@ -451,13 +451,13 @@ export const handleBatchErrors = (errors: AppError[]): {
   const critical: AppError[] = [];
   const recoverable: AppError[] = [];
   const autoRecovery: Promise<boolean>[] = [];
-  
+
   for (const error of errors) {
     if (isCriticalError(error)) {
       critical.push(error);
     } else {
       recoverable.push(error);
-      
+
       // Attempt automatic recovery
       attemptErrorRecovery(error).then(recovery => {
         if (recovery.canRecover && recovery.automaticRecovery) {
@@ -466,6 +466,6 @@ export const handleBatchErrors = (errors: AppError[]): {
       });
     }
   }
-  
+
   return { critical, recoverable, autoRecovery };
-}; 
+};

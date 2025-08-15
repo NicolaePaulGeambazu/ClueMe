@@ -270,7 +270,7 @@ export default function SubscriptionManagementModal({
   };
 
   const formatDate = (date: Date | null) => {
-    if (!date) return t('common.unknown');
+    if (!date) {return t('common.unknown');}
     return date.toLocaleDateString();
   };
 
@@ -332,7 +332,7 @@ export default function SubscriptionManagementModal({
                         </Text>
                       </View>
                     )}
-                    
+
                     {subscriptionInfo.isInTrial && (
                       <View style={styles.planDetailRow}>
                         <Text style={styles.planDetailLabel}>
@@ -434,4 +434,4 @@ export default function SubscriptionManagementModal({
       />
     </Modal>
   );
-} 
+}

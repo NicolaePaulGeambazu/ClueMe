@@ -1,9 +1,10 @@
 import { Platform } from 'react-native';
 import remoteConfigService from './remoteConfigService';
-import { GeolocationService } from './geolocationService';
 import { getUserEntitlements, canCreateReminder, canAddFamilyMember } from '../utils/entitlements';
 import { reminderService, listService } from './firebaseService';
+import { userUsageService } from './userUsageService';
 import { revenueCatService, ProductId, PRODUCT_IDS } from './revenueCatService';
+import { FeatureFlagService } from './featureFlags';
 
 // Regional pricing interface
 interface RegionalPricing {
@@ -79,7 +80,7 @@ interface MonetizationConfig {
 }
 
 // Paywall trigger types
-export type PaywallTrigger = 
+export type PaywallTrigger =
   | 'reminder_limit_warning'
   | 'reminder_limit_block'
   | 'family_limit_warning'
@@ -167,7 +168,7 @@ class MonetizationService {
 
   // Initialize the service
   async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this.isInitialized) {return;}
 
     try {
       // Initialize RevenueCat (this may fail in development)
@@ -178,7 +179,7 @@ class MonetizationService {
         console.warn('[MonetizationService] RevenueCat initialization failed:', revenueCatError);
         console.warn('[MonetizationService] Continuing with local monetization features only');
       }
-      
+
       // Load configuration from Firebase Remote Config
       await this.loadRemoteConfig();
       this.isInitialized = true;
@@ -193,16 +194,16 @@ class MonetizationService {
     try {
       // Initialize remote config service
       await remoteConfigService.initialize();
-      
+
       // Get regional pricing and currency formatting from remote config
       const regionalPricingJson = await remoteConfigService.getStringValue('monetization_regional_pricing');
       const currencyFormattingJson = await remoteConfigService.getStringValue('monetization_currency_formatting');
       const defaultCountry = await remoteConfigService.getStringValue('monetization_default_country') || 'US';
-      
+
       // Parse regional pricing
       let regionalPricing: Record<string, RegionalPricing> = {};
       let currencyFormatting: Record<string, CurrencyFormatting> = {};
-      
+
       try {
         if (regionalPricingJson && regionalPricingJson.trim() !== '') {
           regionalPricing = JSON.parse(regionalPricingJson);
@@ -210,7 +211,7 @@ class MonetizationService {
       } catch (parseError) {
         console.warn('[MonetizationService] Failed to parse regional pricing:', parseError);
       }
-      
+
       try {
         if (currencyFormattingJson && currencyFormattingJson.trim() !== '') {
           currencyFormatting = JSON.parse(currencyFormattingJson);
@@ -218,21 +219,18 @@ class MonetizationService {
       } catch (parseError) {
         console.warn('[MonetizationService] Failed to parse currency formatting:', parseError);
       }
-      
-      // Get user's country for pricing
-      const geolocationService = GeolocationService.getInstance();
-      await geolocationService.initialize();
-      const userLocation = geolocationService.getUserLocation();
-      const userCountry = userLocation?.countryCode || defaultCountry;
-      
+
+      // Get user's country for pricing (UK only)
+      const userCountry = 'GB';
+
       // Get pricing for user's country or fallback to default
-      const userPricing = regionalPricing[userCountry] || regionalPricing[defaultCountry] || regionalPricing['US'];
+      const userPricing = regionalPricing[userCountry] || regionalPricing[defaultCountry] || regionalPricing.US;
       const userCurrencyFormatting = currencyFormatting[userPricing?.currency || 'USD'] || {
         position: 'before',
         spacing: true,
         decimals: 2,
       };
-      
+
       // Update local config with remote values
       this.config = {
         freeTier: {
@@ -266,29 +264,29 @@ class MonetizationService {
         },
         pricing: {
           individual: {
-            monthly: { 
-              price: userPricing?.individual?.monthly || 3.99, 
-              currency: userPricing?.currency || 'USD', 
-              trialDays: 0 
+            monthly: {
+              price: userPricing?.individual?.monthly || 3.99,
+              currency: userPricing?.currency || 'USD',
+              trialDays: 0,
             },
-            yearly: { 
-              price: userPricing?.individual?.yearly || 35.99, 
-              currency: userPricing?.currency || 'USD', 
-              trialDays: 0, 
-              savingsPercent: userPricing?.yearlySavingsPercent || 82 
+            yearly: {
+              price: userPricing?.individual?.yearly || 35.99,
+              currency: userPricing?.currency || 'USD',
+              trialDays: 0,
+              savingsPercent: userPricing?.yearlySavingsPercent || 82,
             },
           },
           family: {
-            monthly: { 
-              price: userPricing?.family?.monthly || 7.99, 
-              currency: userPricing?.currency || 'USD', 
-              trialDays: 0 
+            monthly: {
+              price: userPricing?.family?.monthly || 7.99,
+              currency: userPricing?.currency || 'USD',
+              trialDays: 0,
             },
-            yearly: { 
-              price: userPricing?.family?.yearly || 69.99, 
-              currency: userPricing?.currency || 'USD', 
-              trialDays: 0, 
-              savingsPercent: userPricing?.yearlySavingsPercent || 82 
+            yearly: {
+              price: userPricing?.family?.yearly || 69.99,
+              currency: userPricing?.currency || 'USD',
+              trialDays: 0,
+              savingsPercent: userPricing?.yearlySavingsPercent || 82,
             },
           },
           currencySymbol: userPricing?.symbol || '$',
@@ -320,11 +318,18 @@ class MonetizationService {
 
   // Check reminder creation limits
   async checkReminderCreation(userId: string): Promise<PaywallTriggerResult> {
+    console.log('[MonetizationService] Checking reminder creation for user:', userId);
+    
     const currentCount = await this.getCurrentReminderCount(userId);
     const { currentTier } = await this.getUserSubscription(userId);
     
+    console.log('[MonetizationService] Current count:', currentCount, 'Tier:', currentTier);
+    console.log('[MonetizationService] Block at:', this.config.paywallTriggers.reminderLimit.blockAt, 'Warning at:', this.config.paywallTriggers.reminderLimit.warningAt);
+
     if (currentTier === 'free') {
+      console.log('[MonetizationService] User is on free tier, checking limits...');
       if (currentCount >= this.config.paywallTriggers.reminderLimit.blockAt) {
+        console.log('[MonetizationService] Blocking reminder creation - limit reached');
         return {
           shouldShow: true,
           triggerType: 'reminder_limit_block',
@@ -335,8 +340,9 @@ class MonetizationService {
           limit: this.config.freeTier.reminders,
         };
       }
-      
+
       if (currentCount >= this.config.paywallTriggers.reminderLimit.warningAt) {
+        console.log('[MonetizationService] Showing warning - approaching limit');
         return {
           shouldShow: true,
           triggerType: 'reminder_limit_warning',
@@ -348,7 +354,8 @@ class MonetizationService {
         };
       }
     }
-    
+
+    console.log('[MonetizationService] No paywall needed - user is premium or under limit');
     return {
       shouldShow: false,
       triggerType: 'reminder_limit_warning',
@@ -364,7 +371,7 @@ class MonetizationService {
   async checkFamilyMemberAddition(familyId: string): Promise<PaywallTriggerResult> {
     const currentCount = await this.getCurrentFamilyMemberCount(familyId);
     const { currentTier } = await this.getUserSubscription(familyId);
-    
+
     if (currentTier === 'free') {
       if (currentCount >= this.config.paywallTriggers.familyLimit.blockAt) {
         return {
@@ -377,7 +384,7 @@ class MonetizationService {
           limit: this.config.freeTier.familyMembers + 1, // +1 for owner
         };
       }
-      
+
       if (currentCount >= this.config.paywallTriggers.familyLimit.warningAt) {
         return {
           shouldShow: true,
@@ -390,7 +397,7 @@ class MonetizationService {
         };
       }
     }
-    
+
     return {
       shouldShow: false,
       triggerType: 'family_limit_warning',
@@ -406,7 +413,7 @@ class MonetizationService {
   async checkListCreation(userId: string): Promise<PaywallTriggerResult> {
     const currentCount = await this.getCurrentListCount(userId);
     const { currentTier } = await this.getUserSubscription(userId);
-    
+
     if (currentTier === 'free') {
       if (currentCount >= this.config.paywallTriggers.listLimit.blockAt) {
         return {
@@ -419,7 +426,7 @@ class MonetizationService {
           limit: this.config.freeTier.lists,
         };
       }
-      
+
       if (currentCount >= this.config.paywallTriggers.listLimit.warningAt) {
         return {
           shouldShow: true,
@@ -432,7 +439,7 @@ class MonetizationService {
         };
       }
     }
-    
+
     return {
       shouldShow: false,
       triggerType: 'list_limit_warning',
@@ -447,7 +454,7 @@ class MonetizationService {
   // Check feature usage
   checkFeatureUsage(feature: keyof typeof this.config.freeTier): FeatureCheckResult {
     const featureConfig = this.config.freeTier[feature];
-    
+
     if (typeof featureConfig === 'boolean') {
       if (!featureConfig) {
         return {
@@ -458,7 +465,7 @@ class MonetizationService {
         };
       }
     }
-    
+
     return {
       allowed: true,
       needsUpgrade: false,
@@ -478,7 +485,7 @@ class MonetizationService {
         limit: 0,
       };
     }
-    
+
     return {
       shouldShow: false,
       triggerType: 'recurring_attempt',
@@ -503,7 +510,7 @@ class MonetizationService {
         limit: 0,
       };
     }
-    
+
     return {
       shouldShow: false,
       triggerType: 'custom_notifications_attempt',
@@ -528,7 +535,7 @@ class MonetizationService {
         limit: 0,
       };
     }
-    
+
     return {
       shouldShow: false,
       triggerType: 'multiple_notifications_attempt',
@@ -553,9 +560,11 @@ class MonetizationService {
   // Get current reminder count (placeholder - implement with actual data)
   private async getCurrentReminderCount(userId: string): Promise<number> {
     try {
-      // Use the existing reminder service to get user's reminders
-      const reminders = await reminderService.getUserReminders(userId);
-      return reminders.length;
+      console.log('[MonetizationService] Getting reminder count for user:', userId);
+      // Use the userUsageService to get the current reminder count
+      const usage = await userUsageService.getUserUsage(userId);
+      console.log('[MonetizationService] Found reminders created:', usage.remindersCreated);
+      return usage.remindersCreated;
     } catch (error) {
       console.warn('[MonetizationService] Failed to get reminder count:', error);
       return 0;
@@ -588,9 +597,31 @@ class MonetizationService {
 
   // Get user subscription (placeholder - implement with actual data)
   private async getUserSubscription(userId: string): Promise<{ currentTier: string }> {
-    // This should integrate with your existing premium service
-    // For now, return free tier
-    return { currentTier: 'free' };
+    try {
+      console.log('[MonetizationService] Checking premium status for user:', userId);
+      
+      // Check feature flags first (for simulator/testing)
+      const featureFlags = FeatureFlagService.getInstance();
+      const featureFlagTier = featureFlags.getUserTier();
+      const isProUser = featureFlags.isProUser();
+      
+      console.log('[MonetizationService] Feature flag tier:', featureFlagTier, 'Is pro user:', isProUser);
+      
+      // If user is pro via feature flags, return paid
+      if (isProUser) {
+        console.log('[MonetizationService] User has premium via feature flags');
+        return { currentTier: 'paid' };
+      }
+      
+      // Check if user has premium access via RevenueCat
+      const hasPremium = await revenueCatService.hasPremiumAccess();
+      console.log('[MonetizationService] RevenueCat premium access result:', hasPremium);
+      
+      return { currentTier: hasPremium ? 'paid' : 'free' };
+    } catch (error) {
+      console.warn('[MonetizationService] Failed to check premium status:', error);
+      return { currentTier: 'free' };
+    }
   }
 
   // Check if limits should reset (monthly reset)
@@ -598,19 +629,19 @@ class MonetizationService {
     if (this.config.freeTier.resetDate === 'never') {
       return false;
     }
-    
+
     const now = new Date();
     const lastReset = new Date(lastResetDate);
-    
+
     if (this.config.freeTier.resetDate === 'monthly') {
       return now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear();
     }
-    
+
     if (this.config.freeTier.resetDate === 'weekly') {
       const weekDiff = Math.floor((now.getTime() - lastReset.getTime()) / (7 * 24 * 60 * 60 * 1000));
       return weekDiff >= 1;
     }
-    
+
     return false;
   }
 
@@ -639,10 +670,10 @@ class MonetizationService {
       spacing: true,
       decimals: 2,
     };
-    
+
     const symbol = this.getCurrencySymbol(targetCurrency);
     const formattedAmount = this.formatAmount(amount, formatting.decimals);
-    
+
     if (formatting.position === 'before') {
       return formatting.spacing ? `${symbol} ${formattedAmount}` : `${symbol}${formattedAmount}`;
     } else {
@@ -674,12 +705,9 @@ class MonetizationService {
     return this.config.regionalPricing[countryCode] || null;
   }
 
-  // Get user's current country pricing
+  // Get user's current country pricing (UK only)
   getUserPricing(): RegionalPricing | null {
-    const geolocationService = GeolocationService.getInstance();
-    const userLocation = geolocationService.getUserLocation();
-    const userCountry = userLocation?.countryCode || this.config.defaultCountry;
-    return this.getPricingForCountry(userCountry);
+    return this.getPricingForCountry('GB');
   }
 
   // RevenueCat integration methods
@@ -717,7 +745,7 @@ class MonetizationService {
   async purchasePlan(planType: 'individual' | 'family', period: 'weekly' | 'yearly'): Promise<{ success: boolean; error?: string }> {
     try {
       let productId: ProductId;
-      
+
       if (planType === 'individual') {
         productId = period === 'weekly' ? PRODUCT_IDS.INDIVIDUAL_WEEKLY : PRODUCT_IDS.INDIVIDUAL_YEARLY;
       } else {
@@ -725,7 +753,7 @@ class MonetizationService {
       }
 
       const result = await revenueCatService.purchaseProduct(productId);
-      
+
       if (result.success) {
         console.log('[MonetizationService] Purchase successful:', result);
         return { success: true };
@@ -753,7 +781,7 @@ class MonetizationService {
   async getProductPrice(planType: 'individual' | 'family', period: 'weekly' | 'yearly'): Promise<string> {
     try {
       let productId: ProductId;
-      
+
       if (planType === 'individual') {
         productId = period === 'weekly' ? PRODUCT_IDS.INDIVIDUAL_WEEKLY : PRODUCT_IDS.INDIVIDUAL_YEARLY;
       } else {
@@ -776,7 +804,7 @@ class MonetizationService {
   async isProductAvailable(planType: 'individual' | 'family', period: 'weekly' | 'yearly'): Promise<boolean> {
     try {
       let productId: ProductId;
-      
+
       if (planType === 'individual') {
         productId = period === 'weekly' ? PRODUCT_IDS.INDIVIDUAL_WEEKLY : PRODUCT_IDS.INDIVIDUAL_YEARLY;
       } else {
@@ -803,4 +831,4 @@ class MonetizationService {
 // Create singleton instance
 const monetizationService = new MonetizationService();
 
-export default monetizationService; 
+export default monetizationService;

@@ -1,6 +1,6 @@
 /**
  * Date Utilities for Reminders
- * 
+ *
  * Centralized date handling with timezone support and edge case handling
  */
 
@@ -10,66 +10,57 @@ import { Reminder, RepeatPattern } from '../types';
  * Normalize a date to ensure it's a valid Date object
  */
 export const normalizeDate = (date: Date | string | undefined | null): Date | undefined => {
-  if (!date) return undefined;
-  
+  if (!date) {return undefined;}
+
   if (date instanceof Date) {
     return isNaN(date.getTime()) ? undefined : date;
   }
-  
+
   if (typeof date === 'string') {
     const parsed = new Date(date);
     return isNaN(parsed.getTime()) ? undefined : parsed;
   }
-  
+
   return undefined;
 };
 
 /**
  * Get user's current timezone offset in minutes
  */
-export const getUserTimezoneOffset = (): number => {
-  return new Date().getTimezoneOffset();
-};
-
 /**
- * Convert a date to UTC while preserving the intended local time
+ * Convert a date to UTC while preserving the intended local time (UK timezone)
  * This is useful for storing dates that should fire at a specific local time
  */
 export const toUTCWithLocalTime = (date: Date, timeString?: string): Date => {
   const utcDate = new Date(date);
-  
+
   if (timeString) {
     const [hours, minutes] = timeString.split(':').map(Number);
     if (!isNaN(hours) && !isNaN(minutes)) {
-      // Set the time in local timezone, then convert to UTC
+      // Set the time in UK timezone (GMT/BST)
       utcDate.setHours(hours, minutes, 0, 0);
-      const localOffset = utcDate.getTimezoneOffset();
-      utcDate.setMinutes(utcDate.getMinutes() - localOffset);
     }
   }
-  
+
   return utcDate;
 };
 
 /**
- * Convert UTC date back to local time for display
+ * Convert UTC date back to local time for display (UK timezone)
  */
 export const fromUTCToLocal = (utcDate: Date): Date => {
-  const localDate = new Date(utcDate);
-  const localOffset = localDate.getTimezoneOffset();
-  localDate.setMinutes(localDate.getMinutes() + localOffset);
-  return localDate;
+  return new Date(utcDate);
 };
 
 /**
  * Format a date for display with proper timezone handling
  */
 export const formatDateForDisplay = (date: Date | undefined | null): string => {
-  if (!date) return '';
-  
+  if (!date) {return '';}
+
   const normalizedDate = normalizeDate(date);
-  if (!normalizedDate) return '';
-  
+  if (!normalizedDate) {return '';}
+
   return normalizedDate.toLocaleDateString();
 };
 
@@ -77,18 +68,18 @@ export const formatDateForDisplay = (date: Date | undefined | null): string => {
  * Format a time for display
  */
 export const formatTimeForDisplay = (timeString: string | undefined): string => {
-  if (!timeString) return '';
-  
+  if (!timeString) {return '';}
+
   const [hours, minutes] = timeString.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return '';
-  
+  if (isNaN(hours) || isNaN(minutes)) {return '';}
+
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
-  
-  return date.toLocaleTimeString([], { 
-    hour: '2-digit', 
+
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: true 
+    hour12: true,
   });
 };
 
@@ -155,13 +146,13 @@ export const isFuture = (date: Date): boolean => {
  * Get relative date string (Today, Tomorrow, Yesterday, or date)
  */
 export const getRelativeDateString = (date: Date): string => {
-  if (isToday(date)) return 'Today';
-  if (isTomorrow(date)) return 'Tomorrow';
-  
+  if (isToday(date)) {return 'Today';}
+  if (isTomorrow(date)) {return 'Tomorrow';}
+
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  if (isSameDay(date, yesterday)) return 'Yesterday';
-  
+  if (isSameDay(date, yesterday)) {return 'Yesterday';}
+
   return formatDateForDisplay(date);
 };
 
@@ -245,15 +236,15 @@ export const getLastFridayOfMonth = (date: Date): Date => {
  */
 export const parseTimeString = (timeString: string): { hours: number; minutes: number } | null => {
   const match = timeString.match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  
+  if (!match) {return null;}
+
   const hours = parseInt(match[1], 10);
   const minutes = parseInt(match[2], 10);
-  
+
   if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
     return null;
   }
-  
+
   return { hours, minutes };
 };
 
@@ -284,8 +275,8 @@ export const getCurrentDateString = (): string => {
  */
 export const isValidDateString = (dateString: string): boolean => {
   const match = dateString.match(/^\d{4}-\d{2}-\d{2}$/);
-  if (!match) return false;
-  
+  if (!match) {return false;}
+
   const date = new Date(dateString);
   return !isNaN(date.getTime());
 };
@@ -331,4 +322,4 @@ export const addMinutes = (date: Date, minutes: number): Date => {
   const result = new Date(date);
   result.setMinutes(result.getMinutes() + minutes);
   return result;
-}; 
+};

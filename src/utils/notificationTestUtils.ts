@@ -1,576 +1,343 @@
-import notificationService from '../services/notificationService';
-import { getFirestoreInstance } from '../services/firebaseService';
-import auth from '@react-native-firebase/auth';
-import { Platform } from 'react-native';
-import firestore from '@react-native-firebase/firestore';
+/**
+ * Notification Testing Utilities
+ *
+ * Comprehensive testing tools for debugging notification timing issues
+ */
 
-export interface TestAssignmentData {
+import notificationService from '../services/notificationService';
+import type { NotificationTiming as ServiceNotificationTiming } from '../services/notificationService';
+
+export interface NotificationTestResult {
   reminderId: string;
-  reminderTitle: string;
-  assignedByUserId: string;
-  assignedByDisplayName: string;
-  assignedToUserIds: string[];
+  title: string;
+  dueDate: string;
+  dueTime?: string;
+  notificationTimings: Array<{
+    type: 'before' | 'after' | 'exact';
+    value: number;
+    label: string;
+    calculatedTime: string;
+    isInFuture: boolean;
+    timeUntilNotification: string;
+  }>;
+  testPassed: boolean;
+  errors: string[];
 }
 
 /**
- * Test assignment notification by sending it to a specific user
+ * Test notification timing calculation for a specific reminder
  */
-export const testAssignmentNotification = async (
-  assignedUserId: string,
-  reminderTitle: string = 'Test Task Assignment',
-  assignedByName: string = 'Test User'
-): Promise<void> => {
-  try {
-    
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      return;
-    }
-
-    const testData: TestAssignmentData = {
-      reminderId: `test-${Date.now()}`,
-      reminderTitle,
-      assignedByUserId: currentUser.uid,
-      assignedByDisplayName: assignedByName,
-      assignedToUserIds: [assignedUserId],
-    };
-
-
-    // Send the assignment notification
-    await notificationService.sendAssignmentNotification(
-      testData.reminderId,
-      testData.reminderTitle,
-      testData.assignedByUserId,
-      testData.assignedByDisplayName,
-      testData.assignedToUserIds
-    );
-
-  } catch (error) {
+export const testNotificationTiming = async (
+  reminder: {
+    id: string;
+    title: string;
+    dueDate: string;
+    dueTime?: string;
+    notificationTimings?: Array<{
+      type: 'before' | 'after' | 'exact';
+      value: number;
+      label: string;
+    }>;
   }
-};
+): Promise<NotificationTestResult> => {
+  const result: NotificationTestResult = {
+    reminderId: reminder.id,
+    title: reminder.title,
+    dueDate: reminder.dueDate,
+    dueTime: reminder.dueTime,
+    notificationTimings: [],
+    testPassed: true,
+    errors: [],
+  };
 
-/**
- * Test assignment notification to yourself (for simulator testing)
- */
-export const testSelfAssignmentNotification = async (): Promise<void> => {
   try {
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      return;
-    }
+    const defaultTimings = [
+      { type: 'before' as const, value: 15, label: '15 minutes before' },
+      { type: 'exact' as const, value: 0, label: 'At due time' },
+    ];
 
-    
-    await testAssignmentNotification(
-      currentUser.uid,
-      'Self-Assigned Test Task',
-      'Your App'
-    );
-  } catch (error) {
-  }
-};
+    const timings = reminder.notificationTimings || defaultTimings;
+    const now = new Date();
 
-/**
- * Test assignment notification to a family member
- */
-export const testFamilyAssignmentNotification = async (familyMemberUserId: string): Promise<void> => {
-  try {
-    
-    await testAssignmentNotification(
-      familyMemberUserId,
-      'Family Task Assignment',
-      'Family Member'
-    );
-  } catch (error) {
-  }
-};
+    for (const timing of timings) {
+      try {
+        // Calculate notification time in UK time (no timezone logic)
+        const notificationTime = calculateNotificationTimeUK(
+          new Date(reminder.dueDate),
+          reminder.dueTime,
+          timing.value,
+          timing.type
+        );
 
-/**
- * Check if a user has FCM tokens stored
- */
-export const checkUserFCMTokens = async (userId: string): Promise<string[]> => {
-  try {
-    const firestoreInstance = getFirestoreInstance();
-    const userDoc = await firestoreInstance.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    
-    const fcmTokens = userData?.fcmTokens || (userData?.fcmToken ? [userData.fcmToken] : []);
-    
-    return fcmTokens;
-  } catch (error) {
-    return [];
-  }
-};
+        const isInFuture = notificationTime > now;
+        const timeUntilNotification = isInFuture
+          ? formatTimeDifference(notificationTime, now)
+          : 'Already passed';
 
-/**
- * Test immediate local notification (for simulator testing)
- */
-export const testImmediateLocalNotification = (): void => {
-  try {
-    
-    notificationService.sendTestNotification(true);
-    
-  } catch (error) {
-  }
-};
+        result.notificationTimings.push({
+          type: timing.type,
+          value: timing.value,
+          label: timing.label,
+          calculatedTime: notificationTime.toISOString(),
+          isInFuture,
+          timeUntilNotification,
+        });
 
-/**
- * Test scheduled local notification (for simulator testing)
- */
-export const testScheduledLocalNotification = (secondsFromNow: number = 5): void => {
-  try {
-    
-    notificationService.sendTestNotification30Seconds();
-    
-  } catch (error) {
-  }
-};
-
-/**
- * Comprehensive test for assignment notifications that works on simulator
- * This function tests the entire flow from reminder creation to notification delivery
- */
-export const runComprehensiveNotificationTest = async (): Promise<void> => {
-  try {
-    
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      throw new Error('No authenticated user found');
-    }
-
-    // Step 1: Test local notifications first
-    testImmediateLocalNotification();
-    testScheduledLocalNotification(3);
-    
-    // Step 2: Test FCM token retrieval
-    const tokens = await checkUserFCMTokens(currentUser.uid);
-    
-    // Step 3: Test self-assignment notification
-    await testSelfAssignmentNotification();
-    
-    // Step 4: Test family assignment notification (if we have family members)
-    try {
-      const firestoreInstance = getFirestoreInstance();
-      const userFamily = await firestoreInstance
-        .collection('families')
-        .where('ownerId', '==', currentUser.uid)
-        .limit(1)
-        .get();
-      
-      if (!userFamily.empty) {
-        const familyId = userFamily.docs[0].id;
-        const familyMembers = await firestoreInstance
-          .collection('familyMembers')
-          .where('familyId', '==', familyId)
-          .get();
-        
-        if (familyMembers.size > 1) {
-          // Find a family member that's not the current user
-          const otherMember = familyMembers.docs.find(doc => 
-            doc.data().userId !== currentUser.uid
-          );
-          
-          if (otherMember) {
-            await testFamilyAssignmentNotification(otherMember.data().userId);
-          } else {
+        // Validate the calculation
+        if (timing.type === 'before' && timing.value === 15) {
+          const expectedTime = new Date(reminder.dueDate);
+          if (reminder.dueTime) {
+            const [hours, minutes] = reminder.dueTime.split(':').map(Number);
+            expectedTime.setHours(hours, minutes, 0, 0);
           }
-        } else {
+          expectedTime.setMinutes(expectedTime.getMinutes() - 15);
+
+          const timeDiff = Math.abs(notificationTime.getTime() - expectedTime.getTime());
+          if (timeDiff > 60000) { // More than 1 minute difference
+            result.errors.push(`Timing calculation error: Expected ~${expectedTime.toISOString()}, got ${notificationTime.toISOString()}`);
+            result.testPassed = false;
+          }
         }
-      } else {
-      }
-    } catch (error) {
-    }
-    
-    // Step 5: Test notification service directly
-    try {
-      const notificationService = require('../services/notificationService').notificationService;
-      await notificationService.sendTestNotification();
-    } catch (error) {
-    }
-    
-    
-  } catch (error) {
-    throw error;
-  }
-};
-
-/**
- * Test assignment notification by creating a real reminder and assigning it
- * This simulates the actual user flow
- */
-export const testRealAssignmentFlow = async (assignedUserId: string): Promise<void> => {
-  try {
-    
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      throw new Error('No authenticated user found');
-    }
-
-    // Create a test reminder with assignment
-    const reminderData = {
-      title: 'Test Assignment Reminder',
-      description: 'This is a test reminder to verify assignment notifications',
-      type: 'task' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      dueTime: '14:00',
-      assignedTo: [assignedUserId],
-      assignedBy: currentUser.uid,
-      hasNotification: true,
-      notificationTimings: [
-        { type: 'before' as const, value: 30, label: '30 minutes before' }
-      ],
-      sharedWithFamily: true,
-      familyId: 'test-family-id', // This will be set by the service
-      userId: currentUser.uid,
-      status: 'pending' as const,
-    };
-
-    // Use the reminder service to create the reminder
-    const reminderService = require('../services/firebaseService').reminderService;
-    const reminderId = await reminderService.createReminder(reminderData);
-    
-    
-    // Clean up: Delete the test reminder after a delay
-    setTimeout(async () => {
-      try {
-        await reminderService.deleteReminder(reminderId);
       } catch (error) {
+        result.errors.push(`Error calculating timing for ${timing.label}: ${error}`);
+        result.testPassed = false;
       }
-    }, 30000); // Clean up after 30 seconds
-    
+    }
   } catch (error) {
-    throw error;
+    result.errors.push(`General test error: ${error}`);
+    result.testPassed = false;
   }
+
+  return result;
 };
 
 /**
- * Force refresh FCM token and save to user document
+ * Test recurring notification scheduling
  */
-export const forceRefreshFCMToken = async (userId: string): Promise<string | null> => {
-  try {
-    
-    // Import messaging here to avoid circular dependencies
-    const messaging = require('@react-native-firebase/messaging').default;
-    
-    // Force unregister and re-register for remote messages (iOS)
-    if (Platform.OS === 'ios') {
-      try {
-        await messaging().unregisterDeviceForRemoteMessages();
-        
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        await messaging().registerDeviceForRemoteMessages();
-        
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        const isRegistered = await messaging().isDeviceRegisteredForRemoteMessages;
-      } catch (registrationError) {
-      }
-    }
-    
-    // Get fresh token
-    const token = await messaging().getToken();
-    
-    if (token) {
-      // Save to user document
-      const firestoreInstance = getFirestoreInstance();
-      await firestoreInstance.collection('users').doc(userId).update({
-        fcmTokens: firestore.FieldValue.arrayUnion(token),
-        lastTokenUpdate: firestore.FieldValue.serverTimestamp(),
-      });
-    }
-    
-    return token;
-  } catch (error) {
-    return null;
+export const testRecurringNotifications = async (
+  reminder: {
+    id: string;
+    title: string;
+    dueDate: string;
+    dueTime?: string;
+    repeatPattern: string;
+    customInterval?: number;
+    notificationTimings?: Array<{
+      type: 'before' | 'after' | 'exact';
+      value: number;
+      label: string;
+    }>;
   }
-};
-
-/**
- * Diagnose FCM token issues
- */
-export const diagnoseFCMTokenIssues = async (userId: string): Promise<{
-  hasTokens: boolean;
-  tokenCount: number;
-  lastUpdate: string | null;
-  registrationStatus: boolean;
-  error: string | null;
+): Promise<{
+  testPassed: boolean;
+  occurrencesGenerated: number;
+  notificationsScheduled: number;
+  errors: string[];
+  details: string[];
 }> => {
-  try {
-    
-    // Check user's stored tokens
-    const firestoreInstance = getFirestoreInstance();
-    const userDoc = await firestoreInstance.collection('users').doc(userId).get();
-    const userData = userDoc.data();
-    const fcmTokens = userData?.fcmTokens || [];
-    const lastUpdate = userData?.lastTokenUpdate;
-    
-    // Check device registration status
-    let registrationStatus = false;
-    try {
-      const messaging = require('@react-native-firebase/messaging').default;
-      registrationStatus = await messaging().isDeviceRegisteredForRemoteMessages;
-    } catch (error) {
-    }
-    
-    const result = {
-      hasTokens: fcmTokens.length > 0,
-      tokenCount: fcmTokens.length,
-      lastUpdate: lastUpdate ? new Date(lastUpdate.toDate()).toISOString() : null,
-      registrationStatus,
-      error: null
-    };
-    
-    return result;
-  } catch (error) {
-    return {
-      hasTokens: false,
-      tokenCount: 0,
-      lastUpdate: null,
-      registrationStatus: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
+  const result = {
+    testPassed: true,
+    occurrencesGenerated: 0,
+    notificationsScheduled: 0,
+    errors: [] as string[],
+    details: [] as string[],
+  };
 
-/**
- * Comprehensive debugging function for notification issues
- * This will help identify where the notification flow is failing
- */
-export const debugNotificationSystem = async (): Promise<{
-  currentUser: string | null;
-  fcmToken: string | null;
-  tokensInFirestore: string[];
-  notificationPermissions: boolean;
-  familyMembers: any[];
-  testResults: any;
-}> => {
   try {
-    console.log('=== NOTIFICATION SYSTEM DEBUG ===');
-    
-    const currentUser = auth().currentUser;
-    console.log('Current user:', currentUser?.uid || 'null');
-    
-    // Test FCM token generation
-    console.log('Testing FCM token generation...');
-    const fcmToken = await notificationService.getFCMToken();
-    console.log('FCM token:', fcmToken ? fcmToken.substring(0, 20) + '...' : 'null');
-    
-    // Check tokens in Firestore
-    console.log('Checking tokens in Firestore...');
-    const tokensInFirestore = await checkUserFCMTokens(currentUser?.uid || '');
-    console.log('Tokens in Firestore:', tokensInFirestore.length);
-    
-    // Check notification permissions
-    console.log('Checking notification permissions...');
-    const notificationPermissions = await notificationService.areNotificationsEnabled();
-    console.log('Notification permissions:', notificationPermissions);
-    
-    // Check family members
-    console.log('Checking family members...');
-    let familyMembers: any[] = [];
-    if (currentUser) {
-      try {
-        const firestoreInstance = getFirestoreInstance();
-        const userFamily = await firestoreInstance
-          .collection('families')
-          .where('ownerId', '==', currentUser.uid)
-          .limit(1)
-          .get();
-        
-        if (!userFamily.empty) {
-          const familyId = userFamily.docs[0].id;
-          const membersQuery = await firestoreInstance
-            .collection('familyMembers')
-            .where('familyId', '==', familyId)
-            .get();
-          
-          familyMembers = membersQuery.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        }
-      } catch (error) {
-        console.error('Error getting family members:', error);
-      }
-    }
-    console.log('Family members:', familyMembers.length);
-    
-    // Test notification sending
-    console.log('Testing notification sending...');
-    const testResults = {
-      localNotification: false,
-      selfAssignment: false,
-      familyAssignment: false,
-    };
-    
-    try {
-      // Test local notification
-      notificationService.sendTestNotification(true);
-      testResults.localNotification = true;
-      console.log('Local notification test: SUCCESS');
-    } catch (error) {
-      console.error('Local notification test: FAILED', error);
-    }
-    
-    try {
-      // Test self assignment
-      if (currentUser) {
-        await testSelfAssignmentNotification();
-        testResults.selfAssignment = true;
-        console.log('Self assignment test: SUCCESS');
-      }
-    } catch (error) {
-      console.error('Self assignment test: FAILED', error);
-    }
-    
-    try {
-      // Test family assignment
-      if (familyMembers.length > 1) {
-        const otherMember = familyMembers.find(m => m.userId !== currentUser?.uid);
-        if (otherMember) {
-          await testFamilyAssignmentNotification(otherMember.userId);
-          testResults.familyAssignment = true;
-          console.log('Family assignment test: SUCCESS');
-        }
-      }
-    } catch (error) {
-      console.error('Family assignment test: FAILED', error);
-    }
-    
-    console.log('=== DEBUG COMPLETE ===');
-    
-    return {
-      currentUser: currentUser?.uid || null,
-      fcmToken: fcmToken,
-      tokensInFirestore,
-      notificationPermissions,
-      familyMembers,
-      testResults,
-    };
-    
-  } catch (error) {
-    console.error('Error in debugNotificationSystem:', error);
-    throw error;
-  }
-};
-
-/**
- * Force refresh FCM token and test notification
- */
-export const forceRefreshAndTest = async (): Promise<void> => {
-  try {
-    console.log('=== FORCE REFRESH AND TEST ===');
-    
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      console.log('No authenticated user found');
-      return;
-    }
-    
-    // Force refresh FCM token
-    console.log('Force refreshing FCM token...');
-    const newToken = await notificationService.forceRefreshFCMToken();
-    console.log('New FCM token:', newToken ? newToken.substring(0, 20) + '...' : 'null');
-    
-    // Wait a moment for token to be saved
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Test notification
-    console.log('Testing notification with new token...');
-    await testSelfAssignmentNotification();
-    
-    console.log('=== FORCE REFRESH AND TEST COMPLETE ===');
-    
-  } catch (error) {
-    console.error('Error in forceRefreshAndTest:', error);
-  }
-};
-
-/**
- * Test assignment notification specifically for simulator environment
- * This bypasses FCM and uses local notifications
- */
-export const testAssignmentNotificationSimulator = async (
-  reminderTitle: string = 'Simulator Test Task',
-  assignedByName: string = 'Test User'
-): Promise<void> => {
-  try {
-    console.log('[NotificationTestUtils] Testing assignment notification in simulator mode');
-    
-    notificationService.testAssignmentNotificationSimulator(reminderTitle, assignedByName);
-    
-  } catch (error) {
-    console.error('[NotificationTestUtils] Error in testAssignmentNotificationSimulator:', error);
-  }
-};
-
-/**
- * Run comprehensive simulator notification tests
- * This tests all notification types that should work in simulator
- */
-export const runSimulatorNotificationTests = (): void => {
-  try {
-    console.log('[NotificationTestUtils] Running comprehensive simulator notification tests');
-    
-    notificationService.runSimulatorNotificationTests();
-    
-  } catch (error) {
-    console.error('[NotificationTestUtils] Error in runSimulatorNotificationTests:', error);
-  }
-};
-
-/**
- * Test the complete assignment flow in simulator mode
- * This creates a real reminder and tests the assignment notification
- */
-export const testCompleteAssignmentFlowSimulator = async (): Promise<void> => {
-  try {
-    console.log('[NotificationTestUtils] Testing complete assignment flow in simulator mode');
-    
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      console.log('[NotificationTestUtils] No authenticated user found');
-      return;
-    }
-
-    // Create a test reminder with assignment to current user (for simulator testing)
-    const reminderData = {
-      title: 'Simulator Test Assignment',
-      description: 'This is a test reminder to verify assignment notifications in simulator',
-      type: 'task' as const,
-      priority: 'medium' as const,
-      dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      dueTime: '14:00',
-      assignedTo: [currentUser.uid], // Assign to current user for simulator testing
-      assignedBy: currentUser.uid,
-      hasNotification: true,
-      notificationTimings: [
-        { type: 'before' as const, value: 30, label: '30 minutes before' }
+    // Convert to notification service format
+    const notificationReminder = {
+      id: reminder.id,
+      title: reminder.title,
+      dueDate: reminder.dueDate,
+      dueTime: reminder.dueTime,
+      recurring: {
+        pattern: reminder.repeatPattern,
+        interval: reminder.customInterval || 1,
+      },
+      notificationTimings: reminder.notificationTimings || [
+        { type: 'before', value: 15, label: '15 minutes before' },
       ],
-      sharedWithFamily: true,
-      familyId: 'simulator-test-family',
-      userId: currentUser.uid,
-      status: 'pending' as const,
-    };
+      userId: 'test-user',
+      familyId: 'test-family',
+    } as any; // Type assertion to avoid complex type matching
 
-    // Use the reminder service to create the reminder
-    const reminderService = require('../services/firebaseService').reminderService;
-    const reminderId = await reminderService.createReminder(reminderData);
-    
-    console.log(`[NotificationTestUtils] Created test reminder with ID: ${reminderId}`);
-    
-    // Clean up: Delete the test reminder after a delay
-    setTimeout(async () => {
-      try {
-        await reminderService.deleteReminder(reminderId);
-        console.log(`[NotificationTestUtils] Cleaned up test reminder: ${reminderId}`);
-      } catch (error) {
-        console.error(`[NotificationTestUtils] Error cleaning up test reminder:`, error);
+    // Schedule notifications
+    await notificationService.scheduleReminderNotifications(notificationReminder);
+
+    // Get scheduled notifications to verify
+    const scheduledNotifications = await notificationService.getScheduledNotifications();
+    const reminderNotifications = scheduledNotifications.filter((n: any) =>
+      n.userInfo?.reminderId === reminder.id
+    );
+
+    result.notificationsScheduled = reminderNotifications.length;
+    result.details.push(`Scheduled ${result.notificationsScheduled} notifications for recurring reminder`);
+
+    // Validate that we have notifications for multiple occurrences
+    if (result.notificationsScheduled < 2) {
+      result.errors.push(`Expected multiple notifications for recurring reminder, got ${result.notificationsScheduled}`);
+      result.testPassed = false;
+    }
+
+    // Check that notifications are properly spaced
+    const notificationTimes = reminderNotifications
+      .map((n: any) => new Date(n.date))
+      .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+
+    if (notificationTimes.length >= 2) {
+      const timeSpacing = notificationTimes[1].getTime() - notificationTimes[0].getTime();
+      const expectedSpacing = reminder.customInterval || 1;
+
+      // For daily reminders, expect ~24 hours between notifications
+      if (reminder.repeatPattern === 'daily') {
+        const hoursDiff = timeSpacing / (1000 * 60 * 60);
+        if (Math.abs(hoursDiff - 24) > 2) { // Allow 2 hour tolerance
+          result.errors.push(`Incorrect spacing for daily reminder: ${hoursDiff.toFixed(1)} hours between notifications`);
+          result.testPassed = false;
+        }
       }
-    }, 30000); // Clean up after 30 seconds
-    
+    }
+
   } catch (error) {
-    console.error('[NotificationTestUtils] Error in testCompleteAssignmentFlowSimulator:', error);
+    result.errors.push(`Recurring notification test error: ${error}`);
+    result.testPassed = false;
   }
-}; 
+
+  return result;
+};
+
+/**
+ * Run comprehensive notification tests
+ */
+export const runNotificationTests = async (): Promise<{
+  overallPassed: boolean;
+  results: Array<{
+    testName: string;
+    passed: boolean;
+    details: string[];
+    errors: string[];
+  }>;
+}> => {
+  const results = [];
+  let overallPassed = true;
+
+  // Test 1: Basic notification timing
+  console.log('[NotificationTest] Running basic timing test...');
+  const basicTest = await testNotificationTiming({
+    id: 'test-basic',
+    title: 'Test Reminder',
+    dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+    dueTime: '09:15',
+  });
+
+  results.push({
+    testName: 'Basic Notification Timing',
+    passed: basicTest.testPassed,
+    details: basicTest.notificationTimings.map(t =>
+      `${t.label}: ${t.calculatedTime} (${t.timeUntilNotification})`
+    ),
+    errors: basicTest.errors,
+  });
+
+  if (!basicTest.testPassed) {overallPassed = false;}
+
+  // Test 2: Recurring notifications
+  console.log('[NotificationTest] Running recurring notification test...');
+  const recurringTest = await testRecurringNotifications({
+    id: 'test-recurring',
+    title: 'Test Recurring Reminder',
+    dueDate: new Date().toISOString(),
+    dueTime: '09:15',
+    repeatPattern: 'daily',
+    customInterval: 1,
+  });
+
+  results.push({
+    testName: 'Recurring Notifications',
+    passed: recurringTest.testPassed,
+    details: recurringTest.details,
+    errors: recurringTest.errors,
+  });
+
+  if (!recurringTest.testPassed) {overallPassed = false;}
+
+  return { overallPassed, results };
+};
+
+/**
+ * Format time difference in a human-readable way
+ */
+const formatTimeDifference = (future: Date, now: Date): string => {
+  const diffMs = future.getTime() - now.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 0) {
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ${diffHours % 24} hour${diffHours % 24 !== 1 ? 's' : ''}`;
+  } else if (diffHours > 0) {
+    return `${diffHours} hour${diffHours > 1 ? 's' : ''} ${diffMinutes % 60} minute${diffMinutes % 60 !== 1 ? 's' : ''}`;
+  } else {
+    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}`;
+  }
+};
+
+/**
+ * Calculate notification time in UK time (no timezone logic)
+ */
+function calculateNotificationTimeUK(
+  dueDate: Date,
+  dueTime: string | undefined,
+  value: number,
+  type: 'before' | 'after' | 'exact'
+): Date {
+  const date = new Date(dueDate);
+  if (dueTime) {
+    const [hours, minutes] = dueTime.split(':').map(Number);
+    date.setHours(hours, minutes, 0, 0);
+  }
+  if (type === 'before') {
+    date.setMinutes(date.getMinutes() - value);
+  } else if (type === 'after') {
+    date.setMinutes(date.getMinutes() + value);
+  }
+  // 'exact' means no change
+  return date;
+}
+
+/**
+ * Debug helper to log notification timing details (UK time only)
+ */
+export const debugNotificationTiming = (
+  reminder: {
+    dueDate: string;
+    dueTime?: string;
+  },
+  timing: {
+    type: 'before' | 'after' | 'exact';
+    value: number;
+    label: string;
+  }
+): void => {
+  console.log('[NotificationDebug] === Timing Debug ===');
+  console.log('[NotificationDebug] Reminder due date:', reminder.dueDate);
+  console.log('[NotificationDebug] Reminder due time:', reminder.dueTime);
+  console.log('[NotificationDebug] Timing:', timing);
+
+  try {
+    const notificationTime = calculateNotificationTimeUK(
+      new Date(reminder.dueDate),
+      reminder.dueTime,
+      timing.value,
+      timing.type
+    );
+
+    console.log('[NotificationDebug] Calculated notification time:', notificationTime.toISOString());
+    console.log('[NotificationDebug] Is in future:', notificationTime > new Date());
+    console.log('[NotificationDebug] Time until notification:', formatTimeDifference(notificationTime, new Date()));
+  } catch (error) {
+    console.error('[NotificationDebug] Error calculating timing:', error);
+  }
+
+  console.log('[NotificationDebug] === End Debug ===');
+};

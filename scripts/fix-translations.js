@@ -16,7 +16,7 @@ const colors = {
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
   reset: '\x1b[0m',
-  bold: '\x1b[1m'
+  bold: '\x1b[1m',
 };
 
 class TranslationFixer {
@@ -28,7 +28,7 @@ class TranslationFixer {
   // Load all translation files
   loadTranslations() {
     console.log(`${colors.blue}${colors.bold}Loading translation files...${colors.reset}`);
-    
+
     [BASE_LANGUAGE, ...SUPPORTED_LANGUAGES].forEach(lang => {
       const filePath = path.join(LOCALES_DIR, `${lang}.json`);
       try {
@@ -79,14 +79,14 @@ class TranslationFixer {
   // Fix missing keys by copying from English with TODO marker
   fixMissingKeys() {
     console.log(`\n${colors.blue}${colors.bold}Fixing missing keys...${colors.reset}`);
-    
+
     const baseKeys = this.getAllKeys(this.translations[BASE_LANGUAGE]);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
       console.log(`\n${colors.cyan}Processing ${lang}...${colors.reset}`);
       const langKeys = this.getAllKeys(this.translations[lang]);
       let fixedInLang = 0;
-      
+
       baseKeys.forEach(key => {
         if (!langKeys.includes(key)) {
           const baseValue = this.getNestedValue(this.translations[BASE_LANGUAGE], key);
@@ -99,7 +99,7 @@ class TranslationFixer {
           }
         }
       });
-      
+
       if (fixedInLang > 0) {
         console.log(`${colors.green}✓${colors.reset} Fixed ${fixedInLang} missing keys in ${lang}`);
       } else {
@@ -111,7 +111,7 @@ class TranslationFixer {
   // Save updated translation files
   saveTranslations() {
     console.log(`\n${colors.blue}${colors.bold}Saving updated translation files...${colors.reset}`);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
       const filePath = path.join(LOCALES_DIR, `${lang}.json`);
       try {
@@ -128,18 +128,18 @@ class TranslationFixer {
   generateChecklist() {
     console.log(`\n${colors.blue}${colors.bold}=== TRANSLATION CHECKLIST ===${colors.reset}`);
     console.log(`Total keys to translate: ${colors.bold}${this.fixedCount}${colors.reset}\n`);
-    
+
     SUPPORTED_LANGUAGES.forEach(lang => {
       const baseKeys = this.getAllKeys(this.translations[BASE_LANGUAGE]);
       const todoKeys = [];
-      
+
       baseKeys.forEach(key => {
         const langValue = this.getNestedValue(this.translations[lang], key);
         if (langValue && langValue.startsWith('TODO:')) {
           todoKeys.push(key);
         }
       });
-      
+
       if (todoKeys.length > 0) {
         console.log(`${colors.yellow}${colors.bold}${lang.toUpperCase()} - ${todoKeys.length} keys need translation:${colors.reset}`);
         todoKeys.forEach(key => {
@@ -156,21 +156,21 @@ class TranslationFixer {
   // Run the fix process
   fix() {
     console.log(`${colors.bold}Translation Fixer${colors.reset}\n`);
-    
+
     this.loadTranslations();
     this.fixMissingKeys();
     this.saveTranslations();
     this.generateChecklist();
-    
+
     console.log(`\n${colors.green}${colors.bold}✅ Translation fix completed!${colors.reset}`);
     console.log(`Fixed ${this.fixedCount} missing keys across all languages.`);
     console.log(`\n${colors.yellow}Next steps:${colors.reset}`);
-    console.log(`1. Review the checklist above`);
-    console.log(`2. Translate all TODO items in the locale files`);
-    console.log(`3. Run 'node scripts/validate-translations.js' to verify`);
+    console.log('1. Review the checklist above');
+    console.log('2. Translate all TODO items in the locale files');
+    console.log('3. Run \'node scripts/validate-translations.js\' to verify');
   }
 }
 
 // Run the fixer
 const fixer = new TranslationFixer();
-fixer.fix(); 
+fixer.fix();

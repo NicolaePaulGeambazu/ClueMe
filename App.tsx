@@ -63,18 +63,18 @@ function AppContent() {
       try {
         // Initialize secure key service first
         await secureKeyService.initialize();
-        
+
         // Run key migration (this will only run once)
         await migrateKeysToKeychain();
-        
+
         // Initialize with a longer timeout and better error handling
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Notification initialization timeout')), 30000); // Increased to 30 seconds
         });
-        
+
         await Promise.race([
           notificationService.initialize(),
-          timeoutPromise
+          timeoutPromise,
         ]);
 
         // Initialize global notification service
@@ -95,7 +95,7 @@ function AppContent() {
         }, 5000); // Delay sync to ensure user is authenticated and data is loaded
       } catch (error) {
         // Failed to initialize push notifications
-        
+
         // Try to initialize local notifications only (without FCM)
         try {
           notificationService.initializeLocalNotificationsOnly();
@@ -103,7 +103,7 @@ function AppContent() {
         } catch (localError) {
           // Failed to initialize local notifications
         }
-        
+
         // Continue anyway - notifications are not critical for app functionality
       }
     };

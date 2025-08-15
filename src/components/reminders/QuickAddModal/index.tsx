@@ -6,28 +6,31 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  Easing,
 } from 'react-native';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useFamily } from '../../../hooks/useFamily';
 import { useModal } from '../../../contexts/ModalContext';
 import { usePremium } from '../../../hooks/usePremium';
-import { useMonetization } from '../../../hooks/useMonetization';
+import { useRevenueCatPaywall } from '../../../hooks/useRevenueCatPaywall';
 import monetizationService from '../../../services/monetizationService';
 import { Colors } from '../../../constants/Colors';
+import SmallPaywallModal from '../../premium/SmallPaywallModal';
+import FullScreenPaywall from '../../premium/FullScreenPaywall';
+import { premiumStatusManager } from '../../../services/premiumStatusManager';
+import premiumService from '../../../services/premiumService';
 import { CustomDateTimePickerModal } from '../../ReminderForm/CustomDateTimePicker';
 import { RepeatOptions } from '../../ReminderForm/RepeatOptions';
 import NotificationTimingModal from '../NotificationTimingModal';
 import InterstitialAdTrigger from '../../ads/InterstitialAdTrigger';
 import { QuickAddHeader } from './QuickAddHeader';
 import { QuickAddForm } from './QuickAddForm';
-import { QuickAddFooter } from './QuickAddFooter';
 import { QuickAddSheets } from './QuickAddSheets';
+import { DateTimeSelectionModal } from './DateTimeSelectionModal';
 import { useQuickAddForm, ReminderData } from './useQuickAddForm';
 import { createStyles } from './styles';
 import { SubTask } from '../../../design-system/reminders/types';
-import SmallPaywallModal from '../../premium/SmallPaywallModal';
-import FullScreenPaywall from '../../premium/FullScreenPaywall';
 
 interface QuickAddModalProps {
   visible: boolean;
@@ -52,16 +55,16 @@ export default function QuickAddModal({
   const { user } = useAuth();
   const { members } = useFamily();
   const { showDatePicker: showGlobalDatePicker } = useModal();
-  const { isPremium } = usePremium();
+  const premiumHook = usePremium();
+  const { isPremium } = premiumHook;
   const { 
-    showFullScreenPaywall, 
+    showPaywall, 
     showSmallPaywall, 
-    paywallMessage, 
-    paywallTrigger,
-    checkReminderCreation,
+    showFullScreenPaywall, 
     hidePaywall,
-    isLoading: monetizationLoading 
-  } = useMonetization();
+    paywallMessage 
+  } = useRevenueCatPaywall();
+
   const colors = Colors[theme];
   const styles = createStyles(colors);
 
@@ -72,7 +75,7 @@ export default function QuickAddModal({
         id: m.id,
         userId: m.userId,
         name: m.name,
-        email: m.email
+        email: m.email,
       })));
     } else {
       console.log('[QuickAddModal] No family members available for assignment');
@@ -82,6 +85,8 @@ export default function QuickAddModal({
   // Animation
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const blurAnim = useRef(new Animated.Value(0)).current;
 
   // Form state
   const form = useQuickAddForm(prefillData, prefillDate, prefillTime);
@@ -89,6 +94,12 @@ export default function QuickAddModal({
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [isChunked, setIsChunked] = useState(false);
   const [showTaskChunking, setShowTaskChunking] = useState(false);
+  const [dateTimeModalState, setDateTimeModalState] = useState<null | 'main' | 'customDate' | 'customTime'>(null);
+  const [justUpgraded, setJustUpgraded] = useState(false);
+  const [tempDate, setTempDate] = useState<string>(form.selectedDate);
+  const [tempTime, setTempTime] = useState<string>(form.selectedTime);
+  const [tempCustomDate, setTempCustomDate] = useState<Date | null>(form.customDateValue);
+  const [tempCustomTime, setTempCustomTime] = useState<string>(form.customTimeValue);
 
   // Debug: Log when assignments change
   useEffect(() => {
@@ -100,60 +111,119 @@ export default function QuickAddModal({
   // Animation effects
   useEffect(() => {
     if (visible) {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
+      // Reset animations
+      scaleAnim.setValue(0.8);
+      blurAnim.setValue(0);
+
+      // Beautiful entrance animation with multiple phases
+      Animated.sequence([
+        // Phase 1: Fade in overlay with blur effect
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 300,
+          duration: 400,
           useNativeDriver: true,
+          easing: Easing.out(Easing.cubic),
+        }),
+        // Phase 2: Modal appears with spring effect
+        Animated.spring(slideAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 8,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 0.01,
+        }),
+        // Phase 3: Scale up with bounce
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 7,
+          restDisplacementThreshold: 0.01,
+          restSpeedThreshold: 0.01,
         }),
       ]).start();
     } else {
+      // Elegant exit animation
       Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
         Animated.timing(opacityAnim, {
           toValue: 0,
           duration: 300,
           useNativeDriver: true,
+          easing: Easing.in(Easing.cubic),
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.cubic),
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.8,
+          duration: 250,
+          useNativeDriver: true,
+          easing: Easing.in(Easing.cubic),
         }),
       ]).start();
     }
-  }, [visible, slideAnim, opacityAnim]);
+  }, [visible, slideAnim, opacityAnim, scaleAnim, blurAnim]);
 
   // Handlers
   const handleSave = async () => {
-    if (!form.title.trim()) return;
+    if (!form.title.trim()) {return;}
 
     try {
       setIsSaving(true);
-      
-      // Check monetization limits before saving
-      const monetizationResult = await checkReminderCreation();
-      
-      if (monetizationResult.isBlocking) {
-        // Don't proceed with saving if blocked
-        setIsSaving(false);
-        return;
+
+      // Check monetization limits before creating reminder
+      if (!isPremium && user?.uid && !justUpgraded) {
+        console.log('[QuickAddModal] Checking monetization limits for user:', user.uid);
+        const monetizationResult = await monetizationService.checkReminderCreation(user.uid);
+        
+        console.log('[QuickAddModal] Monetization result:', {
+          shouldShow: monetizationResult.shouldShow,
+          isBlocking: monetizationResult.isBlocking,
+          currentCount: monetizationResult.currentCount,
+          limit: monetizationResult.limit,
+          message: monetizationResult.message
+        });
+        
+        if (monetizationResult.shouldShow) {
+          // Show paywall modal
+          if (monetizationResult.isBlocking) {
+            console.log('[QuickAddModal] Blocking reminder creation - showing full screen paywall');
+            // Block the action and show full screen paywall
+            showPaywall('fullscreen', monetizationResult.message, monetizationResult.triggerType);
+            return; // Don't proceed with creation
+          } else {
+            console.log('[QuickAddModal] Showing warning paywall but allowing creation');
+            // Show warning but allow creation
+            showPaywall('small', monetizationResult.message, monetizationResult.triggerType);
+          }
+        } else {
+          console.log('[QuickAddModal] No paywall needed, proceeding with creation');
+        }
+      } else {
+        console.log('[QuickAddModal] Skipping monetization check - isPremium:', isPremium, 'userId:', user?.uid);
       }
-      
+
       // Debug: Log the reminder data being saved
       const reminderData = form.createReminderData();
       console.log('[QuickAddModal] Saving reminder with assignments:', {
         title: reminderData.title,
+        dueDate: reminderData.dueDate,
+        dueTime: reminderData.dueTime,
         assignedTo: reminderData.assignedTo,
-        assignedToCount: reminderData.assignedTo?.length || 0
+        assignedToCount: reminderData.assignedTo?.length || 0,
+        isRecurring: reminderData.isRecurring,
+        repeatPattern: reminderData.repeatPattern,
+        recurringEndDate: reminderData.recurringEndDate,
+        customInterval: reminderData.customInterval,
+        recurringPattern: reminderData.recurringPattern
       });
 
       await onSave(reminderData);
-      
+
       // Reset form
       form.setTitle('');
       form.setLocation('');
@@ -170,14 +240,15 @@ export default function QuickAddModal({
         endDate: null,
         endOccurrences: undefined,
       });
-      form.setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+
       form.setAssignedTo([]);
       form.setNotificationTimings([]);
-      
+
       // Reset task chunking
       setSubTasks([]);
       setIsChunked(false);
-      
+
+      // Close modal after successful save
       onClose();
     } catch (error) {
       console.error('[QuickAddModal] Error saving reminder:', error);
@@ -206,6 +277,16 @@ export default function QuickAddModal({
     form.setShowTimePicker(false);
   };
 
+  // New full-page modal handlers
+  const handleDateTimeModalConfirm = (dateValue: string, timeValue: string) => {
+    form.handleDateSelect(dateValue);
+    form.handleTimeSelect(timeValue);
+  };
+
+  const handleDateTimeModalClose = () => {
+    form.setShowDateTimeModal(false);
+  };
+
   const handleTaskChunkingSave = (newSubTasks: SubTask[]) => {
     setSubTasks(newSubTasks);
     setIsChunked(newSubTasks.length > 0);
@@ -216,15 +297,59 @@ export default function QuickAddModal({
     setShowTaskChunking(false);
   };
 
-  if (!visible) return null;
+  // Handle upgrade after successful purchase
+  const handleUpgrade = async () => {
+    try {
+      console.log('[QuickAddModal] Handling upgrade after purchase...');
+      
+      // Set flag to prevent paywall from showing again
+      setJustUpgraded(true);
+      
+      // Refresh premium status manager
+      await premiumStatusManager.refreshStatus();
+      console.log('[QuickAddModal] Premium status manager refreshed after upgrade');
+      
+      // Refresh premium service
+      await premiumService.refreshPremiumStatus();
+      console.log('[QuickAddModal] Premium service refreshed after upgrade');
+      
+      // Add a longer delay to ensure status is properly updated and cached
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      hidePaywall();
+      
+      // Reset the flag after a delay
+      setTimeout(() => {
+        setJustUpgraded(false);
+      }, 5000);
+    } catch (error) {
+      console.error('[QuickAddModal] Error refreshing premium status:', error);
+      hidePaywall();
+    }
+  };
+
+  if (!visible) {return null;}
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.overlay}
-        onPress={handleClose}
-        activeOpacity={1}
+      <Animated.View
+        style={[
+          styles.overlay,
+          {
+            opacity: opacityAnim,
+            backgroundColor: `rgba(0, 0, 0, ${opacityAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.6],
+            })})`,
+          },
+        ]}
       >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={handleClose}
+          activeOpacity={1}
+          disabled={false}
+        >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoidingContainer}
@@ -234,16 +359,21 @@ export default function QuickAddModal({
           <Animated.View
             style={[
               styles.modal,
-              { 
+              {
                 backgroundColor: colors.background,
                 opacity: opacityAnim,
-                transform: [{
-                  translateY: slideAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [300, 0], // Slide up from 300px below
-                  })
-                }]
-              }
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [600, 0], // Slide up from further below for dramatic effect
+                    }),
+                  },
+                  {
+                    scale: scaleAnim,
+                  },
+                ],
+              },
             ]}
             onStartShouldSetResponder={() => true}
             onTouchEnd={(e) => e.stopPropagation()}
@@ -254,6 +384,9 @@ export default function QuickAddModal({
             <View style={styles.keyboardView}>
               <QuickAddHeader
                 onClose={handleClose}
+                onSave={handleSave}
+                isSaving={isSaving}
+                isDisabled={!form.title.trim()}
                 isEditing={!!prefillData}
                 colors={colors}
                 styles={styles}
@@ -269,7 +402,7 @@ export default function QuickAddModal({
                 customTimeValue={form.customTimeValue}
                 customDateValue={form.customDateValue}
                 isRecurring={form.isRecurring}
-                timezone={form.timezone}
+
                 assignedTo={form.assignedTo}
                 notificationTimings={form.notificationTimings}
                 isPremium={isPremium}
@@ -277,22 +410,18 @@ export default function QuickAddModal({
                 getTimeOptions={form.getTimeOptions}
                 getRecurringDescriptionText={form.getRecurringDescriptionText}
                 getAssignedMembersText={form.getAssignedMembersText}
-                onDatePress={() => form.setShowDateSheet(true)}
-                onTimePress={() => form.setShowTimeSheet(true)}
+                onDatePress={() => {
+                  setTempDate(form.selectedDate);
+                  setTempTime(form.selectedTime);
+                  setTempCustomDate(form.customDateValue);
+                  setTempCustomTime(form.customTimeValue);
+                  setDateTimeModalState('main');
+                }}
                 onRecurringPress={() => form.setShowRepeatOptions(true)}
                 onNotificationPress={() => form.setShowNotificationModal(true)}
                 onFamilyPress={() => form.setShowFamilyPicker(true)}
                 isChunked={isChunked}
                 subTasksCount={subTasks.length}
-                colors={colors}
-                styles={styles}
-              />
-
-              <QuickAddFooter
-                onSave={handleSave}
-                isSaving={isSaving}
-                isDisabled={!form.title.trim()}
-                isEditing={!!prefillData}
                 colors={colors}
                 styles={styles}
               />
@@ -372,14 +501,14 @@ export default function QuickAddModal({
               if (mode === 'end') {
                 const currentEndDate = form.recurringPattern.endDate || new Date();
                 showGlobalDatePicker('end', currentEndDate, (date) => {
-                  form.setRecurringPattern(prev => ({ 
-                    ...prev, 
-                    endDate: date 
+                  form.setRecurringPattern(prev => ({
+                    ...prev,
+                    endDate: date,
                   }));
                 });
               }
             }}
-            userTier="free"
+            userTier={isPremium ? 'apex' : 'free'}
           />
         )}
 
@@ -397,29 +526,56 @@ export default function QuickAddModal({
           actionCompleted={isSaving && form.title.trim().length > 0}
         />
 
-        {/* Small Paywall Modal */}
+        {/* Paywall Modals */}
         <SmallPaywallModal
           visible={showSmallPaywall}
           onClose={hidePaywall}
-          onUpgrade={() => {
-            // Handle upgrade flow
-            hidePaywall();
-          }}
+          onUpgrade={handleUpgrade}
           message={paywallMessage}
-          triggerFeature={paywallTrigger || undefined}
+          triggerFeature="reminder_limit"
         />
 
-        {/* Full Screen Paywall */}
         <FullScreenPaywall
           visible={showFullScreenPaywall}
           onClose={hidePaywall}
-          onUpgrade={() => {
-            // Handle upgrade flow
-            hidePaywall();
-          }}
-          triggerFeature={paywallTrigger || undefined}
+          onUpgrade={handleUpgrade}
+          triggerFeature="reminder_limit"
         />
-      </TouchableOpacity>
+
+        {/* New Full-Page Date/Time Selection Modal */}
+        <DateTimeSelectionModal
+          visible={!!dateTimeModalState}
+          onClose={() => setDateTimeModalState(null)}
+          onConfirm={(
+            dateValue: string,
+            timeValue: string,
+            customDate: Date | null,
+            customTime: string
+          ) => {
+            form.setSelectedDate(dateValue);
+            form.setSelectedTime(timeValue);
+            if (dateValue === 'custom') {form.setCustomDateValue(customDate);}
+            if (timeValue === 'custom') {form.setCustomTimeValue(customTime);}
+            setDateTimeModalState(null);
+          }}
+          currentDate={tempDate}
+          currentTime={tempTime}
+          customDateValue={tempCustomDate}
+          customTimeValue={tempCustomTime}
+          dateOptions={form.dateOptions}
+          timeOptions={form.getTimeOptions()}
+          colors={colors}
+          modalState={dateTimeModalState}
+          setModalState={setDateTimeModalState}
+          setTempDate={setTempDate}
+          setTempTime={setTempTime}
+          setTempCustomDate={setTempCustomDate}
+          setTempCustomTime={setTempCustomTime}
+          tempDate={tempDate}
+          tempTime={tempTime}
+        />
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
-} 
+}

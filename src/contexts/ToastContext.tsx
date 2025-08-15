@@ -78,4 +78,4 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       )}
     </ToastContext.Provider>
   );
-}; 
+};

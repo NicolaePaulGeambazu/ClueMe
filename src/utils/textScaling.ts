@@ -6,9 +6,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // Calculate device type based on screen dimensions
 const getDeviceType = () => {
-  if (screenWidth >= 768) return 'large';
-  if (screenWidth >= 414) return 'medium';
-  if (screenWidth >= 375) return 'small';
+  if (screenWidth >= 768) {return 'large';}
+  if (screenWidth >= 414) {return 'medium';}
+  if (screenWidth >= 375) {return 'small';}
   return 'compact';
 };
 
@@ -16,23 +16,23 @@ const getDeviceType = () => {
 export const ConsistentFontSizes = {
   // Large Title - consistent across devices
   largeTitle: 34,
-  
+
   // Title sizes
   title1: 26,
   title2: 22,
   title3: 20,
-  
+
   // Body text
   headline: 17,
   body: 16,
   callout: 15,
   subheadline: 14,
-  
+
   // Caption text
   footnote: 13,
   caption1: 12,
   caption2: 11,
-  
+
   // Special sizes
   button: 16,
   tab: 14,
@@ -90,7 +90,7 @@ export const createConsistentTextStyle = (
 // Device-specific adjustments (minimal)
 export const getDeviceAdjustment = (): number => {
   const deviceType = getDeviceType();
-  
+
   switch (deviceType) {
     case 'large':
       return 1.0; // No adjustment for large devices
@@ -119,105 +119,105 @@ export const TextStyles = {
     ConsistentLineHeights.largeTitle,
     { fontWeight: '700' as RNTextStyle['fontWeight'] }
   ),
-  
+
   title1: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.title1),
     'System',
     ConsistentLineHeights.title1,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   title2: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.title2),
     'System',
     ConsistentLineHeights.title2,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   title3: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.title3),
     'System',
     ConsistentLineHeights.title3,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   headline: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.headline),
     'System',
     ConsistentLineHeights.headline,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   body: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.body),
     'System',
     ConsistentLineHeights.body,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   bodyMedium: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.body),
     'System',
     ConsistentLineHeights.body,
     { fontWeight: '500' as RNTextStyle['fontWeight'] }
   ),
-  
+
   bodySemibold: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.body),
     'System',
     ConsistentLineHeights.body,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   callout: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.callout),
     'System',
     ConsistentLineHeights.callout,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   subheadline: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.subheadline),
     'System',
     ConsistentLineHeights.subheadline,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   footnote: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.footnote),
     'System',
     ConsistentLineHeights.footnote,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   caption1: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.caption1),
     'System',
     ConsistentLineHeights.caption1,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   caption2: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.caption2),
     'System',
     ConsistentLineHeights.caption2,
     { fontWeight: '400' as RNTextStyle['fontWeight'] }
   ),
-  
+
   button: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.button),
     'System',
     ConsistentLineHeights.button,
     { fontWeight: '600' as RNTextStyle['fontWeight'] }
   ),
-  
+
   tab: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.tab),
     'System',
     ConsistentLineHeights.tab,
     { fontWeight: '500' as RNTextStyle['fontWeight'] }
   ),
-  
+
   badge: createConsistentTextStyle(
     getAdjustedFontSize(ConsistentFontSizes.badge),
     'System',
@@ -232,4 +232,4 @@ export const DeviceInfo = {
   screenHeight,
   deviceType: getDeviceType(),
   adjustment: getDeviceAdjustment(),
-}; 
+};

@@ -15,15 +15,15 @@ interface EditReminderModalProps {
   reminderId: string;
 }
 
-export default function EditReminderModal({ 
-  visible, 
-  onClose, 
-  reminderId 
+export default function EditReminderModal({
+  visible,
+  onClose,
+  reminderId,
 }: EditReminderModalProps) {
   const navigation = useNavigation();
   const { updateReminder } = useReminders();
   const { user } = useAuth();
-  
+
   // Modal state
   const [showQuickAdd, setShowQuickAdd] = useState(true);
   const [wizardInitialData, setWizardInitialData] = useState<any>(null);
@@ -38,23 +38,23 @@ export default function EditReminderModal({
   }, [visible, reminderId, user?.uid]);
 
   const loadReminderData = async () => {
-    if (!reminderId) return;
+    if (!reminderId) {return;}
 
     setIsLoading(true);
     try {
-      
+
       // Get reminder directly by ID
       const reminder = await reminderService.getReminderById(reminderId);
-      
+
       if (!reminder) {
         onClose();
         return;
       }
 
       setOriginalReminder(reminder);
-      
+
       // Convert reminder data to form format
-      const dueDate = reminder.dueDate instanceof Date ? reminder.dueDate : 
+      const dueDate = reminder.dueDate instanceof Date ? reminder.dueDate :
                      typeof reminder.dueDate === 'string' ? new Date(reminder.dueDate) : new Date();
       const dueDateTime = DateTime.fromJSDate(dueDate);
       if (reminder.dueTime) {
@@ -74,7 +74,7 @@ export default function EditReminderModal({
         priority: reminder.priority || 'medium',
         hasNotification: reminder.hasNotification !== false, // Default to true
         notificationTimings: reminder.notificationTimings || [
-          { type: 'before', value: 15, label: '15 minutes before' }
+          { type: 'before', value: 15, label: '15 minutes before' },
         ],
         // Task chunking data
         isChunked: reminder.isChunked || false,
@@ -93,7 +93,7 @@ export default function EditReminderModal({
 
   const handleQuickAddSave = async (reminderData: any) => {
     try {
-      
+
       if (!originalReminder) {
         throw new Error('No original reminder data available');
       }
@@ -112,7 +112,7 @@ export default function EditReminderModal({
         customInterval: reminderData.customInterval,
         repeatDays: reminderData.repeatDays,
         occurrences: reminderData.occurrences,
-        timezone: reminderData.timezone,
+
         assignedTo: reminderData.assignedTo,
         hasNotification: reminderData.hasNotification,
         notificationTimings: reminderData.notificationTimings,
@@ -122,9 +122,9 @@ export default function EditReminderModal({
         chunkedProgress: reminderData.chunkedProgress,
         updatedAt: new Date(),
       };
-      
+
       await updateReminder(reminderId, updates);
-      
+
       handleClose();
     } catch (error) {
       throw error; // Re-throw to let QuickAddModal handle it
@@ -158,7 +158,7 @@ export default function EditReminderModal({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.overlay}
         onPress={handleClose}
         activeOpacity={1}
@@ -192,4 +192,4 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'flex-end',
   },
-}); 
+});
