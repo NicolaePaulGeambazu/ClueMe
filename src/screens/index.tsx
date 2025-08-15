@@ -11,6 +11,7 @@ import {
   Alert,
   Animated,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -38,6 +39,10 @@ import {
   Trash2,
   Edit,
   MapPin,
+  ChevronRight,
+  Plus,
+  User,
+  Crown,
 } from 'lucide-react-native';
 import { GridIcon } from '../components/common/GridIcon';
 import { filterReminders, getRecurringPatternDescription } from '../utils/reminderUtils';
@@ -51,7 +56,7 @@ import type { Reminder } from '../design-system/reminders/types';
 import type { GestureHandlerStateChangeEvent } from 'react-native-gesture-handler';
 
 interface IndexScreenProps {
-  navigation: any; // You can replace 'any' with the proper navigation type if available
+  navigation: any;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -64,11 +69,13 @@ const ICONS: Record<string, string> = {
   bill: '💳',
   med: '💊',
 };
+
 const PRIORITY_COLORS: Record<string, string> = {
   high: Colors.light.error,
   medium: Colors.light.warning,
   low: Colors.light.success,
 };
+
 const MODAL_OPACITY = 0.4;
 const MODAL_BG = `rgba(0,0,0,${MODAL_OPACITY})`;
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -79,8 +86,9 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
-  const {  isAnonymous } = useAuth();
+  const { isAnonymous } = useAuth();
   const { reminders, isLoading, isInitialized, isDataFullyLoaded, error, loadReminders, deleteReminder, stats } = useReminderContext();
+  const { family, familyMembers, currentMember, isOwner } = useFamily();
   const { fabPosition, setFabPosition } = useSettings();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showFabMenu, setShowFabMenu] = useState(false);
@@ -99,7 +107,7 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   // FAB hint animation
   useEffect(() => {
     if (showFabHint && !hasDraggedFab) {
-      const startHintAnimation = () => {
+      Animated.loop(
         Animated.sequence([
           Animated.timing(fabHintAnim, {
             toValue: 1,
@@ -111,91 +119,76 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
             duration: 1000,
             useNativeDriver: true,
           }),
-        ]).start(() => {
-          // Repeat the animation after 3 seconds
-          setTimeout(startHintAnimation, 3000);
-        });
-      };
-
-      startHintAnimation();
+        ])
+      ).start();
     }
   }, [showFabHint, hasDraggedFab]);
 
+  // Filter reminders for today
+  const todayReminders = useMemo(() => {
+    if (!reminders || reminders.length === 0) return [];
+    
+    const today = getTodayISO();
+    return filterReminders.byToday(reminders);
+  }, [reminders]);
+
+  // Separate reminders by owner vs assigned
+  const { myReminders, familyReminders } = useMemo(() => {
+    if (!reminders || !currentMember) {
+      return { myReminders: [], familyReminders: [] };
+    }
+
+    const my = reminders.filter(r => r.userId === currentMember.userId);
+    const family = reminders.filter(r => r.userId !== currentMember.userId && r.familyId === currentMember.familyId);
+    
+    return { myReminders: my, familyReminders: family };
+  }, [reminders, currentMember]);
+
+  // Get today's reminders for each category
+  const todayMyReminders = useMemo(() => {
+    if (!myReminders || myReminders.length === 0) return [];
+    return filterReminders.byToday(myReminders);
+  }, [myReminders]);
+
+  const todayFamilyReminders = useMemo(() => {
+    if (!familyReminders || familyReminders.length === 0) return [];
+    return filterReminders.byToday(familyReminders);
+  }, [familyReminders]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadReminders();
-    setIsRefreshing(false);
-  };
-
-  // Memoize derived data
-  const todayReminders = useMemo(() => {
-    if (!reminders || !isInitialized) {return [];}
-    const today = getTodayISO();
-    console.log('[IndexScreen] Filtering reminders for today:', today);
-    console.log('[IndexScreen] Total reminders:', reminders.length);
-    
-    const filtered = reminders.filter(reminder => {
-      if (!reminder.dueDate) {
-        console.log('[IndexScreen] Reminder has no dueDate:', reminder.title);
-        return false;
-      }
-
-      // Convert reminder date to YYYY-MM-DD format for comparison
-      const reminderDate = new Date(reminder.dueDate);
-      const reminderDateString = formatDateFns(reminderDate, 'yyyy-MM-dd');
-      
-      console.log('[IndexScreen] Reminder:', reminder.title, 'dueDate:', reminder.dueDate, 'parsed:', reminderDateString, 'matches today:', reminderDateString === today);
-
-      return reminderDateString === today;
-    });
-    
-    console.log('[IndexScreen] Today reminders count:', filtered.length);
-    return filtered;
-  }, [reminders, isInitialized]);
-
-  const getTypeIcon = (type: string) => {
-    return ICONS[type] || ICONS.task;
-  };
-
-  const getPriorityColor = (priority: string) => {
-    return PRIORITY_COLORS[priority] || PRIORITY_COLORS.low;
+    try {
+      await loadReminders();
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleFabPress = () => {
     setShowFabMenu(!showFabMenu);
   };
 
-  const handleFabDrag = (event: any) => {
-    const { translationX } = event.nativeEvent;
+  const handleFabDrag = Animated.event(
+    [{ nativeEvent: { translationX: fabTranslateX } }],
+    { useNativeDriver: true }
+  );
 
-    // Calculate the center of the screen
-    const screenCenter = screenWidth / 2;
-    const currentPosition = fabPosition === 'left' ? 0 : screenWidth - 80; // 80 is FAB width + margins
-
-    // Update the animated value
-    fabTranslateX.setValue(translationX);
-  };
-
-  const handleFabDragEnd = (event: any) => {
-    const { translationX } = event.nativeEvent;
-
-    // Determine which side the FAB should snap to
-    const screenCenter = screenWidth / 2;
-    const newPosition = translationX > 0 ? 'right' : 'left';
-
-    // Only update if position actually changed
-    if (newPosition !== fabPosition) {
-      setFabPosition(newPosition);
+  const handleFabDragEnd = (event: GestureHandlerStateChangeEvent) => {
+    const { translationX } = event.nativeEvent as any;
+    
+    if (Math.abs(translationX) > 50) {
+      setFabPosition(translationX > 0 ? 'left' : 'right');
     }
-
-    // Mark that user has dragged the FAB and hide hint
-    if (!hasDraggedFab) {
-      setHasDraggedFab(true);
-      setShowFabHint(false);
-    }
-
-    // Reset the animated value
-    fabTranslateX.setValue(0);
+    
+    Animated.spring(fabTranslateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 9,
+    }).start();
+    
+    setHasDraggedFab(true);
+    setShowFabHint(false);
   };
 
   const handleQuickAction = (action: string) => {
@@ -224,11 +217,9 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
     if (!reminder) {return;}
 
     if (isRecurringReminder(reminder)) {
-      // Show recurring delete modal with proper props
       setSelectedReminderId(reminderId);
       setShowDeleteConfirmation(true);
     } else {
-      // Show regular delete modal
       setSelectedReminderId(reminderId);
       setShowDeleteConfirmation(true);
     }
@@ -237,16 +228,13 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const handleConfirmDelete = async () => {
     if (selectedReminderId) {
       try {
-        // Find the reminder to get its details
         const reminder = reminders.find(r => r.id === selectedReminderId);
         if (reminder) {
-          // Use the delete reminder function from useReminders
           await deleteReminder(selectedReminderId);
         }
       } catch (error) {
         Alert.alert(t('common.error'), t('errors.unknown'));
       } finally {
-        // Only close modal after deletion completes (success or error)
         setSelectedReminderId('');
         setShowDeleteConfirmation(false);
       }
@@ -256,16 +244,13 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
   const handleConfirmRecurringDelete = async (deleteAll: boolean) => {
     if (selectedReminderId) {
       try {
-        // Find the reminder to get its details
         const reminder = reminders.find(r => r.id === selectedReminderId);
         if (reminder) {
-          // Use the delete reminder function from useReminders
           await deleteReminder(selectedReminderId);
         }
       } catch (error) {
         Alert.alert(t('common.error'), t('errors.unknown'));
       } finally {
-        // Only close modal after deletion completes (success or error)
         setSelectedReminderId('');
         setShowDeleteConfirmation(false);
       }
@@ -278,413 +263,177 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
     showEditReminderModal(reminderId);
   };
 
-  // Swipeable Home Reminder Component
-  interface SwipeableHomeReminderProps {
-    reminder: Reminder;
-    colors: typeof Colors['light'];
-    onDelete: (id: string) => void;
-    onEdit: (id: string) => void;
-    isFirst: boolean;
-  }
-
-  const SwipeableHomeReminder: React.FC<SwipeableHomeReminderProps> = React.memo(({
-    reminder,
-    colors,
-    onDelete,
-    onEdit,
-    isFirst,
-  }) => {
-    const translateX = useRef(new Animated.Value(0)).current;
-    const deleteOpacity = useRef(new Animated.Value(0)).current;
-    const editOpacity = useRef(new Animated.Value(0)).current;
-    const cardScale = useRef(new Animated.Value(1)).current;
-    const [isOpen, setIsOpen] = useState(false);
-
-    const onGestureEvent = Animated.event(
-      [{ nativeEvent: { translationX: translateX } }],
-      { useNativeDriver: true }
-    );
-
-    const onHandlerStateChange = (event: GestureHandlerStateChangeEvent) => {
-      if (event.nativeEvent.oldState === State.ACTIVE) {
-        const { translationX } = (event.nativeEvent as any);
-
-        if (translationX < -SWIPE_THRESHOLD) {
-          // Swipe left - open actions with enhanced animation
-          Animated.parallel([
-            Animated.spring(translateX, {
-              toValue: -140,
-              useNativeDriver: true,
-              tension: 80,
-              friction: 9,
-            }),
-            Animated.timing(deleteOpacity, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(editOpacity, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.sequence([
-              Animated.timing(cardScale, {
-                toValue: 0.98,
-                duration: 150,
-                useNativeDriver: true,
-              }),
-              Animated.spring(cardScale, {
-                toValue: 1,
-                useNativeDriver: true,
-                tension: 150,
-                friction: 10,
-              }),
-            ]),
-          ]).start(() => setIsOpen(true));
-        } else {
-          // Close with smooth animation
-          closeSwipe();
-        }
-      }
-    };
-
-    const closeSwipe = () => {
-      Animated.parallel([
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 80,
-          friction: 9,
-        }),
-        Animated.timing(deleteOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.timing(editOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 150,
-          friction: 10,
-        }),
-      ]).start(() => setIsOpen(false));
-    };
-
-    const handleDelete = () => {
-      // Enhanced delete animation with feedback
-      Animated.sequence([
-        Animated.timing(cardScale, {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 150,
-          friction: 10,
-        }),
-      ]).start(() => {
-        closeSwipe();
-        onDelete(reminder.id);
-      });
-    };
-
-    const handleEdit = () => {
-      // Enhanced edit animation with feedback
-      Animated.sequence([
-        Animated.timing(cardScale, {
-          toValue: 0.95,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.spring(cardScale, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 150,
-          friction: 10,
-        }),
-      ]).start(() => {
-        closeSwipe();
-        onEdit(reminder.id);
-      });
-    };
-
-    const handlePress = () => {
-      if (!isOpen) {
-        onEdit(reminder.id);
-      }
-    };
-
+  // Modern Task Item Component (No Cards)
+  const TaskItem = ({ reminder, isFamilyTask = false }: { reminder: Reminder; isFamilyTask?: boolean }) => {
+    const member = familyMembers?.find(m => m.userId === reminder.userId);
+    const isOverdue = reminder.dueDate ? new Date(reminder.dueDate) < new Date() : false;
+    const isToday = reminder.dueDate ? formatDate(new Date(reminder.dueDate)) === formatDate(new Date()) : false;
+    
     return (
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-      >
-        <Animated.View style={{
-          transform: [{ translateX }, { scale: cardScale }],
-          marginTop: isFirst ? 12 : 0,
-          marginBottom: 10,
-          position: 'relative',
-        }}>
-          {/* Swipe Actions - Positioned to be revealed by swipe */}
-          <View style={{
-            position: 'absolute',
-            right: -140, // Position outside the card
-            top: 0,
-            bottom: 0,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            zIndex: 1,
-            width: 140, // Width to match the swipe distance
+      <TouchableOpacity
+        style={[
+          styles.taskItem,
+          { 
+            borderLeftColor: isFamilyTask ? colors.tertiary : colors.primary,
             backgroundColor: colors.surface,
-            borderTopRightRadius: 16,
-            borderTopLeftRadius: 16,
-            borderBottomRightRadius: 16,
-            borderBottomLeftRadius: 16,
-            shadowColor: colors.shadow,
-            shadowOffset: { width: -2, height: 0 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-            borderLeftWidth: 1,
-            borderLeftColor: colors.border,
-          }}>
-            <Animated.View style={{
-              opacity: editOpacity,
-              transform: [{ scale: editOpacity }],
-            }}>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.background,
-                  padding: 16,
-                  borderRadius: 20,
-                  marginRight: 12,
-                  shadowColor: colors.shadow,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 6,
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: colors.border,
-                }}
-                onPress={handleEdit}
-                activeOpacity={0.7}
-              >
-                <Edit size={20} color={colors.text} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </Animated.View>
-            <Animated.View style={{
-              opacity: deleteOpacity,
-              transform: [{ scale: deleteOpacity }],
-            }}>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: colors.error,
-                  padding: 16,
-                  borderRadius: 20,
-                  marginRight: 12,
-                  shadowColor: colors.shadow,
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.2,
-                  shadowRadius: 6,
-                  elevation: 4,
-                  borderWidth: 1,
-                  borderColor: colors.error + '30',
-                }}
-                onPress={handleDelete}
-                activeOpacity={0.7}
-              >
-                <Trash2 size={20} color={colors.background} strokeWidth={2.5} />
-              </TouchableOpacity>
-            </Animated.View>
-          </View>
-
-          {/* Main Card Row */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[
-              {
-                backgroundColor: colors.surface,
-                borderRadius: 16,
-                paddingVertical: 16,
-                paddingHorizontal: 18,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                shadowColor: colors.shadow,
-                shadowOpacity: 0.08,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 2 },
-                elevation: 2,
-                minHeight: 56,
-                overflow: 'hidden', // Ensure content doesn't show outside bounds
-              },
-              // Add subtle swipe indicator
-              {
-                borderLeftWidth: 3,
-                borderLeftColor: colors.primary + '20',
-              },
-            ]}
-            onPress={handlePress}
-          >
-            {/* Left: Title and Location */}
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text
-                style={{
-                  fontSize: FontSizes.body,
-                  fontFamily: Fonts.text.semibold,
-                  color: colors.text,
-                  flexShrink: 1,
-                  flexWrap: 'nowrap',
-                  maxWidth: screenWidth * 0.45,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
+          }
+        ]}
+        onPress={() => handleEditReminder(reminder.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.taskItemHeader}>
+          <View style={styles.taskItemLeft}>
+            <View style={[
+              styles.taskTypeIndicator,
+              { backgroundColor: isFamilyTask ? colors.tertiary : colors.primary }
+            ]} />
+            <View style={styles.taskContent}>
+              <Text style={[styles.taskTitle, { color: colors.text }]} numberOfLines={2}>
                 {reminder.title}
               </Text>
-              {reminder.location && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, gap: 4 }}>
-                  <MapPin size={12} color={colors.textTertiary} strokeWidth={2} />
-                  <Text style={{
-                    fontSize: FontSizes.caption1,
-                    fontFamily: Fonts.text.regular,
-                    color: colors.textTertiary,
-                    flexShrink: 1,
-                  }} numberOfLines={1}>
-                    {reminder.location}
-                  </Text>
-                </View>
+              {reminder.description && (
+                <Text style={[styles.taskDescription, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {reminder.description}
+                </Text>
               )}
             </View>
-
-            {/* Center: Recurring icon/label */}
-            {reminder.isRecurring ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 8 }}>
-                <Repeat size={18} color={colors.primary} style={{ marginRight: 2 }} />
-                <Text style={{ color: colors.primary, fontSize: FontSizes.caption1, fontFamily: Fonts.text.medium }}>
+          </View>
+          
+          <View style={styles.taskItemRight}>
+            {isFamilyTask && member && (
+              <View style={styles.familyMemberBadge}>
+                <User size={12} color={colors.tertiary} />
+                <Text style={[styles.familyMemberName, { color: colors.tertiary }]}>
+                  {member.name}
+                </Text>
+              </View>
+            )}
+            
+            <View style={styles.taskTimeContainer}>
+              <Clock size={14} color={colors.textSecondary} />
+              <Text style={[styles.taskTime, { color: colors.textSecondary }]}>
+                {reminder.dueTime || (reminder.dueDate ? formatTimeOnly(new Date(reminder.dueDate)) : '')}
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.taskItemFooter}>
+          <View style={styles.taskMeta}>
+            {reminder.type && (
+              <View style={[styles.categoryChip, { backgroundColor: `${colors.primary}15` }]}>
+                <Text style={[styles.categoryText, { color: colors.primary }]}>
+                  {reminder.type}
+                </Text>
+              </View>
+            )}
+            
+            {reminder.priority && (
+              <View style={[
+                styles.priorityChip,
+                { backgroundColor: `${PRIORITY_COLORS[reminder.priority]}15` }
+              ]}>
+                <Text style={[
+                  styles.priorityText,
+                  { color: PRIORITY_COLORS[reminder.priority] }
+                ]}>
+                  {reminder.priority}
+                </Text>
+              </View>
+            )}
+            
+            {reminder.isRecurring && (
+              <View style={[styles.recurringChip, { backgroundColor: `${colors.warning}15` }]}>
+                <Repeat size={12} color={colors.warning} />
+                <Text style={[styles.recurringText, { color: colors.warning }]}>
                   {getRecurringPatternDescription(reminder)}
                 </Text>
               </View>
-            ) : <View style={{ width: 24 }} />}
-
-            {/* Right: Due date/time */}
-            <View style={{ alignItems: 'flex-end', minWidth: 70 }}>
-              <Text style={{
-                color: colors.textSecondary,
-                fontSize: FontSizes.callout,
-                fontFamily: Fonts.text.medium,
-              }}>
-                {reminder.dueDate ? formatDate(reminder.dueDate) : ''}
-              </Text>
-              {reminder.dueTime && (
-                <Text style={{
-                  color: colors.textTertiary,
-                  fontSize: FontSizes.caption1,
-                  fontFamily: Fonts.text.regular,
-                }}>
-                  {formatTimeOnly(reminder.dueTime)}
-                </Text>
-              )}
-              {/* Swipe hint indicator */}
-              <View style={{
-                marginTop: 4,
-                opacity: 0.3,
-                flexDirection: 'row',
-                alignItems: 'center',
-              }}>
-                <View style={{
-                  width: 2,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: colors.textTertiary,
-                  marginRight: 2,
-                }} />
-                <View style={{
-                  width: 2,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: colors.textTertiary,
-                  marginRight: 2,
-                }} />
-                <View style={{
-                  width: 2,
-                  height: 2,
-                  borderRadius: 1,
-                  backgroundColor: colors.textTertiary,
-                }} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-      </PanGestureHandler>
+            )}
+          </View>
+          
+          <View style={styles.taskActions}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: `${colors.primary}15` }]}
+              onPress={() => handleEditReminder(reminder.id)}
+            >
+              <Edit size={14} color={colors.primary} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: `${colors.error}15` }]}
+              onPress={() => handleDeleteReminder(reminder.id)}
+            >
+              <Trash2 size={14} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
     );
-  });
+  };
 
-  // Extracted empty state for clarity
-  const EmptyState = () => (
+  // Empty State Component
+  const EmptyState = ({ title, description, showAddButton = false }: { 
+    title: string; 
+    description: string; 
+    showAddButton?: boolean;
+  }) => (
     <View style={styles.emptyContainer}>
-      <Image
-        source={theme === 'dark'
-          ? require('../assets/images/empty-box-dark.png')
-          : require('../assets/images/empty-box.png')}
-        style={styles.emptyImage as import('react-native').ImageStyle}
-        resizeMode="contain"
-      />
+      <View style={[styles.emptyIconContainer, { backgroundColor: `${colors.primary}10` }]}>
+        <Bell size={32} color={colors.primary} />
+      </View>
       <Text style={[styles.emptyTitle, { color: colors.text }]}>
-        {t('home.noEventsToday')}
+        {title}
       </Text>
       <Text style={[styles.emptyDescription, { color: colors.textSecondary }]}>
-        {t('home.noEventsTodayDescription')}
+        {description}
       </Text>
-      {isAnonymous && (
+      {showAddButton && (
         <TouchableOpacity
-          style={[styles.signInButton, { backgroundColor: colors.primary }]}
-          onPress={() => navigation.navigate('Login')}
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
+          onPress={() => navigation.navigate('Add')}
         >
-          <Text style={[styles.signInButtonText, { color: '#FFFFFF' }]}>
-            {t('home.signIn')}
-          </Text>
+          <Plus size={16} color="#FFFFFF" />
+          <Text style={styles.addButtonText}>Add Task</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: '#FFFFFF' }]}>
-      {/* Focus Mode Banner */}
-
-      {/* Enhanced Hero Header with White Background */}
-      <View style={[styles.heroContainer, { backgroundColor: '#FFFFFF' }]}>
-        <View style={styles.heroHeader}>
-          <View style={styles.heroContent}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Modern Header */}
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
             <View style={styles.greetingContainer}>
-              <Sparkles size={24} color={colors.primary} style={styles.sparkleIcon} />
-              <Text style={[styles.heroGreeting, { color: colors.text }]}>
+              <Sparkles size={20} color={colors.primary} />
+              <Text style={[styles.greeting, { color: colors.text }]}>
                 {isAnonymous ? t('home.welcomeAnonymous') : t('home.welcomeBack')}
               </Text>
             </View>
-            <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               {isAnonymous ? t('home.anonymousBannerDescription') : t('home.subtitle')}
             </Text>
           </View>
-
+          
+          {family && (
+            <TouchableOpacity
+              style={[styles.familyButton, { backgroundColor: `${colors.tertiary}15` }]}
+              onPress={() => navigation.navigate('Family')}
+            >
+              <Users size={16} color={colors.tertiary} />
+              <Text style={[styles.familyButtonText, { color: colors.tertiary }]}>
+                {family.name}
+              </Text>
+              {isOwner && <Crown size={12} color={colors.tertiary} />}
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       <ScrollView
-        style={[
-          styles.content,
-          { backgroundColor: colors.background },
-        ]}
+        style={styles.content}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -695,107 +444,71 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
         }
       >
 
-        {/* Enhanced Stats Summary */}
-        <View style={styles.statsContainer}>
-          <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.navigate('Reminders', { initialTab: 'total' })}
-            disabled={!isDataFullyLoaded}
-          >
-            <View style={[styles.statIconContainer, { backgroundColor: `${colors.primary}15` }]}>
-              <Bell size={20} color={colors.primary} />
-            </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>
-              {isDataFullyLoaded ? stats.total : (
-                <ActivityIndicator size="small" color={colors.primary} />
-              )}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.total')}</Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.navigate('Reminders', { initialTab: 'pending' })}
-            disabled={!isDataFullyLoaded}
-          >
-            <View style={[styles.statIconContainer, { backgroundColor: `${colors.success}15` }]}>
-              <Clock size={20} color={colors.success} />
-            </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>
-              {isDataFullyLoaded ? stats.pending : (
-                <ActivityIndicator size="small" color={colors.success} />
-              )}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.pending')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: colors.surface }]}
-            onPress={() => navigation.navigate('Reminders', { initialTab: 'overdue' })}
-            disabled={!isDataFullyLoaded}
-          >
-            <View style={[styles.statIconContainer, { backgroundColor: `${colors.error}15` }]}>
-              <AlertCircle size={20} color={colors.error} />
-            </View>
-            <Text style={[styles.statNumber, { color: colors.text }]}>
-              {isDataFullyLoaded ? stats.overdue : (
-                <ActivityIndicator size="small" color={colors.error} />
-              )}
-            </Text>
-            <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{t('home.stats.overdue')}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Today's Reminders */}
-        <View style={styles.todayContainer}>
-          <View style={styles.todayHeader}>
+        {/* My Tasks Section */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
-              <TrendingUp size={20} color={colors.primary} />
+              <User size={20} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {t('home.todaysEvents')}
+                My Tasks Today
               </Text>
             </View>
-            <View style={[styles.dateChip, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.todayDate, { color: colors.textSecondary }]}>
-                {formatDate(new Date())}
-              </Text>
-            </View>
+            <TouchableOpacity
+              style={styles.sectionButton}
+              onPress={() => navigation.navigate('Reminders')}
+            >
+              <Text style={[styles.sectionButtonText, { color: colors.primary }]}>View All</Text>
+              <ChevronRight size={16} color={colors.primary} />
+            </TouchableOpacity>
           </View>
-          {error ? (
-            <View style={styles.loadingContainer}>
-              <Text style={[styles.loadingText, { color: colors.error }]}>
-                {t('common.error')}: {error}
-              </Text>
-            </View>
-          ) : !isInitialized ? (
-            <View style={styles.loadingContainer}>
-              <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                {t('common.loading')}
-              </Text>
-            </View>
-          ) : todayReminders.length === 0 ? (
-            <EmptyState />
+          
+          {todayMyReminders.length === 0 ? (
+            <EmptyState
+              title="No tasks today"
+              description="You're all caught up! Add a new task to get started."
+              showAddButton={true}
+            />
           ) : (
-            <View style={styles.remindersList}>
-                {todayReminders.map((reminder, index) => (
-                <SwipeableHomeReminder
-                  key={reminder.id}
-                  reminder={reminder}
-                  colors={colors}
-                  onDelete={handleDeleteReminder}
-                  onEdit={handleEditReminder}
-                  isFirst={index === 0}
-                />
+            <View style={styles.tasksList}>
+              {todayMyReminders.map((reminder) => (
+                <TaskItem key={reminder.id} reminder={reminder} />
               ))}
             </View>
           )}
         </View>
 
-        {/* Interstitial Ad Trigger - Show after user completes 3 actions */}
+        {/* Family Tasks Section - Only show for family owners */}
+        {isOwner && family && todayFamilyReminders.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <Users size={20} color={colors.tertiary} />
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Family Tasks Today
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.sectionButton}
+                onPress={() => navigation.navigate('Family')}
+              >
+                <Text style={[styles.sectionButtonText, { color: colors.tertiary }]}>View All</Text>
+                <ChevronRight size={16} color={colors.tertiary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.tasksList}>
+              {todayFamilyReminders.map((reminder) => (
+                <TaskItem key={reminder.id} reminder={reminder} isFamilyTask={true} />
+              ))}
+            </View>
+          </View>
+        )}
+
 
       </ScrollView>
 
-      {/* Enhanced Floating Action Button */}
+      {/* Floating Action Button */}
       <View style={[
         styles.fabContainer,
         fabPosition === 'left' ? styles.fabContainerLeft : styles.fabContainerRight,
@@ -853,43 +566,43 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               },
             ]}
           >
-                          <TouchableOpacity
-                style={styles.fabTouchable}
-                onPress={handleFabPress}
-                activeOpacity={0.8}
-              >
-                <GridIcon size={24} color="#FFFFFF" />
-                {showFabHint && !hasDraggedFab && (
-                  <View style={styles.fabDragHint}>
-                    <Text style={styles.fabDragHintText}>↔</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.fabTouchable}
+              onPress={handleFabPress}
+              activeOpacity={0.8}
+            >
+              <GridIcon size={24} color="#FFFFFF" />
+              {showFabHint && !hasDraggedFab && (
+                <View style={styles.fabDragHint}>
+                  <Text style={styles.fabDragHintText}>↔</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </Animated.View>
         </PanGestureHandler>
       </View>
 
-              {/* Delete Confirmation Modal */}
-        {showDeleteConfirmation && (
-          <DeleteConfirmationModal
-            visible={showDeleteConfirmation}
-            onClose={() => setShowDeleteConfirmation(false)}
-            onConfirm={handleConfirmDelete}
-            onConfirmRecurring={handleConfirmRecurringDelete}
-            title={t('reminders.deleteConfirmation.title')}
-            message={t('reminders.deleteConfirmation.message')}
-            itemName={reminders.find(r => r.id === selectedReminderId)?.title}
-            isRecurring={reminders.find(r => r.id === selectedReminderId)?.isRecurring}
-            reminder={reminders.find(r => r.id === selectedReminderId) as any}
-            type="reminder"
-          />
-        )}
-
-        {/* Premium Upgrade Modal */}
-        <PremiumUpgradeModal
-          visible={showPremiumUpgrade}
-          onClose={() => setShowPremiumUpgrade(false)}
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmation && (
+        <DeleteConfirmationModal
+          visible={showDeleteConfirmation}
+          onClose={() => setShowDeleteConfirmation(false)}
+          onConfirm={handleConfirmDelete}
+          onConfirmRecurring={handleConfirmRecurringDelete}
+          title={t('reminders.deleteConfirmation.title')}
+          message={t('reminders.deleteConfirmation.message')}
+          itemName={reminders.find(r => r.id === selectedReminderId)?.title}
+          isRecurring={reminders.find(r => r.id === selectedReminderId)?.isRecurring}
+          reminder={reminders.find(r => r.id === selectedReminderId) as any}
+          type="reminder"
         />
+      )}
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal
+        visible={showPremiumUpgrade}
+        onClose={() => setShowPremiumUpgrade(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -1104,101 +817,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
-  reminderIcon: {
-    fontSize: 18,
-  },
-  reminderContent: {
-    flex: 1,
-  },
-  reminderTitle: {
-    ...TextStyles.callout,
-  } as any,
-  reminderDescription: {
-    ...TextStyles.caption1,
-    marginTop: 4,
-  },
-  reminderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  reminderMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  metaText: {
-    ...TextStyles.caption2,
-    marginLeft: 4,
-  },
-  priorityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 4,
-  },
-  recurringInfoContainer: {
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 12,
-  },
-  recurringInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  recurringInfoText: {
-    ...TextStyles.caption1,
-    flex: 1,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 32,
-    marginTop: 20,
-  },
-  statCard: {
-    flex: 1,
-    padding: 20,
-    borderRadius: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-    minHeight: 120,
-    justifyContent: 'center',
-  },
-  statIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  statNumber: {
-    ...TextStyles.title1,
-    marginBottom: 4,
-  },
-  statLabel: {
-    ...TextStyles.caption1,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  } as any,
+
+
   fabContainer: {
     position: 'absolute',
     bottom: 30,
@@ -1350,6 +970,223 @@ const styles = StyleSheet.create({
   },
   reminderTouchable: {
     flex: 1,
+  },
+  // New styles for modern home screen
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingTop: 8,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  familyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  familyButtonText: {
+    ...TextStyles.caption1,
+    marginLeft: 8,
+  },
+  greeting: {
+    ...TextStyles.title1,
+    marginBottom: 4,
+  },
+  subtitle: {
+    ...TextStyles.body,
+  } as any,
+
+  section: {
+    marginBottom: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionTitle: {
+    ...TextStyles.title2,
+    marginLeft: 8,
+  },
+  sectionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionButtonText: {
+    ...TextStyles.caption1,
+  },
+  tasksList: {
+    gap: 12,
+  },
+  taskItem: {
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: 'transparent', // Default to transparent
+  },
+  taskItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  taskItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  taskTypeIndicator: {
+    width: 8,
+    height: 20,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  taskContent: {
+    flex: 1,
+  },
+  taskTitle: {
+    ...TextStyles.callout,
+    fontFamily: Fonts.text.semibold,
+  },
+  taskDescription: {
+    ...TextStyles.caption1,
+    marginTop: 4,
+  },
+  taskItemRight: {
+    alignItems: 'flex-end',
+  },
+  familyMemberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: 4,
+  },
+  familyMemberName: {
+    ...TextStyles.caption1,
+    fontFamily: Fonts.text.medium,
+    marginLeft: 4,
+  },
+  taskTimeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  taskTime: {
+    ...TextStyles.caption1,
+    fontFamily: Fonts.text.regular,
+  },
+  taskItemFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  taskMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  categoryText: {
+    ...TextStyles.caption1,
+    fontFamily: Fonts.text.medium,
+  },
+  priorityChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  priorityText: {
+    ...TextStyles.caption1,
+    fontFamily: Fonts.text.medium,
+  },
+  recurringChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  recurringText: {
+    ...TextStyles.caption1,
+    fontFamily: Fonts.text.medium,
+    marginLeft: 4,
+  },
+  taskActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  actionButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+  },
+
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  addButtonText: {
+    ...TextStyles.callout,
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  emptyIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
 });
 
