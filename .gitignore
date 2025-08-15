@@ -22,6 +22,16 @@ DerivedData
 *.xcuserstate
 **/.xcode.env.local
 
+# iOS Build Artifacts
+*.xcarchive/
+ios/ClearCue2.xcarchive/
+ios/build/
+ios/DerivedData/
+# Large iOS framework files that exceed GitHub limits
+**/FirebaseFirestoreInternal.framework.dSYM/
+**/grpc.framework.dSYM/
+**/*.dSYM/Contents/Resources/DWARF/*
+
 # Android/IntelliJ
 #
 build/
@@ -39,6 +49,7 @@ local.properties
 node_modules/
 npm-debug.log
 yarn-error.log
+.yarn
 
 # fastlane
 #
@@ -72,3 +83,4 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+.env

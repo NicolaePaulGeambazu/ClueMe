@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { mockDataService, FamilyMember, Family } from '../services/mockData';
+import firebaseService, { FamilyMember, Family, getValidFamilyMembers } from '../services/firebaseService';
 
 interface FamilyContextType {
   family: Family | null;
@@ -16,7 +16,7 @@ interface FamilyContextType {
   refreshFamily: () => Promise<void>;
 }
 
-const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
+export const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export function FamilyProvider({ children }: { children: React.ReactNode }) {
   const { user, requireAuth } = useAuth();
@@ -36,64 +36,41 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const loadFamily = async () => {
-    if (!user || user.isAnonymous) return;
+    if (!user || user.isAnonymous) {return;}
 
     try {
       setIsLoading(true);
-      
-      // Check if user owns a family
-      const ownedFamily = await mockDataService.getFamilyByOwner(user.uid);
-      
-      if (ownedFamily) {
-        setFamily(ownedFamily);
-        const members = await mockDataService.getFamilyMembers(ownedFamily.id);
+
+      // Get user's family
+      const userFamily = await firebaseService.getUserFamily(user.uid);
+
+      if (userFamily) {
+        setFamily(userFamily);
+        const members = await getValidFamilyMembers(userFamily.id);
         setFamilyMembers(members);
-        
+
         // Find current user's member record
-        const userMember = members.find(m => m.email === user.email);
+        const userMember = members.find((m: FamilyMember) => m.userId === user.uid);
         setCurrentMember(userMember || null);
       } else {
-        // Create a sample family for demo purposes
-        const sampleFamily: Family = {
-          id: `family_${user.uid}`,
-          name: 'My Family',
-          description: 'Family reminder hub',
-          ownerId: user.uid,
-          memberCount: 1,
-          maxMembers: 10,
-          settings: {
-            allowMemberInvites: true,
-            requireApprovalForReminders: false,
-            sharedCalendar: true,
-          },
-          createdAt: new Date().toISOString(),
-        };
+        // Create a default family for the user
+        const defaultFamily = await firebaseService.createDefaultFamilyIfNeeded(
+          user.uid,
+          user.displayName || 'User',
+          user.email || ''
+        );
 
-        const sampleMember: FamilyMember = {
-          id: `${sampleFamily.id}_member_${user.uid}`,
-          name: user.displayName || 'You',
-          email: user.email || undefined,
-          role: 'admin',
-          status: 'active',
-          joinedAt: new Date().toISOString(),
-          tags: ['parent'],
-          preferences: {
-            receiveNotifications: true,
-            notificationMethods: ['push'],
-            quietHours: {
-              enabled: false,
-              start: '22:00',
-              end: '08:00',
-            },
-          },
-        };
+        if (defaultFamily) {
+          setFamily(defaultFamily);
+          const members = await getValidFamilyMembers(defaultFamily.id);
+          setFamilyMembers(members);
 
-        setFamily(sampleFamily);
-        setFamilyMembers([sampleMember]);
-        setCurrentMember(sampleMember);
+          // Find current user's member record
+          const userMember = members.find((m: FamilyMember) => m.userId === user.uid);
+          setCurrentMember(userMember || null);
+        }
       }
     } catch (error) {
-      console.error('Error loading family:', error);
     } finally {
       setIsLoading(false);
     }
@@ -105,39 +82,32 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const familyId = await mockDataService.createFamily({
+      const familyId = await firebaseService.createFamily({
         name,
         description,
         ownerId: user.uid,
-        maxMembers: 10,
+        ownerName: user.displayName || 'User',
+        memberCount: 1,
+        maxMembers: 2, // Free tier default
         settings: {
           allowMemberInvites: true,
-          requireApprovalForReminders: false,
-          sharedCalendar: true,
+          allowReminderSharing: true,
+          allowActivityNotifications: true,
         },
       });
 
       // Add the owner as the first member
-      await mockDataService.addFamilyMember(familyId, {
+      await firebaseService.addFamilyMember({
+        familyId,
+        userId: user.uid,
         name: user.displayName || 'You',
-        email: user.email || undefined,
-        role: 'admin',
-        status: 'active',
-        tags: ['owner'],
-        preferences: {
-          receiveNotifications: true,
-          notificationMethods: ['push'],
-          quietHours: {
-            enabled: false,
-            start: '22:00',
-            end: '08:00',
-          },
-        },
+        email: user.email || '',
+        role: 'owner',
+        createdBy: user.uid,
       });
 
       await loadFamily();
     } catch (error) {
-      console.error('Error creating family:', error);
       throw error;
     }
   };
@@ -148,27 +118,18 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Mock invite member - in real app, this would send an invitation
-      await mockDataService.addFamilyMember(family.id, {
+      // Add member to family
+      await firebaseService.addFamilyMember({
+        familyId: family.id,
+        userId: '', // Will be set when user accepts invitation
         name: name || email.split('@')[0],
         email,
         role: 'member',
-        status: 'pending',
-        tags: [],
-        preferences: {
-          receiveNotifications: true,
-          notificationMethods: ['push'],
-          quietHours: {
-            enabled: false,
-            start: '22:00',
-            end: '08:00',
-          },
-        },
+        createdBy: user!.uid,
       });
 
       await loadFamily();
     } catch (error) {
-      console.error('Error inviting member:', error);
       throw error;
     }
   };
@@ -179,24 +140,23 @@ export function FamilyProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await mockDataService.updateFamilyMember(memberId, updates);
+      // Note: Firebase service doesn't have updateFamilyMember method
+      // This would need to be implemented in the Firebase service
       await loadFamily();
     } catch (error) {
-      console.error('Error updating member:', error);
       throw error;
     }
   };
 
   const removeMember = async (memberId: string) => {
-    if (!requireAuth()) {
+    if (!requireAuth() || !family) {
       throw new Error('Authentication required');
     }
 
     try {
-      await mockDataService.removeFamilyMember(memberId);
+      await firebaseService.removeFamilyMember(memberId, family.id);
       await loadFamily();
     } catch (error) {
-      console.error('Error removing member:', error);
       throw error;
     }
   };

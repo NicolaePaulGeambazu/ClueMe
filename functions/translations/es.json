@@ -1,0 +1,38 @@
+{
+  "notifications": {
+    "reminderDue": "Recordatorio Vencido",
+    "reminderIn15Minutes": "Recordatorio en 15 minutos",
+    "reminderIn30Minutes": "Recordatorio en 30 minutos",
+    "reminderIn1Hour": "Recordatorio en 1 hora",
+    "reminderIn1Day": "Recordatorio en 1 día",
+    "reminderOverdue": "Recordatorio Atrasado",
+    "taskAssigned": "📋 ¡Nueva Tarea para Ti!",
+    "taskAssignedBy": "{{assignedBy}} te asignó una nueva tarea: \"{{title}}\" - ¡échale un vistazo! 💪",
+    "taskCompleted": "Tarea Completada",
+    "taskCompletedBy": "{{completedBy}} completó: {{title}}",
+    "taskUpdated": "Tarea Actualizada",
+    "taskUpdatedBy": "{{updatedBy}} actualizó: {{title}}",
+    "familyInvitation": "Invitación Familiar",
+    "familyInvitationFrom": "{{inviterName}} te invitó a unirte a su familia",
+    "general": "📋 Recordatorio de Tarea",
+    "generalWithDescription": "{{title}} - {{description}}",
+    "dueNow": "¡{{title}} vence ahora!",
+    "dueIn15Minutes": "{{title}} vence en 15 minutos",
+    "dueIn30Minutes": "{{title}} vence en 30 minutos",
+    "dueIn1Hour": "{{title}} vence en 1 hora",
+    "dueIn1Day": "{{title}} vence en 1 día",
+    "overdueBy": "{{title}} está atrasado por {{days}} días",
+    "overdueBy1Day": "{{title}} está atrasado por 1 día",
+    "minutesLeft": "{{minutes}} minutos restantes",
+    "hoursLeft": "{{hours}} horas restantes",
+    "daysLeft": "{{days}} días restantes"
+  },
+  "time": {
+    "minutes": "minutos",
+    "minute": "minuto",
+    "hours": "horas",
+    "hour": "hora",
+    "days": "días",
+    "day": "día"
+  }
+} 

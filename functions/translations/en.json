@@ -1,0 +1,38 @@
+{
+  "notifications": {
+    "reminderDue": "Reminder Due",
+    "reminderIn15Minutes": "Reminder in 15 minutes",
+    "reminderIn30Minutes": "Reminder in 30 minutes", 
+    "reminderIn1Hour": "Reminder in 1 hour",
+    "reminderIn1Day": "Reminder in 1 day",
+    "reminderOverdue": "Reminder Overdue",
+    "taskAssigned": "📋 New Task for You!",
+    "taskAssignedBy": "{{assignedBy}} assigned you a new task: \"{{title}}\" - check it out! 💪",
+    "taskCompleted": "Task Completed",
+    "taskCompletedBy": "{{completedBy}} completed: {{title}}",
+    "taskUpdated": "Task Updated",
+    "taskUpdatedBy": "{{updatedBy}} updated: {{title}}",
+    "familyInvitation": "Family Invitation",
+    "familyInvitationFrom": "{{inviterName}} invited you to join their family",
+    "general": "📋 Task Reminder",
+    "generalWithDescription": "{{title}} - {{description}}",
+    "dueNow": "{{title}} is due now!",
+    "dueIn15Minutes": "{{title}} is due in 15 minutes",
+    "dueIn30Minutes": "{{title}} is due in 30 minutes",
+    "dueIn1Hour": "{{title}} is due in 1 hour",
+    "dueIn1Day": "{{title}} is due in 1 day",
+    "overdueBy": "{{title}} is overdue by {{days}} days",
+    "overdueBy1Day": "{{title}} is overdue by 1 day",
+    "minutesLeft": "{{minutes}} minutes left",
+    "hoursLeft": "{{hours}} hours left",
+    "daysLeft": "{{days}} days left"
+  },
+  "time": {
+    "minutes": "minutes",
+    "minute": "minute",
+    "hours": "hours", 
+    "hour": "hour",
+    "days": "days",
+    "day": "day"
+  }
+} 

@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:ClearCue2/Configuration.storekit">
+   </FileRef>
+   <FileRef
       location = "group:ClearCue2.xcodeproj">
    </FileRef>
    <FileRef

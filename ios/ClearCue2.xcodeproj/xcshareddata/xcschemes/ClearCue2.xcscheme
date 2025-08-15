@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "ClearCue2.app"
+               BuildableName = "ClearCue.app"
                BlueprintName = "ClearCue2"
                ReferencedContainer = "container:ClearCue2.xcodeproj">
             </BuildableReference>
@@ -33,7 +33,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "ClearCue2Tests.xctest"
+               BuildableName = "ClearCue.xctest"
                BlueprintName = "ClearCue2Tests"
                ReferencedContainer = "container:ClearCue2.xcodeproj">
             </BuildableReference>
@@ -55,11 +55,14 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ClearCue2.app"
+            BuildableName = "ClearCue.app"
             BlueprintName = "ClearCue2"
             ReferencedContainer = "container:ClearCue2.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "../ClearCue2/Configuration.storekit">
+      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -72,7 +75,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "ClearCue2.app"
+            BuildableName = "ClearCue.app"
             BlueprintName = "ClearCue2"
             ReferencedContainer = "container:ClearCue2.xcodeproj">
          </BuildableReference>

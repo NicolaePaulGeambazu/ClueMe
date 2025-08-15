@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Clock, Star, CheckCircle, AlertCircle, User } from 'lucide-react-native';
+import { Clock, Star, CheckCircle, AlertCircle, User, Repeat, MapPin } from 'lucide-react-native';
 import { Fonts } from '../../constants/Fonts';
+import { formatTimeOnly } from '../../utils/dateUtils';
 
 interface TimeBlockProps {
   reminder: any;
@@ -14,7 +15,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
   reminder,
   onPress,
   colors,
-  compact = false
+  compact = false,
 }) => {
   const styles = createStyles(colors);
 
@@ -49,20 +50,29 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
     }
   };
 
-  const formatTime = (time: string) => {
-    if (!time) return '';
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${displayHour}:${minutes} ${ampm}`;
-  };
-
   const isOverdue = () => {
-    if (!reminder.dueDate) return false;
-    const dueDate = new Date(reminder.dueDate);
-    const now = new Date();
-    return dueDate < now && !reminder.completed;
+    if (!reminder.dueDate || reminder.completed) {return false;}
+
+    try {
+      // Create a Date object from the due date
+      const dueDateTime = new Date(reminder.dueDate);
+
+      // If there's a due time, combine it with the due date
+      if (reminder.dueTime) {
+        const [hours, minutes] = reminder.dueTime.split(':').map(Number);
+        if (!isNaN(hours) && !isNaN(minutes)) {
+          dueDateTime.setHours(hours, minutes, 0, 0);
+        }
+      }
+
+      const now = new Date();
+      return dueDateTime < now;
+    } catch (error) {
+      // Fallback to date-only comparison
+      const dueDate = new Date(reminder.dueDate);
+      const now = new Date();
+      return dueDate < now;
+    }
   };
 
   const typeColor = getTypeColor(reminder.type);
@@ -75,7 +85,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
         style={[
           styles.compactBlock,
           { borderLeftColor: typeColor },
-          overdue && styles.overdueBlock
+          overdue && styles.overdueBlock,
         ]}
         onPress={onPress}
       >
@@ -94,7 +104,7 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       style={[
         styles.block,
         { borderLeftColor: typeColor },
-        overdue && styles.overdueBlock
+        overdue && styles.overdueBlock,
       ]}
       onPress={onPress}
     >
@@ -108,15 +118,28 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
             <Star size={14} color={colors.warning} fill={colors.warning} />
           )}
         </View>
-        
+
         <View style={styles.blockMeta}>
           {reminder.dueTime && (
             <View style={styles.timeMeta}>
               <Clock size={12} color={colors.textSecondary} strokeWidth={2} />
-              <Text style={styles.timeText}>{formatTime(reminder.dueTime)}</Text>
+              <Text style={styles.timeText}>{formatTimeOnly(reminder.dueTime)}</Text>
             </View>
           )}
-          
+
+          {reminder.location && (
+            <View style={styles.locationMeta}>
+              <MapPin size={12} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={styles.locationText}>{reminder.location}</Text>
+            </View>
+          )}
+
+          {reminder.isRecurring && (
+            <View style={styles.recurringMeta}>
+              <Repeat size={12} color={colors.primary} strokeWidth={2} />
+            </View>
+          )}
+
           <View style={[styles.priorityBadge, { backgroundColor: priorityColor + '15' }]}>
             <Text style={[styles.priorityText, { color: priorityColor }]}>
               {reminder.priority}
@@ -132,13 +155,20 @@ export const TimeBlock: React.FC<TimeBlockProps> = ({
       )}
 
       <View style={styles.blockFooter}>
-        {reminder.assignedTo && (
+        {reminder.assignedTo && reminder.assignedTo.length > 0 && (
           <View style={styles.assignedTo}>
             <User size={12} color={colors.textSecondary} strokeWidth={2} />
-            <Text style={styles.assignedText}>{reminder.assignedTo}</Text>
+            <Text style={styles.assignedText}>
+              {Array.isArray(reminder.assignedTo)
+                ? reminder.assignedTo.length === 1
+                  ? reminder.assignedTo[0]
+                  : `${reminder.assignedTo[0]} +${reminder.assignedTo.length - 1}`
+                : reminder.assignedTo
+              }
+            </Text>
           </View>
         )}
-        
+
         {overdue && (
           <View style={styles.overdueIndicator}>
             <AlertCircle size={12} color={colors.error} strokeWidth={2} />
@@ -216,6 +246,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     marginLeft: 4,
   },
+  locationMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: 4,
+  },
+  recurringMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   priorityBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -258,4 +302,4 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.error,
     marginLeft: 4,
   },
-}); 
+});

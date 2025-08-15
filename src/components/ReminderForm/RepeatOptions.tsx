@@ -1,7 +1,39 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
-import { Calendar, Clock, Repeat, X, ChevronRight } from 'lucide-react-native';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Alert,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import { CustomDateTimePickerModal } from './CustomDateTimePicker';
+import {
+  Calendar,
+  Clock,
+  Repeat,
+  X,
+  ChevronRight,
+  Calendar as CalendarIcon,
+  CalendarDays,
+  CalendarRange,
+  CalendarCheck,
+  Settings,
+  Sparkles,
+  Crown,
+  Lock,
+} from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
 import { Fonts } from '../../constants/Fonts';
+import { formatDateForDisplay } from '../../utils/dateUtils';
+import { DisabledFeature } from '../premium/DisabledFeature';
+import { isProUser } from '../../services/featureFlags';
+import { getRecurringDescription } from '../../design-system/reminders/utils/recurring-utils';
+import RevenueCatPaywall from '../premium/RevenueCatPaywall';
+
 
 interface RepeatOptionsProps {
   isRecurring: boolean;
@@ -11,68 +43,84 @@ interface RepeatOptionsProps {
   customInterval: number;
   onCustomIntervalChange: (interval: number) => void;
   colors: any;
+  repeatDays: number[];
+  onRepeatDaysChange: (days: number[]) => void;
+  customFrequencyType?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  onCustomFrequencyTypeChange?: (frequency: 'daily' | 'weekly' | 'monthly' | 'yearly') => void;
+  recurringStartDate?: Date;
+  onRecurringStartDateChange: (date: Date | undefined) => void;
+  recurringEndDate?: Date;
+  onRecurringEndDateChange: (date: Date | undefined) => void;
+  recurringEndAfter?: number;
+  onRecurringEndAfterChange?: (count: number | undefined) => void;
+  onDatePickerOpen: (mode: 'start' | 'end') => void;
+  showCustomInterval?: boolean;
+  onShowCustomIntervalChange?: (show: boolean) => void;
+  userTier?: 'free' | 'ascend' | 'apex' | 'immortal';
+  onClose: () => void;
+  visible: boolean;
 }
 
-const REPEAT_PRESETS = [
-  {
-    id: 'daily',
-    label: 'Daily',
-    description: 'Every day',
-    icon: '📅',
+// Premium feature limits
+const PREMIUM_LIMITS = {
+  free: {
+    maxInterval: 30,
+    maxOccurrences: 50,
+    maxRepeatDays: 3,
+    customIntervals: false,
+    advancedEndConditions: false,
   },
-  {
-    id: 'weekdays',
-    label: 'Weekdays',
-    description: 'Monday to Friday',
-    icon: '💼',
+  ascend: {
+    maxInterval: 30,
+    maxOccurrences: 50,
+    maxRepeatDays: 3,
+    customIntervals: true,
+    advancedEndConditions: true,
   },
-  {
-    id: 'weekly',
-    label: 'Weekly',
-    description: 'Every week',
-    icon: '📆',
+  apex: {
+    maxInterval: 365,
+    maxOccurrences: 999,
+    maxRepeatDays: 7,
+    customIntervals: true,
+    advancedEndConditions: true,
   },
-  {
-    id: 'monthly',
-    label: 'Monthly',
-    description: 'Every month',
-    icon: '🗓️',
+  immortal: {
+    maxInterval: 365,
+    maxOccurrences: 999,
+    maxRepeatDays: 7,
+    customIntervals: true,
+    advancedEndConditions: true,
   },
-  {
-    id: 'yearly',
-    label: 'Yearly',
-    description: 'Every year',
-    icon: '🎉',
-  },
-  {
-    id: 'first_monday',
-    label: 'First Monday',
-    description: 'First Monday of each month',
-    icon: '📋',
-  },
-  {
-    id: 'last_friday',
-    label: 'Last Friday',
-    description: 'Last Friday of each month',
-    icon: '📋',
-  },
-  {
-    id: 'custom',
-    label: 'Custom',
-    description: 'Set custom interval',
-    icon: '⚙️',
-  },
+};
+
+const FREQUENCY_OPTIONS = [
+  { id: 'daily', label: 'Daily', icon: CalendarDays, description: 'Every day', premium: false },
+  { id: 'weekly', label: 'Weekly', icon: CalendarRange, description: 'Every week', premium: false },
+  { id: 'monthly', label: 'Monthly', icon: CalendarIcon, description: 'Every month', premium: false },
+  { id: 'yearly', label: 'Yearly', icon: CalendarCheck, description: 'Every year', premium: false },
+  { id: 'weekdays', label: 'Weekdays', icon: Calendar, description: 'Mon-Fri only', premium: false },
+  { id: 'custom', label: 'Custom', icon: Settings, description: 'Advanced patterns', premium: true },
 ];
 
-const INTERVAL_OPTIONS = [
-  { value: 1, label: '1 day' },
-  { value: 2, label: '2 days' },
-  { value: 3, label: '3 days' },
-  { value: 7, label: '1 week' },
-  { value: 14, label: '2 weeks' },
-  { value: 30, label: '1 month' },
-  { value: 90, label: '3 months' },
-  { value: 365, label: '1 year' },
+const END_CONDITIONS = [
+  { id: 'never', label: 'No end date', description: 'Repeat indefinitely', premium: false },
+  { id: 'on_date', label: 'On date', description: 'End on specific date', premium: true },
+  { id: 'after_occurrences', label: 'After occurrences', description: 'End after X times', premium: true },
+];
+
+const DAYS_OF_WEEK = [
+  { id: 1, label: 'Mon', fullLabel: 'Monday' },
+  { id: 2, label: 'Tue', fullLabel: 'Tuesday' },
+  { id: 3, label: 'Wed', fullLabel: 'Wednesday' },
+  { id: 4, label: 'Thu', fullLabel: 'Thursday' },
+  { id: 5, label: 'Fri', fullLabel: 'Friday' },
+  { id: 6, label: 'Sat', fullLabel: 'Saturday' },
+  { id: 0, label: 'Sun', fullLabel: 'Sunday' },
+];
+
+const MONTHLY_REPEAT_OPTIONS = [
+  { id: 'day_of_month', label: 'Day of month', description: 'e.g., 15th of each month' },
+  { id: 'day_of_week_in_month', label: 'Day of week', description: 'e.g., first Monday' },
 ];
 
 export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
@@ -82,332 +130,789 @@ export const RepeatOptions: React.FC<RepeatOptionsProps> = ({
   onRepeatPatternChange,
   customInterval,
   onCustomIntervalChange,
-  colors
+  colors,
+  repeatDays,
+  onRepeatDaysChange,
+  customFrequencyType,
+  onCustomFrequencyTypeChange,
+  recurringStartDate,
+  onRecurringStartDateChange,
+  recurringEndDate,
+  onRecurringEndDateChange,
+  recurringEndAfter,
+  onRecurringEndAfterChange,
+  onDatePickerOpen,
+  showCustomInterval = false,
+  onShowCustomIntervalChange,
+  userTier = 'free',
+  onClose,
+  visible,
 }) => {
-  const [showCustomInterval, setShowCustomInterval] = useState(false);
+  const { t } = useTranslation();
   const styles = createStyles(colors);
+  const tierLimits = PREMIUM_LIMITS[userTier];
+  const isPremiumUser = isProUser();
 
-  const handlePatternSelect = (pattern: string) => {
-    if (pattern === 'custom') {
-      setShowCustomInterval(true);
+  // State management
+  const [selectedFrequency, setSelectedFrequency] = useState(repeatPattern || 'daily');
+  const [interval, setInterval] = useState(customInterval || 1);
+  const [endCondition, setEndCondition] = useState<'never' | 'on_date' | 'after_occurrences'>(
+    recurringEndAfter ? 'after_occurrences' : recurringEndDate ? 'on_date' : 'never'
+  );
+  const [endDate, setEndDate] = useState<Date | undefined>(recurringEndDate);
+  const [occurrences, setOccurrences] = useState(recurringEndAfter || 5);
+  const [selectedDays, setSelectedDays] = useState<number[]>(repeatDays);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [showLocalDatePicker, setShowLocalDatePicker] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+
+  const handleFrequencySelect = useCallback((frequency: string) => {
+    const option = FREQUENCY_OPTIONS.find(opt => opt.id === frequency);
+
+    if (option?.premium && !isPremiumUser) {
+      // Show premium upgrade prompt
+      return;
+    }
+
+    setSelectedFrequency(frequency);
+    onRepeatPatternChange(frequency);
+
+    // Reset custom settings when switching to non-custom patterns
+    if (frequency !== 'custom') {
+      setSelectedDays([]);
+      onRepeatDaysChange([]);
+      if (onCustomFrequencyTypeChange && ['daily', 'weekly', 'monthly', 'yearly'].includes(frequency)) {
+        onCustomFrequencyTypeChange(frequency as 'daily' | 'weekly' | 'monthly' | 'yearly');
+      }
+    }
+  }, [onRepeatPatternChange, onCustomFrequencyTypeChange, onRepeatDaysChange]);
+
+  const handleIntervalChange = useCallback((value: string) => {
+    const newInterval = parseInt(value);
+    if (!isNaN(newInterval) && newInterval > 0 && newInterval <= tierLimits.maxInterval) {
+      setInterval(newInterval);
+      onCustomIntervalChange(newInterval);
+    }
+  }, [tierLimits.maxInterval, onCustomIntervalChange]);
+
+  const handleEndConditionSelect = useCallback((condition: typeof endCondition) => {
+    const option = END_CONDITIONS.find(opt => opt.id === condition);
+
+    if (option?.premium && !isPremiumUser) {
+      // Show premium upgrade prompt
+      return;
+    }
+
+    setEndCondition(condition);
+    if (condition === 'never') {
+      onRecurringEndDateChange(undefined);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(undefined);
+      }
+    } else if (condition === 'after_occurrences') {
+      onRecurringEndDateChange(undefined);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(occurrences);
+      }
+    } else if (condition === 'on_date') {
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(undefined);
+      }
+    }
+  }, [onRecurringEndDateChange, onRecurringEndAfterChange, occurrences]);
+
+  const handleDayToggle = useCallback((day: number) => {
+    // Temporarily disable premium checks for testing
+    // if (!tierLimits.customIntervals && selectedDays.length >= tierLimits.maxRepeatDays && !selectedDays.includes(day)) {
+    //   Alert.alert(
+    //     'Upgrade Required',
+    //     `Free users can select up to ${tierLimits.maxRepeatDays} days. Upgrade to select more days.`
+    //   );
+    //   return;
+    // }
+
+    if (selectedDays.includes(day)) {
+      const newDays = selectedDays.filter(d => d !== day);
+      setSelectedDays(newDays);
+      onRepeatDaysChange(newDays);
     } else {
-      setShowCustomInterval(false);
-      onRepeatPatternChange(pattern);
+      const newDays = [...selectedDays, day].sort();
+      setSelectedDays(newDays);
+      onRepeatDaysChange(newDays);
     }
-  };
+  }, [selectedDays, onRepeatDaysChange]);
 
-  const handleCustomIntervalChange = (value: string) => {
-    const interval = parseInt(value);
-    if (!isNaN(interval) && interval > 0) {
-      onCustomIntervalChange(interval);
+  const handleOccurrencesChange = useCallback((value: string) => {
+    const newOccurrences = parseInt(value);
+    if (!isNaN(newOccurrences) && newOccurrences > 0 && newOccurrences <= tierLimits.maxOccurrences) {
+      setOccurrences(newOccurrences);
+      if (onRecurringEndAfterChange) {
+        onRecurringEndAfterChange(newOccurrences);
+      }
     }
-  };
+  }, [tierLimits.maxOccurrences, onRecurringEndAfterChange]);
 
-  const getPatternDescription = (pattern: string) => {
-    const preset = REPEAT_PRESETS.find(p => p.id === pattern);
-    return preset ? preset.description : 'Custom interval';
-  };
+  const handleDatePickerOpen = useCallback(() => {
+    setShowLocalDatePicker(true);
+  }, []);
 
-  const getSmartNudgeText = () => {
-    if (!isRecurring) return null;
-    
-    switch (repeatPattern) {
-      case 'daily':
-        return "If missed today, suggest tomorrow";
-      case 'weekdays':
-        return "If missed on Friday, suggest next Monday";
-      case 'weekly':
-        return "If missed this week, suggest next week";
-      case 'monthly':
-        return "If missed this month, suggest next month";
-      default:
-        return "Smart nudges enabled for custom patterns";
+  const handleDatePickerClose = useCallback(() => {
+    setShowLocalDatePicker(false);
+  }, []);
+
+  const handleDatePickerSelect = useCallback((date: Date) => {
+    setEndDate(date);
+    onRecurringEndDateChange(date);
+    setShowLocalDatePicker(false);
+  }, [onRecurringEndDateChange]);
+
+  const handleUpgradePress = useCallback(() => {
+    Alert.alert(
+      '🎉 Unlock Pro Features',
+      'Upgrade to ClearCue Pro to access advanced recurring patterns, custom intervals, and more powerful scheduling options.',
+      [
+        {
+          text: 'Upgrade to Pro',
+          onPress: () => {
+            // For testing, upgrade the user
+            // In production, this would navigate to the upgrade flow
+          },
+          style: 'default',
+        },
+        { text: 'Maybe Later', style: 'cancel' },
+      ]
+    );
+  }, []);
+
+
+
+  const getSummaryText = useCallback(() => {
+    const frequencyText = FREQUENCY_OPTIONS.find(f => f.id === selectedFrequency)?.label || 'Daily';
+    const intervalText = interval === 1 ? '' : ` every ${interval} ${selectedFrequency.slice(0, -2)}s`;
+
+    let summary = `Every ${frequencyText.toLowerCase()}${intervalText}`;
+
+    if (selectedFrequency === 'weekly' && selectedDays.length > 0) {
+      const dayLabels = selectedDays.map(day =>
+        DAYS_OF_WEEK.find(d => d.id === day)?.label
+      ).join(', ');
+      summary += ` on ${dayLabels}`;
     }
-  };
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Repeat size={20} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.headerTitle}>Repeat Options</Text>
-        </View>
-        <TouchableOpacity
-          style={[styles.toggleButton, isRecurring && styles.toggleButtonActive]}
-          onPress={() => onRecurringChange(!isRecurring)}
-        >
-          <View style={[styles.toggleDot, isRecurring && styles.toggleDotActive]} />
-        </TouchableOpacity>
-      </View>
+    if (endCondition === 'on_date' && endDate) {
+      summary += ` until ${formatDateForDisplay(endDate)}`;
+    } else if (endCondition === 'after_occurrences') {
+      summary += ` for ${occurrences} times`;
+    }
 
-      {isRecurring && (
-        <View style={styles.content}>
-          <Text style={styles.sectionLabel}>Repeat Pattern</Text>
-          
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.presetsContainer}
-          >
-            {REPEAT_PRESETS.map((preset) => (
-              <TouchableOpacity
-                key={preset.id}
-                style={[
-                  styles.presetOption,
-                  repeatPattern === preset.id && styles.presetOptionSelected
-                ]}
-                onPress={() => handlePatternSelect(preset.id)}
-              >
-                <Text style={styles.presetIcon}>{preset.icon}</Text>
+    return summary;
+  }, [selectedFrequency, interval, selectedDays, endCondition, endDate, occurrences]);
+
+  const renderFrequencySelection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Repeat Pattern</Text>
+      <View style={styles.optionsGrid}>
+        {FREQUENCY_OPTIONS.map((option) => {
+          const isSelected = selectedFrequency === option.id;
+          // Enable premium restrictions for free users
+          const isDisabled = option.premium && !isPremiumUser;
+
+          return (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.optionCard,
+                isSelected && styles.selectedOption,
+                isDisabled && styles.disabledOption,
+              ]}
+              onPress={() => handleFrequencySelect(option.id)}
+              disabled={isDisabled}
+            >
+              <View style={styles.optionContent}>
+                <option.icon
+                  size={20}
+                  color={isSelected ? colors.primary : isDisabled ? colors.textSecondary : colors.text}
+                />
                 <Text style={[
-                  styles.presetLabel,
-                  repeatPattern === preset.id && styles.presetLabelSelected
+                  styles.optionLabel,
+                  isSelected && styles.selectedOptionText,
+                  isDisabled && styles.disabledText,
                 ]}>
-                  {preset.label}
+                  {option.label}
                 </Text>
                 <Text style={[
-                  styles.presetDescription,
-                  repeatPattern === preset.id && styles.presetDescriptionSelected
+                  styles.optionDescription,
+                  isDisabled && styles.disabledText,
                 ]}>
-                  {preset.description}
+                  {option.description}
+                </Text>
+                {option.premium && !isPremiumUser && (
+                  <View style={styles.premiumBadge}>
+                    <Crown size={12} color="#8B4513" fill="#8B4513" />
+                    <Text style={styles.premiumText}>Pro</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
+  const renderIntervalControl = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Interval</Text>
+      <View style={styles.intervalContainer}>
+        <Text style={styles.intervalLabel}>Every</Text>
+        <TextInput
+          style={styles.intervalInput}
+          value={interval.toString()}
+          onChangeText={handleIntervalChange}
+          keyboardType="numeric"
+          maxLength={3}
+          editable={tierLimits.customIntervals}
+        />
+        <Text style={styles.intervalLabel}>
+          {selectedFrequency === 'daily' ? 'day(s)' :
+           selectedFrequency === 'weekly' ? 'week(s)' :
+           selectedFrequency === 'monthly' ? 'month(s)' :
+           selectedFrequency === 'yearly' ? 'year(s)' : 'time(s)'}
+        </Text>
+        {/* Temporarily disabled premium upgrade prompt for testing */}
+        {/* {!tierLimits.customIntervals && (
+          <TouchableOpacity onPress={handleUpgradePress}>
+            <View style={styles.premiumBadge}>
+              <Crown size={12} color="#8B4513" fill="#8B4513" />
+              <Text style={styles.premiumText}>Upgrade</Text>
+            </View>
+          </TouchableOpacity>
+        )} */}
+      </View>
+    </View>
+  );
+
+  const renderCustomDaysSelection = () => {
+    if (selectedFrequency !== 'custom') {return null;}
+
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Repeat on Days</Text>
+        <View style={styles.daysGrid}>
+          {DAYS_OF_WEEK.map((day) => {
+            const isSelected = selectedDays.includes(day.id);
+            // Temporarily disable premium restrictions for testing
+            const isDisabled = false; // !tierLimits.customIntervals &&
+                              // selectedDays.length >= tierLimits.maxRepeatDays &&
+                              // !isSelected;
+
+            return (
+              <TouchableOpacity
+                key={day.id}
+                style={[
+                  styles.dayButton,
+                  isSelected && styles.selectedDay,
+                  isDisabled && styles.disabledDay,
+                ]}
+                onPress={() => handleDayToggle(day.id)}
+                disabled={isDisabled}
+              >
+                <Text style={[
+                  styles.dayButtonText,
+                  isSelected && styles.selectedDayText,
+                  isDisabled && styles.disabledText,
+                ]}>
+                  {day.label}
                 </Text>
               </TouchableOpacity>
-            ))}
-          </ScrollView>
+            );
+          })}
+        </View>
+        {selectedDays.length > 0 && (
+          <Text style={styles.selectedDaysText}>
+            Selected: {selectedDays.map(day =>
+              DAYS_OF_WEEK.find(d => d.id === day)?.fullLabel
+            ).join(', ')}
+          </Text>
+        )}
+      </View>
+    );
+  };
 
-          {showCustomInterval && (
-            <View style={styles.customIntervalContainer}>
-              <Text style={styles.sectionLabel}>Custom Interval</Text>
-              <View style={styles.intervalInputContainer}>
-                <TextInput
-                  style={styles.intervalInput}
-                  placeholder="Enter number of days"
-                  value={customInterval.toString()}
-                  onChangeText={handleCustomIntervalChange}
-                  keyboardType="numeric"
-                  placeholderTextColor={colors.textTertiary}
-                />
-                <Text style={styles.intervalUnit}>days</Text>
+  const renderEndCondition = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>End Condition</Text>
+      <View style={styles.optionsGrid}>
+        {END_CONDITIONS.map((option) => {
+          const isSelected = endCondition === option.id;
+          // Enable premium restrictions for free users
+          const isDisabled = option.premium && !isPremiumUser;
+
+          return (
+            <TouchableOpacity
+              key={option.id}
+              style={[
+                styles.optionCard,
+                isSelected && styles.selectedOption,
+                isDisabled && styles.disabledOption,
+              ]}
+              onPress={() => handleEndConditionSelect(option.id as typeof endCondition)}
+              disabled={isDisabled}
+            >
+              <View style={styles.optionContent}>
+                <Text style={[
+                  styles.optionLabel,
+                  isSelected && styles.selectedOptionText,
+                  isDisabled && styles.disabledText,
+                ]}>
+                  {option.label}
+                </Text>
+                <Text style={[
+                  styles.optionDescription,
+                  isDisabled && styles.disabledText,
+                ]}>
+                  {option.description}
+                </Text>
+                {option.premium && !isPremiumUser && (
+                  <View style={styles.premiumBadge}>
+                    <Crown size={12} color={colors.warning} />
+                    <Text style={styles.premiumText}>Premium</Text>
+                  </View>
+                )}
               </View>
-              
-              <Text style={styles.quickOptionsLabel}>Quick options:</Text>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickOptionsContainer}
-              >
-                {INTERVAL_OPTIONS.map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.quickOption,
-                      customInterval === option.value && styles.quickOptionSelected
-                    ]}
-                    onPress={() => onCustomIntervalChange(option.value)}
-                  >
-                    <Text style={[
-                      styles.quickOptionText,
-                      customInterval === option.value && styles.quickOptionTextSelected
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-          {repeatPattern && !showCustomInterval && (
-            <View style={styles.selectedPattern}>
-              <Text style={styles.selectedPatternText}>
-                {getPatternDescription(repeatPattern)}
-              </Text>
-            </View>
-          )}
+      {endCondition === 'on_date' && (
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => {
+            handleDatePickerOpen();
+          }}
+        >
+          <Calendar size={16} color={colors.primary} />
+          <Text style={styles.dateButtonText}>
+            {endDate ? formatDateForDisplay(endDate) : 'Select end date'}
+          </Text>
+          <ChevronRight size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
+      )}
 
-          {getSmartNudgeText() && (
-            <View style={styles.smartNudgeContainer}>
-              <Clock size={16} color={colors.success} strokeWidth={2} />
-              <Text style={styles.smartNudgeText}>{getSmartNudgeText()}</Text>
-            </View>
-          )}
+      {endCondition === 'after_occurrences' && (
+        <View style={styles.occurrencesContainer}>
+          <Text style={styles.occurrencesLabel}>End after</Text>
+          <TextInput
+            style={styles.occurrencesInput}
+            value={occurrences.toString()}
+            onChangeText={handleOccurrencesChange}
+            keyboardType="numeric"
+            maxLength={3}
+          />
+          <Text style={styles.occurrencesLabel}>occurrences</Text>
         </View>
       )}
     </View>
+  );
+
+  const renderPatternPreview = () => {
+    const mockReminder = {
+      id: 'preview',
+      userId: 'preview',
+      title: 'Preview',
+      type: 'task' as const,
+      priority: 'medium' as const,
+      status: 'pending' as const,
+      isRecurring: true,
+      repeatPattern: selectedFrequency,
+      customInterval: interval,
+      repeatDays: selectedDays,
+      recurringEndDate: endCondition === 'on_date' ? endDate : undefined,
+      recurringEndAfter: endCondition === 'after_occurrences' ? occurrences : undefined,
+
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const description = getRecurringDescription(mockReminder as any);
+
+    return (
+      <View style={styles.previewSection}>
+        <Text style={styles.previewTitle}>Pattern Preview</Text>
+        <View style={styles.previewCard}>
+          <Repeat size={16} color={colors.primary} />
+          <Text style={styles.previewText}>{description}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Set Repeat Schedule</Text>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <X size={24} color={colors.text} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Summary Card */}
+        <View style={styles.summaryCard}>
+          <Repeat size={20} color={colors.primary} strokeWidth={2} />
+          <Text style={styles.summaryText}>{getSummaryText()}</Text>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} pointerEvents={userTier === 'free' ? 'none' : 'auto'}>
+          {renderFrequencySelection()}
+          {renderIntervalControl()}
+          {renderCustomDaysSelection()}
+          {renderEndCondition()}
+          {renderPatternPreview()}
+        </ScrollView>
+
+        {/* Footer */}
+        <View style={styles.footer} pointerEvents={userTier === 'free' ? 'none' : 'auto'}>
+          <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.doneButton}
+            onPress={() => {
+              onRecurringChange(true);
+              onClose();
+            }}
+          >
+            <Text style={styles.doneButtonText}>Done</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Premium Overlay for Free Users */}
+        {userTier === 'free' && (
+          <View style={{
+            position: 'absolute',
+            top: 88, // header height (approx 56) + summaryCard margin/padding (approx 32)
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.6)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }} pointerEvents="auto">
+            <TouchableOpacity
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 20,
+                paddingHorizontal: 32,
+                borderRadius: 16,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 4,
+              }}
+              onPress={() => setShowPaywall(true)}
+            >
+              <Text style={{ color: colors.surface, fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
+                Unlock Recurring Schedules
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* RevenueCat Paywall Modal */}
+        <RevenueCatPaywall
+          visible={showPaywall}
+          onClose={() => setShowPaywall(false)}
+          onUpgrade={() => {}}
+          variant="small"
+          message="Unlock recurring reminders and advanced scheduling with Pro!"
+          triggerFeature="recurring-reminders"
+        />
+
+        {/* Local Date Picker */}
+        <CustomDateTimePickerModal
+          visible={showLocalDatePicker}
+          onClose={handleDatePickerClose}
+          onConfirm={handleDatePickerSelect}
+          initialDate={endDate || new Date()}
+          mode="date"
+          colors={colors}
+        />
+      </View>
+    </Modal>
   );
 };
 
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    flex: 1,
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontFamily: Fonts.text.semibold,
+    fontSize: 18,
+    color: colors.text,
+  },
+  closeButton: {
+    padding: 8,
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '10',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary + '20',
+  },
+  summaryText: {
+    fontFamily: Fonts.text.medium,
     fontSize: 16,
     color: colors.text,
-    marginLeft: 8,
-  },
-  toggleButton: {
-    width: 44,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.border,
-    padding: 2,
-  },
-  toggleButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  toggleDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: colors.background,
-  },
-  toggleDotActive: {
-    backgroundColor: '#FFFFFF',
-    transform: [{ translateX: 20 }],
+    marginLeft: 12,
+    flex: 1,
   },
   content: {
-    gap: 16,
+    flex: 1,
+    paddingHorizontal: 16,
   },
-  sectionLabel: {
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontFamily: Fonts.text.semibold,
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text,
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  presetsContainer: {
-    gap: 12,
-    paddingRight: 16,
+  optionsGrid: {
+    gap: 8,
   },
-  presetOption: {
-    backgroundColor: colors.borderLight,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    minWidth: 80,
+  optionCard: {
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  presetOptionSelected: {
-    backgroundColor: colors.primary + '15',
+  selectedOption: {
     borderColor: colors.primary,
+    backgroundColor: colors.primary + '10',
   },
-  presetIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+  disabledOption: {
+    borderColor: colors.textSecondary,
+    backgroundColor: colors.surface,
   },
-  presetLabel: {
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  optionLabel: {
     fontFamily: Fonts.text.medium,
-    fontSize: 12,
+    fontSize: 14,
     color: colors.text,
-    textAlign: 'center',
+    marginLeft: 12,
+    flex: 1,
   },
-  presetLabelSelected: {
-    color: colors.primary,
-    fontFamily: Fonts.text.semibold,
-  },
-  presetDescription: {
+  optionDescription: {
     fontFamily: Fonts.text.regular,
-    fontSize: 10,
+    fontSize: 12,
     color: colors.textSecondary,
-    textAlign: 'center',
+    marginLeft: 12,
     marginTop: 2,
   },
-  presetDescriptionSelected: {
+  selectedOptionText: {
     color: colors.primary,
   },
-  customIntervalContainer: {
+  disabledText: {
+    color: colors.textSecondary,
+  },
+  intervalContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
-  intervalInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.borderLight,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+  intervalLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 16,
+    color: colors.textSecondary,
   },
   intervalInput: {
-    flex: 1,
-    fontFamily: Fonts.text.regular,
-    fontSize: 16,
-    color: colors.text,
-    paddingVertical: 12,
-  },
-  intervalUnit: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginLeft: 8,
-  },
-  quickOptionsLabel: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  quickOptionsContainer: {
-    gap: 8,
-  },
-  quickOption: {
-    backgroundColor: colors.borderLight,
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  quickOptionSelected: {
-    backgroundColor: colors.primary + '15',
-    borderColor: colors.primary,
-  },
-  quickOptionText: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 12,
-    color: colors.text,
-  },
-  quickOptionTextSelected: {
-    color: colors.primary,
-  },
-  selectedPattern: {
-    backgroundColor: colors.success + '15',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.success + '30',
-  },
-  selectedPatternText: {
-    fontFamily: Fonts.text.medium,
-    fontSize: 14,
-    color: colors.success,
+    fontFamily: Fonts.text.semibold,
+    fontSize: 18,
+    minWidth: 40,
     textAlign: 'center',
   },
-  smartNudgeContainer: {
+  premiumBadge: {
+    backgroundColor: '#FFD700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginLeft: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.success + '10',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: colors.success + '20',
+    gap: 4,
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  smartNudgeText: {
+  premiumText: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 11,
+    color: '#8B4513',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  daysGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  dayButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  dayButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  selectedDay: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  selectedDayText: {
+    color: colors.surface,
+  },
+  disabledDay: {
+    backgroundColor: colors.surface,
+    borderColor: colors.textSecondary,
+  },
+  selectedDaysText: {
     fontFamily: Fonts.text.regular,
     fontSize: 12,
-    color: colors.success,
-    marginLeft: 8,
+    color: colors.textSecondary,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  dateButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: colors.text,
+    marginLeft: 12,
     flex: 1,
   },
-}); 
+  occurrencesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  occurrencesLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 14,
+    color: colors.text,
+    marginRight: 12,
+  },
+  occurrencesInput: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 16,
+    backgroundColor: colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 60,
+    textAlign: 'center',
+  },
+  previewSection: {
+    marginTop: 24,
+  },
+  previewTitle: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  previewCard: {
+    backgroundColor: colors.surface,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  previewText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.text,
+  },
+  footer: {
+    flexDirection: 'row',
+    padding: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 16,
+    color: colors.text,
+  },
+  doneButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  doneButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 16,
+    color: colors.surface,
+  },
+});

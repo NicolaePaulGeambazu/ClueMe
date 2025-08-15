@@ -1,0 +1,814 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { Users, Settings, Activity, Bell, TrendingUp, Mail, MapPin } from 'lucide-react-native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useFamily } from '../hooks/useFamily';
+import { useMonetization } from '../hooks/useMonetization';
+import { Colors } from '../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../constants/Fonts';
+import FamilyInvitationModal from '../components/FamilyInvitationModal';
+import { formatForActivity } from '../utils/dateUtils';
+// Analytics service removed to fix Firebase issues
+import { addFamilyNotification, getFirestoreInstance, listService, UserList, FamilyMember } from '../services/firebaseService';
+import SmallPaywallModal from '../components/premium/SmallPaywallModal';
+import FullScreenPaywall from '../components/premium/FullScreenPaywall';
+import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+
+// Mock analytics service to prevent crashes
+const analyticsService = {
+  trackScreen: (screen: string, component: string, params: any) => {
+  },
+  trackAction: (action: string, params: any) => {
+  },
+};
+
+// Use the proper FamilyMember interface from firebaseService
+interface FamilyActivity {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  memberId: string;
+  memberName: string;
+}
+
+export default function FamilyScreen() {
+  const { t } = useTranslation();
+  const { theme } = useTheme();
+  const { user, isAnonymous } = useAuth();
+  const {
+    family,
+    members,
+    activities,
+    pendingInvitations,
+    isLoading,
+    error,
+    loadFamily,
+    removeMember,
+    sendInvitation,
+    acceptInvitation,
+    declineInvitation,
+    leaveFamily,
+    isOwner,
+    hasPendingInvitations,
+  } = useFamily();
+  const {
+    showFullScreenPaywall,
+    showSmallPaywall,
+    paywallMessage,
+    paywallTrigger,
+    checkFamilyMemberAddition,
+    hidePaywall,
+    isLoading: monetizationLoading,
+  } = useMonetization();
+  const colors = Colors[theme];
+  const styles = createStyles(colors);
+
+  // Track screen view
+  useEffect(() => {
+    analyticsService.trackScreen('Family', 'FamilyScreen', {
+      user_id: user?.uid,
+      is_anonymous: isAnonymous,
+      family_id: family?.id,
+      members_count: members.length,
+      activities_count: activities.length,
+    });
+  }, [user?.uid, isAnonymous, family?.id, members.length, activities.length]);
+
+  // State management
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState<'members' | 'activity' | 'notifications' | 'lists'>('members');
+  const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [familyNotifications, setFamilyNotifications] = useState<any[]>([]);
+  const [sharedLists, setSharedLists] = useState<UserList[]>([]);
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [listsError, setListsError] = useState<string | null>(null);
+
+  // Real-time listener for family notifications
+  useEffect(() => {
+    if (!family?.id) {return;}
+
+    try {
+      const firestoreInstance = getFirestoreInstance();
+      const unsubscribe = firestoreInstance
+        .collection('familyNotifications')
+        .where('familyId', '==', family.id)
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(
+          (snapshot: FirebaseFirestoreTypes.QuerySnapshot) => {
+            if (snapshot && snapshot.docs) {
+              const notifications = snapshot.docs.map((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+                const data = doc.data();
+                return {
+                  ...data,
+                  createdAt: data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : data.createdAt,
+                };
+              });
+              setFamilyNotifications(notifications);
+            } else {
+              setFamilyNotifications([]);
+            }
+          },
+          (error: any) => {
+            console.error('Error listening to family notifications:', error);
+            setFamilyNotifications([]);
+          }
+        );
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error setting up family notifications listener:', error);
+      setFamilyNotifications([]);
+    }
+  }, [family?.id]);
+
+  // Fetch shared lists when family changes
+  useEffect(() => {
+    if (!family?.id) {
+      setSharedLists([]);
+      setListsError(null);
+      return;
+    }
+    setIsLoadingLists(true);
+    setListsError(null);
+    const fetchLists = async () => {
+      try {
+        const firestoreInstance = getFirestoreInstance();
+        const snapshot = await firestoreInstance
+          .collection('lists')
+          .where('familyId', '==', family.id)
+          .where('isPrivate', '==', false)
+          .orderBy('updatedAt', 'desc')
+          .get();
+
+        if (snapshot && snapshot.docs) {
+          const lists: UserList[] = [];
+          snapshot.forEach((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot) => {
+            const data = doc.data();
+            lists.push({
+              id: doc.id,
+              name: data.name,
+              description: data.description,
+              items: data.items || [],
+              format: data.format || 'checkmark',
+              isFavorite: data.isFavorite || false,
+              isPrivate: data.isPrivate || false,
+              familyId: data.familyId,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+              updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(),
+              createdBy: data.createdBy,
+            });
+          });
+          setSharedLists(lists);
+        } else {
+          setSharedLists([]);
+        }
+      } catch (e: any) {
+        console.error('Error fetching shared lists:', e);
+        setListsError(e.message || 'Error fetching shared lists');
+        setSharedLists([]);
+      } finally {
+        setIsLoadingLists(false);
+      }
+    };
+    fetchLists();
+  }, [family?.id]);
+
+  const handleRefresh = useCallback(async () => {
+    analyticsService.trackAction('pull_to_refresh', {
+      screen: 'Family',
+      user_id: user?.uid,
+      active_tab: activeTab,
+    });
+
+    setIsRefreshing(true);
+    await loadFamily();
+    setIsRefreshing(false);
+  }, [loadFamily, user?.uid, activeTab]);
+
+  const handleMemberPress = (member: any) => {
+    analyticsService.trackAction('member_pressed', {
+      screen: 'Family',
+      member_id: member.id,
+      member_name: member.name,
+    });
+    // Navigate to member details
+  };
+
+  const handleMemberMenu = (member: any) => {
+    analyticsService.trackAction('member_menu_opened', {
+      screen: 'Family',
+      member_id: member.id,
+      member_name: member.name,
+    });
+
+    Alert.alert(
+      member.name,
+      t('family.memberActions'),
+      [
+        {
+          text: t('family.remove'),
+          style: 'destructive',
+          onPress: () => handleRemoveMember(member),
+        },
+        { text: t('common.cancel'), style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleRemoveMember = async (member: any) => {
+    try {
+      analyticsService.trackAction('member_removed', {
+        screen: 'Family',
+        member_id: member.id,
+        member_name: member.name,
+      });
+
+      await removeMember(member.id);
+      Alert.alert(t('common.success'), t('family.removeSuccess'));
+    } catch (error) {
+      Alert.alert(t('common.error'), t('family.removeError'));
+    }
+  };
+
+  const handleActivityPress = (activity: any) => {
+    analyticsService.trackAction('activity_pressed', {
+      screen: 'Family',
+      activity_id: activity.id,
+      activity_type: activity.type,
+    });
+    // Navigate to activity details or related screen
+  };
+
+  const handleInvitations = async () => {
+    analyticsService.trackAction('invitations_opened', {
+      screen: 'Family',
+      user_id: user?.uid,
+    });
+
+    // Check monetization limits before showing invitation modal
+    if (family?.id) {
+      const monetizationResult = await checkFamilyMemberAddition();
+
+      if (monetizationResult.isBlocking) {
+        // Don't show invitation modal if blocked
+        return;
+      }
+    }
+
+    setShowInvitationModal(true);
+  };
+
+  const handleLeaveFamily = () => {
+    analyticsService.trackAction('leave_family_prompted', {
+      screen: 'Family',
+      user_id: user?.uid,
+    });
+
+    Alert.alert(
+      t('family.leaveFamily'),
+      t('family.leaveFamilyConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('family.leaveFamily'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await leaveFamily();
+              Alert.alert(t('common.success'), t('family.leaveFamilySuccess'));
+            } catch (error) {
+              Alert.alert(t('common.error'), t('family.leaveFamilyError'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{t('family.loading')}</Text>
+          {!family && (
+            <Text style={styles.loadingSubtext}>{t('family.creatingFamily')}</Text>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{error || t('family.loadError')}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadFamily}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Show no family state (this should rarely happen now with auto-creation)
+  if (!family) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>{t('family.noFamilyFound')}</Text>
+          <Text style={styles.loadingSubtext}>{t('family.createOrJoinFamily')}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadFamily}>
+            <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'members':
+        return (
+          <View style={styles.tabContent}>
+            <View style={styles.membersHeader}>
+              <Text style={styles.membersCount}>{members.length} {t('family.membersCount')}</Text>
+              <View style={styles.membersActions}>
+                {isOwner && (
+                  <TouchableOpacity style={styles.actionButton} onPress={handleInvitations}>
+                    <Mail size={20} color={colors.primary} strokeWidth={2} />
+                    <Text style={styles.actionButtonText}>{t('family.invitations.sendInvitation')}</Text>
+                    {hasPendingInvitations && <View style={styles.notificationBadge} />}
+                  </TouchableOpacity>
+                )}
+                {!isOwner && (
+                  <TouchableOpacity style={styles.actionButton} onPress={handleInvitations}>
+                    <Mail size={20} color={colors.primary} strokeWidth={2} />
+                    <Text style={styles.actionButtonText}>{t('family.invitations.title')}</Text>
+                    {hasPendingInvitations && <View style={styles.notificationBadge} />}
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            <ScrollView
+              style={styles.membersList}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary}
+                />
+              }
+            >
+              {members.map((member) => (
+                <TouchableOpacity
+                  key={member.id}
+                  style={styles.memberCard}
+                  onPress={() => handleMemberPress(member)}
+                  onLongPress={() => handleMemberMenu(member)}
+                >
+                  <View style={styles.memberInfo}>
+                    <Text style={styles.memberName}>{member.name || 'Unknown Member'}</Text>
+                    <Text style={styles.memberEmail}>{member.email || 'No email'}</Text>
+                    <Text style={styles.memberRole}>{t(`family.roles.${member.role || 'member'}`)}</Text>
+                    {/* Debug: Show user ID for assignment purposes */}
+                    <Text style={styles.memberUserId}>User ID: {member.userId || 'No user ID'}</Text>
+                  </View>
+                  <View style={[styles.onlineIndicator, { backgroundColor: member.isOnline ? colors.success : colors.textTertiary }]} />
+                </TouchableOpacity>
+              ))}
+
+              {/* Leave Family Button for non-owners */}
+              {!isOwner && (
+                <TouchableOpacity style={styles.leaveFamilyButton} onPress={handleLeaveFamily}>
+                  <Text style={styles.leaveFamilyButtonText}>{t('family.leaveFamily')}</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        );
+
+      case 'activity':
+        return (
+          <View style={styles.tabContent}>
+            <ScrollView
+              style={styles.activityList}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefreshing}
+                  onRefresh={handleRefresh}
+                  tintColor={colors.primary}
+                />
+              }
+            >
+              {activities.length === 0 ? (
+                <Text style={styles.emptyText}>{t('family.noActivities')}</Text>
+              ) : (
+                activities.map((activity) => (
+                  <TouchableOpacity
+                    key={activity.id}
+                    style={styles.activityCard}
+                    onPress={() => handleActivityPress(activity)}
+                  >
+                    <View style={styles.activityHeader}>
+                      <Text style={styles.activityTitle}>{activity.title || 'Activity'}</Text>
+                      <Text style={styles.activityTimestamp}>{activity.createdAt ? formatForActivity(activity.createdAt) : 'Unknown time'}</Text>
+                    </View>
+                    {activity.metadata?.location && (
+                      <View style={styles.activityLocation}>
+                        <MapPin size={12} color={colors.textTertiary} strokeWidth={2} />
+                        <Text style={styles.activityLocationText}>{activity.metadata.location}</Text>
+                      </View>
+                    )}
+                    <Text style={styles.activityDescription}>{activity.description || 'No description'}</Text>
+                    <Text style={styles.activityMember}>by {activity.memberName || 'Unknown member'}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        );
+
+      case 'notifications':
+        return (
+          <View style={styles.tabContent}>
+            {familyNotifications.length === 0 ? (
+              <Text style={styles.emptyText}>{t('family.noNotifications')}</Text>
+            ) : (
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                {familyNotifications.map((notif, index) => {
+                  // Ensure we have valid notification data
+                  if (!notif || typeof notif !== 'object') {
+                    return null;
+                  }
+
+                  return (
+                    <View key={notif.id || `notif-${index}`} style={[styles.activityCard, { marginBottom: 12 }]}>
+                      <Text style={styles.activityTitle}>{notif.message || 'Notification'}</Text>
+                      {notif.assignedTo && Array.isArray(notif.assignedTo) && notif.assignedTo.length > 0 && (
+                        <Text style={styles.activityDescription}>{t('add.assignedToMultiple', { count: notif.assignedTo.length })}</Text>
+                      )}
+                      <Text style={styles.activityTimestamp}>
+                        {notif.createdAt ? formatForActivity(notif.createdAt) : 'Unknown time'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            )}
+          </View>
+        );
+
+      case 'lists':
+        return (
+          <View style={styles.tabContent}>
+            {listsError ? (
+              <Text style={styles.emptyText}>{listsError}</Text>
+            ) : isLoadingLists ? (
+              <Text style={styles.loadingText}>{t('common.loading')}</Text>
+            ) : sharedLists.length === 0 ? (
+              <Text style={styles.emptyText}>{t('family.noSharedLists') || 'No lists shared with family.'}</Text>
+            ) : (
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                {sharedLists.map(list => (
+                  <View key={list.id} style={styles.activityCard}>
+                    <Text style={styles.activityTitle}>{list.name}</Text>
+                    {list.description ? (
+                      <Text style={styles.activityDescription}>{list.description}</Text>
+                    ) : null}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'members' && styles.activeTabButton]}
+          onPress={() => {
+            analyticsService.trackAction('tab_changed', {
+              screen: 'Family',
+              tab: 'members',
+              user_id: user?.uid,
+            });
+            setActiveTab('members');
+          }}
+        >
+          <Users size={20} color={activeTab === 'members' ? colors.primary : colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.tabLabel, activeTab === 'members' && styles.activeTabLabel]}>{t('family.members')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'activity' && styles.activeTabButton]}
+          onPress={() => {
+            analyticsService.trackAction('tab_changed', {
+              screen: 'Family',
+              tab: 'activity',
+              user_id: user?.uid,
+            });
+            setActiveTab('activity');
+          }}
+        >
+          <Activity size={20} color={activeTab === 'activity' ? colors.primary : colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.tabLabel, activeTab === 'activity' && styles.activeTabLabel]}>{t('family.activity')}</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'notifications' && styles.activeTabButton]}
+          onPress={() => {
+            analyticsService.trackAction('tab_changed', {
+              screen: 'Family',
+              tab: 'notifications',
+              user_id: user?.uid,
+            });
+            setActiveTab('notifications');
+          }}
+        >
+          <Bell size={20} color={activeTab === 'notifications' ? colors.primary : colors.textSecondary} strokeWidth={2} />
+          <Text style={[styles.tabLabel, activeTab === 'notifications' && styles.activeTabLabel]}>{t('family.notifications')}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {renderTabContent()}
+
+      {/* Family Invitation Modal */}
+      <FamilyInvitationModal
+        visible={showInvitationModal}
+        onClose={() => setShowInvitationModal(false)}
+        pendingInvitations={pendingInvitations}
+        onSendInvitation={sendInvitation}
+        onAcceptInvitation={acceptInvitation}
+        onDeclineInvitation={declineInvitation}
+        isOwner={isOwner}
+      />
+
+      {/* Small Paywall Modal */}
+      <SmallPaywallModal
+        visible={showSmallPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        message={paywallMessage}
+        triggerFeature={paywallTrigger || undefined}
+      />
+
+      {/* Full Screen Paywall */}
+      <FullScreenPaywall
+        visible={showFullScreenPaywall}
+        onClose={hidePaywall}
+        onUpgrade={() => {
+          // Handle upgrade flow
+          hidePaywall();
+        }}
+        triggerFeature={paywallTrigger || undefined}
+      />
+    </View>
+  );
+}
+
+const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 16,
+    color: colors.textSecondary,
+  },
+  loadingSubtext: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textTertiary,
+    marginTop: 8,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.surface,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  activeTabButton: {
+    backgroundColor: colors.primary + '15',
+  },
+  tabLabel: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  activeTabLabel: {
+    color: colors.primary,
+  },
+  tabContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  membersHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  membersCount: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 16,
+    color: colors.text,
+  },
+  membersActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+  },
+  actionButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  notificationBadge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+    marginLeft: 4,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '15',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  addButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.primary,
+    marginLeft: 4,
+  },
+  membersList: {
+    flex: 1,
+  },
+  memberCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 16,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  memberEmail: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 2,
+  },
+  memberRole: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+  memberUserId: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 4,
+  },
+  onlineIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  activityList: {
+    flex: 1,
+  },
+  activityCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  activityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  activityTitle: {
+    fontFamily: Fonts.text.semibold,
+    fontSize: 16,
+    color: colors.text,
+  },
+  activityTimestamp: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+  activityLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 4,
+  },
+  activityLocationText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+  activityDescription: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  activityMember: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+  emptyText: {
+    fontFamily: Fonts.text.regular,
+    fontSize: 16,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 48,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.surface,
+  },
+  leaveFamilyButton: {
+    backgroundColor: colors.primary,
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  leaveFamilyButtonText: {
+    fontFamily: Fonts.text.medium,
+    fontSize: 12,
+    color: colors.surface,
+  },
+});

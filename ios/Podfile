@@ -3,19 +3,27 @@
 # related to Swift pods and static library linking, especially with Firebase.
 
 # Section 1: React Native Core Configuration
-# This line resolves the `react_native_pods.rb` script using Node's module resolution.
-# This ensures that the correct script, potentially from a hoisted `react-native`
-# package in a monorepo or complex setup, is used.
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+# Transform this into a `node_require` generic function to allow for hoisting
+def node_require(script)
+  # Resolve script with node to allow for hoisting
+  require Pod::Executable.execute_command('node', ['-p',
+    "require.resolve(
+      '#{script}',
+      {paths: [process.argv[1]]},
+    )", __dir__]).strip
+end
+
+# Use it to require both react-native's and react-native-permissions' scripts:
+node_require('react-native/scripts/react_native_pods.rb')
+node_require('react-native-permissions/scripts/setup.rb')
 
 # Define the minimum iOS deployment target for your project.
 # Based on your React Native version (0.75.5), iOS 15.0 is a reasonable minimum.
 # Ensure this matches your Xcode project settings.
 platform :ios, '15.0'
+
+# Specify the Xcode project
+project 'ClearCue2.xcodeproj'
 
 # Crucial for Swift pods when using static libraries.
 # This tells CocoaPods to generate module maps for all pods that don't already have them.
@@ -50,10 +58,9 @@ target 'ClearCue2' do
   # `:app_path` is the absolute path to your React Native project root (usually one level up from `ios/`).
   use_react_native!(
     :path => config[:reactNativePath],
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
-    # Uncomment and set these flags as needed for your project:
-    # :hermes_enabled => true,     # Hermes is often enabled by default in new RN projects
-    # :fabric_enabled => false,    # Set to true if you are using the New Architecture
+    :app_path => "#{Pod::Config.instance.installation_root}/..",
+    :hermes_enabled => true,     # Enable Hermes JavaScript engine
+    :fabric_enabled => false,    # Set to true if you are using the New Architecture
     # :flipper_configuration => FlipperConfiguration.enabled, # Enable Flipper for debugging
     # :mac_catalyst_enabled => false, # Set to true if building for Mac Catalyst
   )
@@ -65,6 +72,7 @@ target 'ClearCue2' do
   pod 'Firebase/Core', :modular_headers => true
   pod 'Firebase/Auth', :modular_headers => true
   pod 'Firebase/Firestore', :modular_headers => true
+  pod 'Firebase/Messaging', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'FirebaseCoreExtension', :modular_headers => true
@@ -73,11 +81,31 @@ target 'ClearCue2' do
   pod 'GoogleDataTransport', :modular_headers => true # Often a transitive dependency for Firebase
   pod 'nanopb', :modular_headers => true # Often a transitive dependency for Firebase
 
+  # RevenueCat Paywalls - Required for RevenueCat Paywalls functionality
+  pod 'RevenueCat'
+  pod 'RevenueCatUI'
+
   # Other React Native community modules from your package.json:
   # These are generally auto-linked by `use_native_modules!`, but listed here for clarity
   # and if you ever needed to add specific options.
   # pod 'RNCSafeAreaContext', :path => '../node_modules/react-native-safe-area-context' # Remove this line
   # pod 'RNScreens', :path => '../node_modules/react-native-screens' # Remove this line
+
+  # React Native Permissions - Setup the permissions you need
+  setup_permissions([
+    'LocationWhenInUse',
+    'LocationAlways',
+    'Notifications',
+    'Camera',
+    'PhotoLibrary',
+    'Microphone',
+    'Calendars',
+    'Contacts',
+    'FaceID',
+  ])
+
+  # AdMob - Google Mobile Ads SDK (temporarily disabled due to codegen issues)
+  # pod 'Google-Mobile-Ads-SDK'
 
   # Section 4: Test Target
   # This block defines dependencies for your test target.
@@ -106,6 +134,9 @@ target 'ClearCue2' do
     installer.pods_project.targets.each do |target|
       target.build_configurations.each do |config|
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+        # Enable dSYM generation for all targets
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+        config.build_settings['ENABLE_BITCODE'] = 'NO'
       end
     end
     # END: Force iOS Deployment Target for all Pod targets
@@ -128,5 +159,17 @@ target 'ClearCue2' do
 
     # Custom post-install hooks can be added here if needed for specific pods
     # or project requirements, e.g., to fix specific build settings for a pod.
+
+    # BEGIN: Disable codegen for problematic modules (temporarily disabled)
+    # installer.pods_project.targets.each do |target|
+    #   if target.name == 'RNGoogleMobileAds'
+    #     target.build_configurations.each do |config|
+    #       config.build_settings['GENERATE_INFOPLIST_FILE'] = 'NO'
+    #     end
+    #   end
+    # end
+    # END: Disable codegen for problematic modules
+
+
   end
 end

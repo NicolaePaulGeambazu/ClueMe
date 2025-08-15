@@ -1,6 +1,29 @@
-import { Platform } from 'react-native';
+export interface ColorScheme {
+  text: string;
+  background: string;
+  primary: string;
+  secondary: string;
+  tertiary: string;
+  tint: string;
+  tabIconDefault: string;
+  tabIconSelected: string;
+  surface: string;
+  border: string;
+  borderLight: string;
+  textSecondary: string;
+  textTertiary: string;
+  error: string;
+  success: string;
+  warning: string;
+  shadow: string;
+}
 
-export const Colors = {
+export interface ColorPalette {
+  light: ColorScheme;
+  dark: ColorScheme;
+}
+
+export const Colors: ColorPalette = {
   light: {
     text: '#000000',
     background: '#ffffff',
@@ -39,12 +62,4 @@ export const Colors = {
     warning: '#FF9F0A',
     shadow: '#000000',
   },
-};
-
-// Font configuration to use system fonts instead of Inter
-export const Fonts = {
-  regular: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  medium: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  semiBold: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  bold: Platform.OS === 'ios' ? 'System' : 'Roboto',
 };

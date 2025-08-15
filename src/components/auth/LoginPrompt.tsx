@@ -4,9 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { Colors } from '../../constants/Colors'
-import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';;
+import { Colors } from '../../constants/Colors';
+import { Fonts, FontSizes, LineHeights } from '../../constants/Fonts';
 import { isValidEmail, isValidPassword } from '../../utils/authUtils';
+import { useTranslation } from 'react-i18next';
 
 interface LoginPromptProps {
   visible: boolean;
@@ -20,13 +21,14 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
   visible,
   onClose,
   onSuccess,
-  title = 'Sign In Required',
-  message = 'Please sign in to continue with this action.',
+  title,
+  message,
 }) => {
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const colors = Colors[theme];
   const { signIn, signUp, upgradeFromAnonymous, isAnonymous } = useAuth();
-  
+
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [formData, setFormData] = useState({
     name: '',
@@ -35,26 +37,17 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const styles = createStyles(colors);
 
   const handleSubmit = async () => {
-    if (!isValidEmail(formData.email)) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address');
-      return;
-    }
-    
-    if (!isValidPassword(formData.password)) {
-      Alert.alert('Invalid Password', 'Password must be at least 6 characters long');
-      return;
-    }
-
-    if (mode === 'signup' && !formData.name.trim()) {
-      Alert.alert('Missing Information', 'Please enter your name');
+    if (!formData.email || !formData.password || (mode === 'signup' && !formData.name)) {
+      Alert.alert(t('auth.validation.title'), t('auth.validation.requiredFields'));
       return;
     }
 
     setIsLoading(true);
+
     try {
       if (mode === 'signin') {
         await signIn(formData.email, formData.password);
@@ -65,12 +58,12 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
           await signUp(formData.email, formData.password, formData.name);
         }
       }
-      
+
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      Alert.alert('Authentication Failed', 'Please check your credentials and try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('auth.error.generic');
+      Alert.alert(t('auth.error.title'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -97,8 +90,8 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.message}>{message}</Text>
+            <Text style={styles.title}>{title || t('auth.loginPrompt.title')}</Text>
+            <Text style={styles.message}>{message || t('auth.loginPrompt.message')}</Text>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
             <X size={24} color={colors.text} strokeWidth={2} />
@@ -112,7 +105,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               onPress={() => setMode('signin')}
             >
               <Text style={[styles.modeButtonText, mode === 'signin' && styles.activeModeButtonText]}>
-                Sign In
+                {t('auth.signIn')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -120,7 +113,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               onPress={() => setMode('signup')}
             >
               <Text style={[styles.modeButtonText, mode === 'signup' && styles.activeModeButtonText]}>
-                Sign Up
+                {t('auth.signUp')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -131,7 +124,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
                 <User size={20} color={colors.textTertiary} strokeWidth={2} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Full name"
+                  placeholder={t('auth.fields.fullName')}
                   value={formData.name}
                   onChangeText={(value) => setFormData(prev => ({ ...prev, name: value }))}
                   autoCapitalize="words"
@@ -144,7 +137,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               <Mail size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Email address"
+                placeholder={t('auth.fields.email')}
                 value={formData.email}
                 onChangeText={(value) => setFormData(prev => ({ ...prev, email: value }))}
                 keyboardType="email-address"
@@ -158,7 +151,7 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               <Lock size={20} color={colors.textTertiary} strokeWidth={2} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder={t('auth.fields.password')}
                 value={formData.password}
                 onChangeText={(value) => setFormData(prev => ({ ...prev, password: value }))}
                 secureTextEntry={!showPassword}
@@ -184,9 +177,9 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
               disabled={isLoading}
             >
               <Text style={styles.submitButtonText}>
-                {isLoading 
-                  ? (mode === 'signin' ? 'Signing In...' : 'Creating Account...') 
-                  : (mode === 'signin' ? 'Sign In' : 'Create Account')
+                {isLoading
+                  ? (mode === 'signin' ? t('auth.signingIn') : t('auth.creatingAccount'))
+                  : (mode === 'signin' ? t('auth.signIn') : t('auth.createAccount'))
                 }
               </Text>
             </TouchableOpacity>
@@ -194,9 +187,9 @@ export const LoginPrompt: React.FC<LoginPromptProps> = ({
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {isAnonymous 
-                ? 'Your anonymous data will be preserved when you create an account.'
-                : 'By continuing, you agree to our Terms of Service and Privacy Policy.'
+              {isAnonymous
+                ? t('auth.anonymousDataPreserved')
+                : t('auth.termsAgreement')
               }
             </Text>
           </View>

@@ -146,14 +146,14 @@ export default function FamilyInvitationModal({
           {/* Pending Invitations Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('family.invitations.pendingInvitations')}</Text>
-            
+
             {pendingInvitations.length === 0 ? (
               <Text style={styles.emptyText}>{t('family.invitations.noPendingInvitations')}</Text>
             ) : (
               pendingInvitations.map((invitation) => {
                 const daysUntilExpiry = getDaysUntilExpiry(invitation.expiresAt);
                 const expired = isExpired(invitation.expiresAt);
-                
+
                 return (
                   <View key={invitation.id} style={styles.invitationCard}>
                     <View style={styles.invitationHeader}>
@@ -162,22 +162,22 @@ export default function FamilyInvitationModal({
                         {t('family.invitations.invitationFrom', { name: invitation.inviterName })}
                       </Text>
                     </View>
-                    
+
                     <Text style={styles.invitationTo}>
                       {t('family.invitations.invitationTo', { familyName: invitation.familyName })}
                     </Text>
-                    
+
                     <View style={styles.invitationFooter}>
                       <View style={styles.invitationMeta}>
                         <Calendar size={14} color={colors.textTertiary} strokeWidth={2} />
                         <Text style={styles.expiryText}>
-                          {expired 
+                          {expired
                             ? t('family.invitations.invitationExpired')
                             : t('family.invitations.expiresIn', { days: daysUntilExpiry })
                           }
                         </Text>
                       </View>
-                      
+
                       {!expired && (
                         <View style={styles.invitationActions}>
                           <TouchableOpacity
@@ -187,13 +187,13 @@ export default function FamilyInvitationModal({
                           >
                             <Check size={16} color={colors.surface} strokeWidth={2} />
                             <Text style={styles.acceptButtonText}>
-                              {processingInvitation === invitation.id 
-                                ? t('family.invitations.accepting') 
+                              {processingInvitation === invitation.id
+                                ? t('family.invitations.accepting')
                                 : t('family.invitations.accept')
                               }
                             </Text>
                           </TouchableOpacity>
-                          
+
                           <TouchableOpacity
                             style={[styles.actionButton, styles.declineButton]}
                             onPress={() => handleDeclineInvitation(invitation.id)}
@@ -201,8 +201,8 @@ export default function FamilyInvitationModal({
                           >
                             <XIcon size={16} color={colors.error} strokeWidth={2} />
                             <Text style={styles.declineButtonText}>
-                              {processingInvitation === invitation.id 
-                                ? t('family.invitations.declining') 
+                              {processingInvitation === invitation.id
+                                ? t('family.invitations.declining')
                                 : t('family.invitations.decline')
                               }
                             </Text>
@@ -365,4 +365,4 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     color: colors.error,
     marginLeft: 4,
   },
-}); 
+});
