@@ -5,6 +5,7 @@ import auth from '@react-native-firebase/auth';
 import notificationService from './notificationService';
 import { Platform } from 'react-native';
 import { generateNextOccurrence, shouldGenerateNextOccurrence } from '../utils/reminderUtils';
+import logger from '../utils/logger';
 import type { ReminderType } from '../design-system/reminders/types';
 import type { ReminderPriority } from '../design-system/reminders/types';
 import type { ReminderStatus } from '../design-system/reminders/types';

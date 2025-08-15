@@ -7,7 +7,11 @@
 
 import '@react-native-firebase/app';
 import './src/i18n'; // Initialize i18n
+import overrideConsole from './src/utils/console-override';
 import React, { useEffect } from 'react';
+
+// Override console globally to prevent production spam
+overrideConsole();
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -26,6 +30,7 @@ import secureKeyService from './src/services/secureKeyService';
 import { migrateKeysToKeychain } from './src/utils/migrateKeys';
 // Analytics service removed to fix Firebase issues
 import { AppState, AppStateStatus } from 'react-native';
+import ErrorBoundary from './src/components/common/ErrorBoundary';
 
 
 // Import navigation components
@@ -287,23 +292,36 @@ function AppContent() {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <FamilyProvider>
-              <ReminderProvider>
-                <SettingsProvider>
-                    <ToastProvider>
-                      <StatusBar barStyle="dark-content" />
-                      <AppContent />
-                    </ToastProvider>
-                </SettingsProvider>
-              </ReminderProvider>
-            </FamilyProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary onError={(error, errorInfo) => {
+      // Log critical app-level errors
+      console.error('[App] Critical error caught by root boundary:', error);
+    }}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ErrorBoundary>
+            <ThemeProvider>
+              <ErrorBoundary>
+                <AuthProvider>
+                  <ErrorBoundary>
+                    <FamilyProvider>
+                      <ErrorBoundary>
+                        <ReminderProvider>
+                          <SettingsProvider>
+                              <ToastProvider>
+                                <StatusBar barStyle="dark-content" />
+                                <AppContent />
+                              </ToastProvider>
+                          </SettingsProvider>
+                        </ReminderProvider>
+                      </ErrorBoundary>
+                    </FamilyProvider>
+                  </ErrorBoundary>
+                </AuthProvider>
+              </ErrorBoundary>
+            </ThemeProvider>
+          </ErrorBoundary>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }

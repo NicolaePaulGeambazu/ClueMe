@@ -1,5 +1,4 @@
 #import "AppDelegate.h"
-#import "ClearCue2-Swift.h"
 
 #import <React/RCTBundleURLProvider.h>
 #import <Firebase.h>
@@ -25,22 +24,29 @@
 
 - (void)setupNotificationSystem
 {
-  // Initialize the pure iOS notification manager
-  NotificationManager *notificationManager = [NotificationManager shared];
+  // Use direct iOS notification APIs to avoid Swift bridging issues
+  NSLog(@"[AppDelegate] Setting up native iOS notification system");
+  [self setupFallbackNotificationSystem];
+}
+
+- (void)setupFallbackNotificationSystem
+{
+  // Native iOS notification setup using UNUserNotificationCenter
+  UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
   
-  // Request notification permissions
-  [notificationManager requestPermissions:^(BOOL granted) {
+  [center requestAuthorizationWithOptions:(UNAuthorizationOptionAlert + UNAuthorizationOptionBadge + UNAuthorizationOptionSound)
+                        completionHandler:^(BOOL granted, NSError * _Nullable error) {
     if (granted) {
-      NSLog(@"[AppDelegate] Notification permissions granted");
+      NSLog(@"[AppDelegate] Native iOS notification permissions granted");
       dispatch_async(dispatch_get_main_queue(), ^{
         [[UIApplication sharedApplication] registerForRemoteNotifications];
       });
     } else {
-      NSLog(@"[AppDelegate] Notification permissions denied");
+      NSLog(@"[AppDelegate] Native iOS notification permissions denied");
     }
   }];
   
-  NSLog(@"[AppDelegate] iOS notification system initialized");
+  NSLog(@"[AppDelegate] Native iOS notification system initialized");
 }
 
 // MARK: - Remote Notifications

@@ -9,6 +9,7 @@ import analyticsService from '../services/analyticsService';
 import { cleanReminderForFirestore, filterReminders } from '../utils/reminderUtils';
 import { ReminderStatus, ReminderPriority } from '../design-system/reminders/types';
 import { userUsageService } from '../services/userUsageService';
+import logger from '../utils/logger';
 
 // Convert Firebase reminder to a simpler format for the UI
 const convertToUIReminder = (firebaseReminder: FirebaseReminder) => {
@@ -72,12 +73,16 @@ const convertToUIReminder = (firebaseReminder: FirebaseReminder) => {
   };
 };
 
-// Debounce function to prevent excessive updates
-const debounce = <T extends (...args: any[]) => any>(func: T, wait: number): T => {
+// Enhanced debounce function with proper cleanup tracking
+const debounce = <T extends (...args: any[]) => any>(func: T, wait: number, timeoutRefs?: Set<NodeJS.Timeout>): T => {
   let timeout: NodeJS.Timeout;
   return ((...args: any[]) => {
-    clearTimeout(timeout);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutRefs?.delete(timeout);
+    }
     timeout = setTimeout(() => func(...args), wait);
+    timeoutRefs?.add(timeout);
   }) as T;
 };
 
@@ -149,29 +154,34 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
   const unsubscribeRef = useRef<null | (() => void)>(null);
   const lastUpdateRef = useRef<number>(0);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const allTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  const cleanupTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
   // Debounced update function to prevent excessive re-renders
   const debouncedSetReminders = useCallback(
     debounce((newReminders: any[]) => {
       setReminders(newReminders);
-    }, 300), // Increased from 100ms to 300ms for more stability
+    }, 500, allTimeoutsRef.current), // Increased to 500ms and added timeout tracking
     []
   );
 
-  // Optimized reminder update function
+  // Optimized reminder update function with proper cleanup
   const updateRemindersOptimized = useCallback((newReminders: any[]) => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateRef.current;
 
     // If updates are too frequent, debounce them
-    if (timeSinceLastUpdate < 300) { // Increased from 100ms to 300ms
+    if (timeSinceLastUpdate < 500) { // Increased to 500ms as recommended
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
+        allTimeoutsRef.current.delete(updateTimeoutRef.current);
       }
       updateTimeoutRef.current = setTimeout(() => {
         debouncedSetReminders(newReminders);
         lastUpdateRef.current = Date.now();
-      }, 300); // Increased from 100ms to 300ms
+        updateTimeoutRef.current = null;
+      }, 500); // Increased to 500ms as recommended
+      allTimeoutsRef.current.add(updateTimeoutRef.current);
     } else {
       // Direct update if enough time has passed
       debouncedSetReminders(newReminders);
@@ -246,9 +256,10 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       setIsInitialized(true);
 
       // Set a timeout to mark data as fully loaded after all background operations complete
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setIsDataFullyLoaded(true);
-      }, 2000); // 2 second delay to allow all async operations to complete
+      }, 1000); // Reduced from 2s to 1s for better performance
+      cleanupTimeoutsRef.current.push(timeout);
     } catch (err) {
       setError('Failed to load reminders');
     } finally {
@@ -383,10 +394,11 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
           try {
             userReminders = firebaseReminders.map(convertToUIReminder).filter(Boolean);
             // Debounce the update to prevent rapid fluctuations
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
               updateCombinedReminders();
               setIsLoading(false);
-            }, 100);
+            }, 500); // Increased to 500ms as recommended
+            cleanupTimeoutsRef.current.push(timeout);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -402,10 +414,11 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
             checkForNewAssignments(previousFamilyReminders, familyReminders);
 
             // Debounce the update to prevent rapid fluctuations
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
               updateCombinedReminders();
               setIsLoading(false);
-            }, 100);
+            }, 500); // Increased to 500ms as recommended
+            cleanupTimeoutsRef.current.push(timeout);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -431,13 +444,15 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
         // Listen to family members changes to refetch when family structure changes
         const familyUnsubscribe = reminderService.onFamilyMembersChange(family.id, (newMembers) => {
           // Debounced reload to prevent excessive updates
-          setTimeout(() => loadReminders(0, false), 500);
+          const timeout = setTimeout(() => loadReminders(0, false), 1000); // Increased to 1s
+          cleanupTimeoutsRef.current.push(timeout);
         });
 
         // Listen to family activities to refetch when family activities change
         const activitiesUnsubscribe = reminderService.onFamilyActivitiesChange(family.id, (newActivities) => {
           // Debounced reload to prevent excessive updates
-          setTimeout(() => loadReminders(0, false), 500);
+          const timeout = setTimeout(() => loadReminders(0, false), 1000); // Increased to 1s
+          cleanupTimeoutsRef.current.push(timeout);
         });
 
         unsubscribe = () => {
@@ -457,7 +472,7 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
             checkForNewAssignments(previousUserReminders, uiReminders);
 
             // Debounce the update to prevent rapid fluctuations
-            setTimeout(() => {
+            const timeout = setTimeout(() => {
               updateRemindersOptimized(uiReminders);
 
               // Schedule notifications for assigned tasks
@@ -467,7 +482,8 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
               previousUserReminders = [...uiReminders];
 
               setIsLoading(false);
-            }, 100);
+            }, 500); // Increased to 500ms as recommended
+            cleanupTimeoutsRef.current.push(timeout);
           } catch (error) {
             // Silent fallback - don't trigger full reload
           }
@@ -733,6 +749,47 @@ export const ReminderProvider: React.FC<ReminderProviderProps> = ({ children }) 
       clearTimeout(updateTimeoutRef.current);
       updateTimeoutRef.current = null;
     }
+    
+    // Clear all tracked timeouts - CRITICAL FOR MEMORY LEAK PREVENTION
+    allTimeoutsRef.current.forEach(timeout => {
+      clearTimeout(timeout);
+    });
+    allTimeoutsRef.current.clear();
+    
+    // Clear cleanup timeouts array
+    cleanupTimeoutsRef.current.forEach(timeout => {
+      clearTimeout(timeout);
+    });
+    cleanupTimeoutsRef.current = [];
+    
+    logger.debug('ReminderContext', 'All timeouts and listeners cleaned up');
+  }, []);
+
+  // Cleanup on component unmount - PREVENTS MEMORY LEAKS
+  useEffect(() => {
+    return () => {
+      // Clear all unsubscribers
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      
+      // Clear all tracked timeouts
+      allTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      allTimeoutsRef.current.clear();
+      
+      // Clear cleanup timeouts
+      cleanupTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      cleanupTimeoutsRef.current = [];
+      
+      // Clear update timeout
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+      
+      logger.debug('ReminderContext', 'Component unmounted, all resources cleaned');
+    };
   }, []);
 
   // Memoized stats calculation to prevent rapid fluctuations
