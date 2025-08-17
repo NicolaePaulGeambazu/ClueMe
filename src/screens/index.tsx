@@ -6,12 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  FlatList,
   Image,
   Dimensions,
   Alert,
   Animated,
   ActivityIndicator,
-  FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -470,11 +470,24 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               showAddButton={true}
             />
           ) : (
-            <View style={styles.tasksList}>
-              {todayMyReminders.map((reminder) => (
-                <TaskItem key={reminder.id} reminder={reminder} />
-              ))}
-            </View>
+            <FlatList
+              data={todayMyReminders}
+              renderItem={({ item }) => <TaskItem reminder={item} />}
+              keyExtractor={(item) => item.id}
+              style={styles.tasksList}
+              showsVerticalScrollIndicator={false}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+              initialNumToRender={5}
+              updateCellsBatchingPeriod={16}
+              scrollEnabled={false}
+              getItemLayout={(data, index) => ({
+                length: 80,
+                offset: 80 * index,
+                index,
+              })}
+            />
           )}
         </View>
 
@@ -497,11 +510,24 @@ const IndexScreen: React.FC<IndexScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
             </View>
             
-            <View style={styles.tasksList}>
-              {todayFamilyReminders.map((reminder) => (
-                <TaskItem key={reminder.id} reminder={reminder} isFamilyTask={true} />
-              ))}
-            </View>
+            <FlatList
+              data={todayFamilyReminders}
+              renderItem={({ item }) => <TaskItem reminder={item} isFamilyTask={true} />}
+              keyExtractor={(item) => item.id}
+              style={styles.tasksList}
+              showsVerticalScrollIndicator={false}
+              removeClippedSubviews={true}
+              maxToRenderPerBatch={10}
+              windowSize={10}
+              initialNumToRender={5}
+              updateCellsBatchingPeriod={16}
+              scrollEnabled={false}
+              getItemLayout={(data, index) => ({
+                length: 80,
+                offset: 80 * index,
+                index,
+              })}
+            />
           </View>
         )}
 
