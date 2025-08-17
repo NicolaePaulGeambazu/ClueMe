@@ -1,9 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+
 
 import '@react-native-firebase/app';
 import './src/i18n'; // Initialize i18n
@@ -22,6 +17,7 @@ import { ModalProvider } from './src/contexts/ModalContext';
 import { ToastProvider } from './src/contexts/ToastContext';
 import { ReminderProvider } from './src/contexts/ReminderContext';
 import { SettingsProvider } from './src/contexts/SettingsContext';
+import { FluidThemeProvider } from './src/design-system';
 import { StatusBar } from 'react-native';
 import { Colors } from './src/constants/Colors';
 import notificationService from './src/services/notificationService';
@@ -35,6 +31,7 @@ import ErrorBoundary from './src/components/common/ErrorBoundary';
 
 // Import navigation components
 import TabNavigator from './src/components/navigation/TabNavigator';
+import FluidTabNavigator from './src/components/navigation/FluidTabNavigator';
 import IndexScreen from './src/screens/index';
 
 // Import individual screens for quick actions
@@ -143,7 +140,7 @@ function AppContent() {
         >
           <Stack.Screen
             name="MainTabs"
-            component={TabNavigator}
+            component={FluidTabNavigator}
             options={{ headerShown: false }}
           />
           <Stack.Screen
@@ -293,7 +290,6 @@ function AppContent() {
 export default function App() {
   return (
     <ErrorBoundary onError={(error, errorInfo) => {
-      // Log critical app-level errors
       console.error('[App] Critical error caught by root boundary:', error);
     }}>
       <GestureHandlerRootView style={{ flex: 1 }}>
